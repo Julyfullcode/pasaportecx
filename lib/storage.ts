@@ -37,4 +37,115 @@ export class FilesystemStorage implements StorageAdapter {
   }
 }
 
-export const storage: StorageAdapter = new FilesystemStorage();
+const TIPOS_CONTENIDO: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+function configuracionSupabase() {
+  const url = process.env.SUPABASE_URL?.replace(/\/+$/, "");
+  const clave = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+  if (!url || !clave || !bucket) {
+    throw new Error(
+      "Faltan SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY o SUPABASE_STORAGE_BUCKET",
+    );
+  }
+  return { url, clave, bucket };
+}
+
+function rutaObjeto(url: string) {
+  const prefijo = "/uploads/";
+  if (!url.startsWith(prefijo)) return null;
+  const relativa = url.slice(prefijo.length);
+  const partes = relativa.split("/");
+  if (!relativa || partes.some((parte) => !parte || parte === "." || parte === "..")) {
+    throw new Error("Ruta de almacenamiento inválida");
+  }
+  return relativa;
+}
+
+function codificarRuta(ruta: string) {
+  return ruta.split("/").map(encodeURIComponent).join("/");
+}
+
+async function detalleError(respuesta: Response) {
+  const detalle = (await respuesta.text()).slice(0, 500);
+  return detalle ? `: ${detalle}` : "";
+}
+
+export class SupabaseStorage implements StorageAdapter {
+  async guardar(datos: Uint8Array, extension: string, carpeta: string) {
+    const { url, clave, bucket } = configuracionSupabase();
+    const extensionSegura = extension.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+    const carpetaSegura = carpeta.replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!carpetaSegura) throw new Error("Carpeta de almacenamiento inválida");
+    const ruta = `${carpetaSegura}/${randomBytes(20).toString("hex")}.${extensionSegura}`;
+    const respuesta = await fetch(
+      `${url}/storage/v1/object/${encodeURIComponent(bucket)}/${codificarRuta(ruta)}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: clave,
+          Authorization: `Bearer ${clave}`,
+          "Content-Type": TIPOS_CONTENIDO[extensionSegura] ?? "application/octet-stream",
+          "cache-control": "31536000",
+          "x-upsert": "false",
+        },
+        body: Buffer.from(datos),
+      },
+    );
+    if (!respuesta.ok) {
+      throw new Error(
+        `Supabase Storage no pudo guardar el archivo (${respuesta.status})${await detalleError(respuesta)}`,
+      );
+    }
+    return `/uploads/${ruta}`;
+  }
+
+  async leer(urlArchivo: string) {
+    const ruta = rutaObjeto(urlArchivo);
+    if (!ruta) throw new Error("Ruta de almacenamiento inválida");
+    const { url, clave, bucket } = configuracionSupabase();
+    const respuesta = await fetch(
+      `${url}/storage/v1/object/authenticated/${encodeURIComponent(bucket)}/${codificarRuta(ruta)}`,
+      { headers: { apikey: clave, Authorization: `Bearer ${clave}` } },
+    );
+    if (!respuesta.ok) {
+      throw new Error(
+        `Supabase Storage no pudo leer el archivo (${respuesta.status})${await detalleError(respuesta)}`,
+      );
+    }
+    return Buffer.from(await respuesta.arrayBuffer());
+  }
+
+  async eliminar(urlArchivo: string) {
+    const ruta = rutaObjeto(urlArchivo);
+    if (!ruta) return;
+    const { url, clave, bucket } = configuracionSupabase();
+    const respuesta = await fetch(
+      `${url}/storage/v1/object/${encodeURIComponent(bucket)}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: clave,
+          Authorization: `Bearer ${clave}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prefixes: [ruta] }),
+      },
+    );
+    if (!respuesta.ok && respuesta.status !== 404) {
+      throw new Error(
+        `Supabase Storage no pudo eliminar el archivo (${respuesta.status})${await detalleError(respuesta)}`,
+      );
+    }
+  }
+}
+
+export const storage: StorageAdapter =
+  process.env.STORAGE_DRIVER?.toLowerCase() === "supabase"
+    ? new SupabaseStorage()
+    : new FilesystemStorage();
