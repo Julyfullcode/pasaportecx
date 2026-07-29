@@ -9,11 +9,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TipoDesafio { CHECK_IN OPCION_MULTIPLE RESPUESTA_ABIERTA EVIDENCIA_FOTO ENCUESTA }
-enum EstadoDesafio { BORRADOR PUBLICADO CERRADO }
-enum EstadoCompletitud { APROBADO PENDIENTE RECHAZADO }
-enum MetodoPuntajeEquipo { PROMEDIO SUMA }
-enum ModoAsistentes { MOSAICO CARRUSEL DESTACADO }
+enum TipoDesafio {
+  CHECK_IN
+  OPCION_MULTIPLE
+  RESPUESTA_ABIERTA
+  EVIDENCIA_FOTO
+  ENCUESTA
+}
+
+enum EstadoDesafio {
+  BORRADOR
+  PUBLICADO
+  CERRADO
+}
+
+enum EstadoCompletitud {
+  APROBADO
+  PENDIENTE
+  RECHAZADO
+}
+
+enum MetodoPuntajeEquipo {
+  PROMEDIO
+  SUMA
+}
+
+enum ModoAsistentes {
+  MOSAICO
+  CARRUSEL
+  DESTACADO
+}
 
 model Participante {
   id String @id @default(cuid())
