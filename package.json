@@ -1,0 +1,53 @@
+{
+  "name": "pasaporte-cx",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test",
+    "seed": "prisma db seed",
+    "db:reset": "prisma migrate reset",
+    "db:studio": "prisma studio",
+    "prisma:postgres": "prisma generate --schema prisma/schema.postgresql.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "6.13.0",
+    "bcryptjs": "3.0.2",
+    "html5-qrcode": "2.3.8",
+    "jszip": "3.10.1",
+    "lucide-react": "0.468.0",
+    "next": "15.5.22",
+    "pdf-lib": "1.17.1",
+    "qrcode": "1.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.54.1",
+    "@testing-library/react": "16.3.0",
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "22.15.30",
+    "@types/qrcode": "1.5.5",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "autoprefixer": "10.4.21",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.5.22",
+    "postcss": "8.5.6",
+    "prisma": "6.13.0",
+    "tailwindcss": "3.4.17",
+    "tsx": "4.20.3",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

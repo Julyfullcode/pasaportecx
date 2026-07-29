@@ -1,0 +1,12 @@
+import { requerirAdmin } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { MarcoProyeccion } from "@/components/proyeccion/MarcoProyeccion";
+import { MuroRecuerdosProyeccion } from "@/components/proyeccion/MuroRecuerdos";
+
+export const dynamic = "force-dynamic";
+
+export default async function ProyeccionRecuerdos() {
+  await requerirAdmin();
+  const recuerdos = await db.recuerdo.findMany({ where: { visible: true, pendiente: false, reportado: false }, orderBy: { creadoEn: "desc" }, take: 20, include: { participante: true } });
+  return <MarcoProyeccion primera="Momentos que" segunda="nos conectan"><MuroRecuerdosProyeccion inicial={recuerdos} /></MarcoProyeccion>;
+}

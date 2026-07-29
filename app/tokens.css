@@ -1,0 +1,17 @@
+:root {
+  /* Identidad Grupo EPM. Ajuste los valores únicamente en este bloque. */
+  --epm-azul-profundo: #0b3b60;
+  --epm-azul: #0079c2;
+  --epm-azul-claro: #3fa9e0;
+  --epm-teal: #0e7c6e;
+  --epm-verde-medio: #2e9e5b;
+  --epm-verde: #8cc63f;
+  --epm-blanco: #ffffff;
+  --epm-gris-fondo: #f4f7f9;
+  --epm-gris-texto: #2b3a42;
+  --epm-gris-suave: #dce5ea;
+  --epm-gradiente: linear-gradient(120deg, #0b3b60 0%, #0e7c6e 55%, #8cc63f 100%);
+
+  --epm-sombra: 0 10px 30px rgba(11, 59, 96, 0.1);
+  --epm-radio: 16px;
+}

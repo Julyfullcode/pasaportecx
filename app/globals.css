@@ -1,0 +1,141 @@
+@import "./tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--epm-gris-fondo);
+  color: var(--epm-gris-texto);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(63, 169, 224, 0.08), transparent 34rem),
+    var(--epm-gris-fondo);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-poppins), sans-serif;
+  letter-spacing: -0.025em;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--epm-azul-claro);
+  outline-offset: 3px;
+}
+
+.marca-gradiente {
+  background: var(--epm-gradiente);
+}
+
+.tarjeta {
+  border: 1px solid rgba(220, 229, 234, 0.9);
+  border-radius: var(--epm-radio);
+  background: var(--epm-blanco);
+  box-shadow: var(--epm-sombra);
+}
+
+.boton-primario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 48px;
+  border-radius: 999px;
+  background: var(--epm-azul);
+  padding: 0.7rem 1.25rem;
+  color: white;
+  font-family: var(--font-poppins), sans-serif;
+  font-weight: 700;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.boton-primario:hover {
+  background: var(--epm-azul-profundo);
+  box-shadow: 0 8px 20px rgba(0, 121, 194, 0.24);
+  transform: translateY(-1px);
+}
+
+.boton-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  border: 1px solid var(--epm-azul);
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  color: var(--epm-azul-profundo);
+  font-weight: 800;
+}
+
+.campo {
+  width: 100%;
+  border: 1px solid var(--epm-gris-suave);
+  border-radius: 0.85rem;
+  background: white;
+  padding: 0.75rem 0.9rem;
+  color: var(--epm-gris-texto);
+}
+
+.campo:focus {
+  border-color: var(--epm-azul);
+  outline: 3px solid rgba(63, 169, 224, 0.2);
+}
+
+.etiqueta {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--epm-azul-profundo);
+  font-weight: 800;
+}
+
+.contenedor {
+  width: min(100% - 2rem, 1180px);
+  margin-inline: auto;
+}
+
+@keyframes entrada-suave {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pulso-puntos {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.entrada-suave {
+  animation: entrada-suave 420ms ease both;
+}
+
+.puntos-animados {
+  animation: pulso-puntos 700ms ease 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

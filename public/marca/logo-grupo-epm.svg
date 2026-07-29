@@ -1,0 +1,10 @@
+<!-- PLACEHOLDER: reemplazar este archivo por el logo oficial Grupo EPM conservando el nombre. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 78" role="img" aria-labelledby="title">
+  <title id="title">Grupo EPM — logo temporal</title>
+  <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round">
+    <path d="M20 44c18-31 36-31 54 0s36 31 54 0"/>
+    <path d="M30 57c13-19 26-19 39 0s26 19 39 0" opacity=".7"/>
+  </g>
+  <text x="148" y="42" fill="#fff" font-family="Arial,sans-serif" font-weight="700" font-size="28">Grupo EPM</text>
+  <text x="149" y="61" fill="#fff" font-family="Arial,sans-serif" font-size="9" opacity=".8">LOGO TEMPORAL</text>
+</svg>

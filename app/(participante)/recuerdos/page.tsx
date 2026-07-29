@@ -1,0 +1,26 @@
+import { requerirParticipante } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { MuroRecuerdos } from "@/components/participante/MuroRecuerdos";
+
+export const dynamic = "force-dynamic";
+
+export default async function Recuerdos({ searchParams }: { searchParams: Promise<{ subir?: string }> }) {
+  const participante = await requerirParticipante("/recuerdos");
+  const [recuerdos, { subir }] = await Promise.all([
+    db.recuerdo.findMany({
+      where: { visible: true, pendiente: false },
+      orderBy: { creadoEn: "desc" },
+      take: 18,
+      include: { participante: { include: { grupo: true, empresa: true } } },
+    }),
+    searchParams,
+  ]);
+  return (
+    <div className="contenedor py-6">
+      <p className="font-extrabold text-[var(--epm-verde-medio)]">Lo que vivimos</p>
+      <h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Muro de recuerdos</h1>
+      <p className="mt-2 text-sm text-slate-600">Fotos espontáneas del encuentro, compartidas por todos.</p>
+      <MuroRecuerdos iniciales={recuerdos} participanteId={participante.id} abrirSubida={subir === "1"} />
+    </div>
+  );
+}

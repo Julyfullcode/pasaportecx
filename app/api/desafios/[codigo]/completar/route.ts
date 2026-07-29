@@ -1,0 +1,114 @@
+import { Prisma, type EstadoCompletitud } from "@prisma/client";
+import { db } from "@/lib/db";
+import { participanteActual } from "@/lib/auth";
+import { anunciarCambio } from "@/lib/eventos";
+import { storage } from "@/lib/storage";
+import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
+import { recalcularPuntosParticipante } from "@/lib/puntos";
+
+type Configuracion = {
+  opciones?: Opcion[];
+  puntajeParcial?: boolean;
+  respuestasAceptadas?: string[];
+  formato?: "texto" | "escala";
+};
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ codigo: string }> },
+) {
+  const participante = await participanteActual();
+  if (!participante) return Response.json({ error: "Tu sesión venció. Recupera tu acceso." }, { status: 401 });
+  const { codigo } = await params;
+  const desafio = await db.desafio.findUnique({
+    where: { codigoQr: codigo },
+    include: { _count: { select: { completitudes: true } } },
+  });
+  if (!desafio) return Response.json({ error: "Este código no corresponde a un desafío." }, { status: 404 });
+  const ahora = new Date();
+  if (desafio.estado !== "PUBLICADO") return Response.json({ error: "El desafío no está disponible." }, { status: 409 });
+  if (desafio.disponibleDesde && desafio.disponibleDesde > ahora) return Response.json({ error: "Este desafío aún no comienza." }, { status: 409 });
+  if (desafio.disponibleHasta && desafio.disponibleHasta < ahora) return Response.json({ error: "Este desafío ya finalizó." }, { status: 409 });
+  if (desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
+    return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
+  }
+
+  // Un check-in no lleva campos. Evitar parsear multipart vacío también hace el
+  // flujo más resistente a navegadores que omiten el boundary cuando no hay partes.
+  const formulario = desafio.tipo === "CHECK_IN" ? new FormData() : await request.formData();
+  const configuracion = desafio.configuracion as Configuracion;
+  let puntos = desafio.puntos;
+  let estado: EstadoCompletitud = "APROBADO";
+  let urlEvidencia: string | undefined;
+  let respuesta: Prisma.InputJsonValue = {};
+
+  if (desafio.tipo === "OPCION_MULTIPLE") {
+    const seleccionadas = formulario.getAll("opcion").map(String);
+    puntos = puntuarOpcionMultiple(
+      seleccionadas,
+      configuracion.opciones ?? [],
+      desafio.puntos,
+      Boolean(configuracion.puntajeParcial),
+    );
+    respuesta = { seleccionadas };
+  } else if (desafio.tipo === "RESPUESTA_ABIERTA") {
+    const texto = String(formulario.get("respuesta") ?? "");
+    puntos = validarRespuestaAbierta(texto, configuracion.respuestasAceptadas ?? [])
+      ? desafio.puntos
+      : 0;
+    respuesta = { texto };
+  } else if (desafio.tipo === "EVIDENCIA_FOTO") {
+    const foto = formulario.get("evidencia");
+    if (!(foto instanceof File) || !foto.type.startsWith("image/")) {
+      return Response.json({ error: "Adjunta una foto como evidencia." }, { status: 400 });
+    }
+    urlEvidencia = await storage.guardar(
+      new Uint8Array(await foto.arrayBuffer()),
+      "jpg",
+      "evidencias",
+    );
+    puntos = 0;
+    estado = "PENDIENTE";
+  } else if (desafio.tipo === "ENCUESTA") {
+    const valor = String(formulario.get("respuesta") ?? "");
+    if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });
+    respuesta = { valor };
+  }
+
+  try {
+    const resultado = await db.$transaction(async (tx) => {
+      const completitud = await tx.completitud.create({
+        data: {
+          participanteId: participante.id,
+          desafioId: desafio.id,
+          puntosOtorgados: puntos,
+          respuesta,
+          urlEvidencia,
+          estado,
+        },
+      });
+      const nuevoTotal = await recalcularPuntosParticipante(tx, participante.id);
+      return { completitud, nuevoTotal };
+    });
+    anunciarCambio("puntos");
+    return Response.json({
+      estado: resultado.completitud.estado,
+      puntosGanados: puntos,
+      nuevoTotal: resultado.nuevoTotal,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existente = await db.completitud.findUniqueOrThrow({
+        where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
+      });
+      return Response.json({
+        yaCompletado: true,
+        estado: existente.estado,
+        puntosGanados: existente.puntosOtorgados,
+        nuevoTotal: participante.puntosTotales,
+      });
+    }
+    console.error(error);
+    return Response.json({ error: "La respuesta no pudo guardarse. Puedes reintentar sin perderla." }, { status: 500 });
+  }
+}
