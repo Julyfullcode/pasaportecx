@@ -12,5 +12,5 @@ export default async function ProyeccionEquipos() {
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     obtenerRankingEquipos(),
   ]);
-  return <MarcoProyeccion primera="Juntos" segunda="llegamos más lejos"><PodioEquipos inicial={equipos} metodo={configuracion.metodoPuntajeEquipo} tamano={configuracion.tamanoPodioEquipos} /></MarcoProyeccion>;
+  return <MarcoProyeccion primera="Juntos" segunda="llegamos más lejos"><PodioEquipos inicial={equipos} tamano={configuracion.tamanoPodioEquipos} /></MarcoProyeccion>;
 }

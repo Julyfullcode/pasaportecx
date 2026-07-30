@@ -3,7 +3,7 @@ import { Award, Camera, ChevronRight, ImagePlus, Medal, Sparkles, Trophy } from 
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { obtenerRankingEquipos } from "@/lib/equipos";
-import { FotoCircular } from "@/components/marca/FotoCircular";
+import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
 import { MarcaHeader } from "@/components/ui/MarcaHeader";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function Inicio() {
   return (
     <>
       <MarcaHeader tituloVerde="Hola," tituloClaro={participante.nombre.split(" ")[0]} compacto lateral>
-        <div className="flex max-w-[52vw] items-center justify-end gap-2 text-right">
+        <div className="flex max-w-[60vw] items-center justify-end gap-2 text-right">
           <div className="min-w-0">
             <p className="truncate text-xs font-bold text-white/85 sm:text-sm">{participante.empresa.nombre}</p>
             <span className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold sm:text-xs">
@@ -33,7 +33,7 @@ export default async function Inicio() {
               <span className="truncate">{participante.grupo.nombre}</span>
             </span>
           </div>
-          <FotoCircular src={participante.urlFoto} alt={`Foto de ${participante.nombre}`} className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
+          <FotoPerfilEditable src={participante.urlFoto} nombre={participante.nombre} />
         </div>
       </MarcaHeader>
       <div className="contenedor relative z-20 -mt-3 space-y-4">

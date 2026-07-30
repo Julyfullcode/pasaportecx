@@ -7,7 +7,15 @@ function consultarGrupos() {
     orderBy: { orden: "asc" },
     include: {
       participantes: {
-        select: { puntosTotales: true, activo: true, id: true, urlFoto: true },
+        where: { activo: true },
+        select: {
+          puntosTotales: true,
+          activo: true,
+          id: true,
+          nombre: true,
+          urlFoto: true,
+          empresa: { select: { nombre: true, urlLogo: true } },
+        },
       },
     },
   });
