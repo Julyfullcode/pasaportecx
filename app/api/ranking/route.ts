@@ -1,17 +1,26 @@
 import { db } from "@/lib/db";
-import { obtenerRankingEquipos } from "@/lib/equipos";
+import { obtenerRankingConConfiguracion } from "@/lib/equipos";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [configuracion, individual, equipos] = await Promise.all([
-    db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
+  const [individual, ranking] = await Promise.all([
     db.participante.findMany({
       where: { activo: true },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
-      include: { empresa: true, grupo: true },
+      select: {
+        id: true,
+        nombre: true,
+        urlFoto: true,
+        puntosTotales: true,
+        empresa: { select: { nombre: true, urlLogo: true } },
+        grupo: { select: { nombre: true, colorHex: true } },
+      },
     }),
-    obtenerRankingEquipos(),
+    obtenerRankingConConfiguracion(),
   ]);
-  return Response.json({ configuracion, individual, equipos });
+  return Response.json(
+    { configuracion: ranking.configuracion, individual, equipos: ranking.equipos },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }

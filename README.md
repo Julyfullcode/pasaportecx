@@ -39,23 +39,23 @@ La primera ejecución E2E requiere `npx playwright install chromium`.
 - Prisma 6.13. SQLite vive en `prisma/dev.db` para desarrollo. Prisma exige un `provider` literal; por eso producción usa el esquema gemelo `prisma/schema.postgresql.prisma`, que solo cambia ese provider. Mantenga ambos modelos sincronizados.
 - Las completitudes tienen una restricción única `(participanteId, desafioId)`. El handler captura `P2002` y devuelve la completitud existente; un doble toque o dos solicitudes concurrentes no duplican puntos.
 - Todo cambio de completitud, aprobación o ajuste recalcula `puntosTotales` dentro de la misma transacción.
-- `/api/stream` emite SSE. Los clientes cierran listeners y temporizadores al desmontarse y pasan automáticamente a polling cada 5 segundos si SSE falla.
-- Las fotos usan nombres criptográficamente aleatorios y `StorageAdapter`. `FilesystemStorage` guarda bajo `/uploads`; para producción implemente otro adaptador (S3, Vercel Blob o equivalente) sin cambiar la lógica de negocio.
-- Las fotos se comprimen en el navegador mediante canvas: perfil 600 px; recuerdos 1200 px y miniatura 300 px.
+- Las vistas se actualizan con polling visible, sin solicitudes solapadas: 3–5 segundos en proyección, 10 segundos en ranking y 30 segundos en el muro. Las pestañas ocultas no consultan.
+- Las fotos usan nombres criptográficamente aleatorios y `StorageAdapter`. Producción usa Supabase Storage; la ruta `/uploads` agrega caché CDN inmutable.
+- Las fotos se comprimen en el navegador y se validan nuevamente en el servidor. Cada dispositivo sube como máximo dos recuerdos en paralelo.
 - Las sesiones de participante y administrador son independientes, persistentes y usan tokens aleatorios almacenados como hash; la cookie es `httpOnly`, `sameSite` y `secure` en producción.
 
 ## Marca
 
 Toda la paleta está centralizada y comentada en `app/tokens.css`. Cambiar un color allí actualiza la interfaz completa.
 
-`public/marca/logo-grupo-epm.svg` es un **placeholder identificado**, porque el logo oficial no fue suministrado. Sustituya únicamente ese archivo por el SVG oficial, conservando nombre y `viewBox`; toda la app consume el componente único `components/marca/Logo.tsx`.
+La aplicación usa el logo oficial preparado en `public/marca/logo-grupo-epm-oficial.png` mediante el componente único `components/marca/Logo.tsx`.
 
 Las fotos de personas usan siempre `FotoCircular`; los recuerdos son la excepción rectangular. `CurvaMarca` y `TexturaArcos` contienen los recursos gráficos reutilizables.
 
 ## Despliegue en Vercel + PostgreSQL
 
-1. Cree una base PostgreSQL administrada y copie su URL.
-2. Configure en Vercel: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_USER`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_APP_URL` y `STORAGE_DRIVER`.
+1. Cree una base PostgreSQL administrada. En Supabase use Transaction Pooler (puerto 6543) para `DATABASE_URL` y Session Pooler (puerto 5432) para `DIRECT_URL`.
+2. Configure en Vercel: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `ADMIN_USER`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_APP_URL`, `STORAGE_DRIVER` y las variables `SUPABASE_*`.
 3. Genere y migre usando el esquema PostgreSQL:
 
    ```bash
@@ -63,7 +63,7 @@ Las fotos de personas usan siempre `FotoCircular`; los recuerdos son la excepci�
    npx prisma migrate deploy --schema prisma/schema.postgresql.prisma
    ```
 
-4. Cambie `FilesystemStorage` por un adaptador persistente. El filesystem de una función serverless es efímero y no sirve para el álbum del evento.
+4. Use `STORAGE_DRIVER=supabase`; el filesystem de una función serverless es efímero y no sirve para el álbum del evento.
 5. Ejecute el seed solo si desea los datos de demostración; luego cambie la contraseña inicial.
 6. Despliegue con `npm run build`. Para un evento real, pruebe la red del lugar y deje abierta una pestaña de administración.
 
@@ -116,7 +116,7 @@ Al terminar, la sección roja de `/admin/configuracion` exige escribir dos veces
 
 - Si una mutación tarda, espere el mensaje final; no cierre la pestaña. Los botones muestran carga y permiten reintentar.
 - Un doble escaneo no duplica puntos. Si el celular perdió red, use el botón de reintento: la respuesta sigue en el formulario.
-- Si SSE se corta, las vistas pasan a consulta cada 5 segundos automáticamente.
+- Las vistas se actualizan automáticamente mientras la pestaña está visible y se sincronizan al recuperar el foco.
 - Si la cámara está bloqueada, autorice este sitio en la configuración del navegador o escriba manualmente el código impreso.
 - Si una foto del lote falla, reintente solamente esa fila.
 - Si la proyección se congela, recargue únicamente esa pestaña; la operación y los puntos permanecen en la base de datos.

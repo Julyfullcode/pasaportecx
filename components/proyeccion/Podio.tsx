@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { usePollingVisible } from "@/lib/usePollingVisible";
 
 export type PersonaPodio = {
   id: string;
@@ -14,17 +15,10 @@ export type PersonaPodio = {
 
 export function Podio({ inicial, tamano }: { inicial: PersonaPodio[]; tamano: number }) {
   const [personas, setPersonas] = useState(inicial);
-  useEffect(() => {
-    let intervalo: ReturnType<typeof setInterval> | undefined;
-    const actualizar = async () => {
-      const r = await fetch("/api/ranking", { cache: "no-store" });
-      if (r.ok) setPersonas((await r.json()).individual);
-    };
-    const fuente = new EventSource("/api/stream");
-    fuente.onmessage = actualizar;
-    fuente.onerror = () => { fuente.close(); intervalo = setInterval(actualizar, 5_000); };
-    return () => { fuente.close(); if (intervalo) clearInterval(intervalo); };
-  }, []);
+  usePollingVisible(async () => {
+    const r = await fetch("/api/ranking", { cache: "no-store" });
+    if (r.ok) setPersonas((await r.json()).individual);
+  }, 3_000);
 
   const top = personas.slice(0, tamano);
   const principales = [top[1], top[0], top[2]].filter(Boolean);

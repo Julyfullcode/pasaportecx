@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Medal, Users } from "lucide-react";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { usePollingVisible } from "@/lib/usePollingVisible";
 
 type Datos = {
   configuracion: {
@@ -36,23 +37,10 @@ export function RankingTiempoReal({
 }) {
   const [datos, setDatos] = useState(inicial);
   const [pestana, setPestana] = useState<"individual" | "equipos">("individual");
-  useEffect(() => {
-    let intervalo: ReturnType<typeof setInterval> | undefined;
-    const actualizar = async () => {
-      const respuesta = await fetch("/api/ranking", { cache: "no-store" });
-      if (respuesta.ok) setDatos(await respuesta.json());
-    };
-    const fuente = new EventSource("/api/stream");
-    fuente.onmessage = () => void actualizar();
-    fuente.onerror = () => {
-      fuente.close();
-      intervalo = setInterval(actualizar, 5_000);
-    };
-    return () => {
-      fuente.close();
-      if (intervalo) clearInterval(intervalo);
-    };
-  }, []);
+  usePollingVisible(async () => {
+    const respuesta = await fetch("/api/ranking", { cache: "no-store" });
+    if (respuesta.ok) setDatos(await respuesta.json());
+  }, 10_000);
   return (
     <>
       <div className="mt-5 grid grid-cols-2 rounded-full bg-white p-1 shadow-soft">

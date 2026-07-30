@@ -12,7 +12,14 @@ export default async function Ranking() {
     db.participante.findMany({
       where: { activo: true },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
-      include: { empresa: true, grupo: true },
+      select: {
+        id: true,
+        nombre: true,
+        urlFoto: true,
+        puntosTotales: true,
+        empresa: { select: { nombre: true } },
+        grupo: { select: { nombre: true, colorHex: true } },
+      },
     }),
     obtenerRankingEquipos(),
   ]);

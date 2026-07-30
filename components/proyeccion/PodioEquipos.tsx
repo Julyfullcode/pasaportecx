@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Users } from "lucide-react";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { usePollingVisible } from "@/lib/usePollingVisible";
 
 type Equipo = {
   id: string;
@@ -16,12 +17,14 @@ type Equipo = {
 export function PodioEquipos({ inicial, metodo, tamano }: { inicial: Equipo[]; metodo: string; tamano: number }) {
   const [equipos, setEquipos] = useState(inicial);
   const [criterio, setCriterio] = useState(metodo);
-  useEffect(() => {
-    let intervalo: ReturnType<typeof setInterval> | undefined;
-    const actualizar = async () => { const r = await fetch("/api/ranking", { cache: "no-store" }); if (r.ok) { const d = await r.json(); setEquipos(d.equipos); setCriterio(d.configuracion.metodoPuntajeEquipo); } };
-    const fuente = new EventSource("/api/stream"); fuente.onmessage = actualizar; fuente.onerror = () => { fuente.close(); intervalo = setInterval(actualizar, 5_000); };
-    return () => { fuente.close(); if (intervalo) clearInterval(intervalo); };
-  }, []);
+  usePollingVisible(async () => {
+    const r = await fetch("/api/ranking", { cache: "no-store" });
+    if (r.ok) {
+      const d = await r.json();
+      setEquipos(d.equipos);
+      setCriterio(d.configuracion.metodoPuntajeEquipo);
+    }
+  }, 3_000);
   return (
     <div className="flex h-full min-h-0 flex-col py-[clamp(12px,2vh,24px)]">
       <p className="mx-auto mb-3 w-fit shrink-0 rounded-full bg-white/15 px-5 py-2 text-[clamp(12px,1.2vw,19px)] font-extrabold">Criterio: {criterio === "PROMEDIO" ? "promedio por integrante activo" : "suma total"}</p>

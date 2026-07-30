@@ -95,6 +95,7 @@ export class SupabaseStorage implements StorageAdapter {
           "x-upsert": "false",
         },
         body: Buffer.from(datos),
+        signal: AbortSignal.timeout(15_000),
       },
     );
     if (!respuesta.ok) {
@@ -111,7 +112,10 @@ export class SupabaseStorage implements StorageAdapter {
     const { url, clave, bucket } = configuracionSupabase();
     const respuesta = await fetch(
       `${url}/storage/v1/object/authenticated/${encodeURIComponent(bucket)}/${codificarRuta(ruta)}`,
-      { headers: { apikey: clave, Authorization: `Bearer ${clave}` } },
+      {
+        headers: { apikey: clave, Authorization: `Bearer ${clave}` },
+        signal: AbortSignal.timeout(10_000),
+      },
     );
     if (!respuesta.ok) {
       throw new Error(
@@ -135,6 +139,7 @@ export class SupabaseStorage implements StorageAdapter {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ prefixes: [ruta] }),
+        signal: AbortSignal.timeout(10_000),
       },
     );
     if (!respuesta.ok && respuesta.status !== 404) {

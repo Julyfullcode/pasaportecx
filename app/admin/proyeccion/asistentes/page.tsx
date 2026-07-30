@@ -9,7 +9,17 @@ export default async function ProyeccionAsistentes() {
   await requerirAdmin();
   const [configuracion, personas] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
-    db.participante.findMany({ where: { activo: true }, orderBy: { creadoEn: "desc" }, include: { empresa: true, grupo: true } }),
+    db.participante.findMany({
+      where: { activo: true },
+      orderBy: { creadoEn: "desc" },
+      select: {
+        id: true,
+        nombre: true,
+        urlFoto: true,
+        empresa: { select: { nombre: true, urlLogo: true } },
+        grupo: { select: { nombre: true, colorHex: true } },
+      },
+    }),
   ]);
   return <MarcoProyeccion primera="Somos parte de" segunda="una gran experiencia"><RotadorAsistentes inicial={personas} modo={configuracion.modoAsistentes} intervalo={configuracion.intervaloAsistentesSegundos} /></MarcoProyeccion>;
 }

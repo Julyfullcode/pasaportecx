@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { usePollingVisible } from "@/lib/usePollingVisible";
 
 type Recuerdo = { id: string; urlFoto: string; descripcion: string | null; participante: { nombre: string } };
 
 export function MuroRecuerdosProyeccion({ inicial }: { inicial: Recuerdo[] }) {
   const [recuerdos, setRecuerdos] = useState(inicial);
-  useEffect(() => {
-    let intervalo: ReturnType<typeof setInterval> | undefined;
-    const actualizar = async () => { const r = await fetch("/api/proyeccion/datos", { cache: "no-store" }); if (r.ok) setRecuerdos((await r.json()).recuerdos); };
-    const fuente = new EventSource("/api/stream"); fuente.onmessage = actualizar; fuente.onerror = () => { fuente.close(); intervalo = setInterval(actualizar, 5_000); };
-    return () => { fuente.close(); if (intervalo) clearInterval(intervalo); };
-  }, []);
+  usePollingVisible(async () => {
+    const r = await fetch("/api/proyeccion/datos", { cache: "no-store" });
+    if (r.ok) setRecuerdos((await r.json()).recuerdos);
+  }, 5_000);
   return (
     <div className="grid h-full min-h-0 grid-cols-4 grid-rows-3 gap-[clamp(8px,1.2vw,18px)] py-[clamp(12px,2vh,24px)]">
       {recuerdos.slice(0, 12).map((recuerdo, indice) => (

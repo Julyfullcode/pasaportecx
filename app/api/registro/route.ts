@@ -12,6 +12,8 @@ function codigoRecuperacion() {
 }
 
 export async function POST(request: Request) {
+  let urlFoto: string | undefined;
+  let participantePersistido = false;
   try {
     const formulario = await request.formData();
     const datos = registroSchema.parse(Object.fromEntries(formulario));
@@ -23,33 +25,37 @@ export async function POST(request: Request) {
       return Response.json({ error: "La foto supera 500 KB. Intenta comprimirla de nuevo." }, { status: 400 });
     }
     const configuracion = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-    let grupoId = datos.grupoId;
-    if (configuracion.asignacionAutomatica) {
-      const grupos = await db.grupo.findMany({
-        where: { activo: true },
-        include: { _count: { select: { participantes: { where: { activo: true } } } } },
-        orderBy: { orden: "asc" },
+    urlFoto = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), "jpg", "perfiles");
+    const participante = await db.$transaction(async (tx) => {
+      let grupoId = datos.grupoId;
+      if (configuracion.asignacionAutomatica) {
+        await tx.$queryRaw`WITH bloqueo AS MATERIALIZED (SELECT pg_advisory_xact_lock(1302026)) SELECT 1 AS "adquirido" FROM bloqueo`;
+        const grupos = await tx.grupo.findMany({
+          where: { activo: true },
+          include: { _count: { select: { participantes: { where: { activo: true } } } } },
+          orderBy: { orden: "asc" },
+        });
+        grupoId = grupos.sort(
+          (a, b) => a._count.participantes - b._count.participantes || a.orden - b.orden,
+        )[0]?.id;
+      }
+      if (!grupoId) throw new Error("No hay un equipo disponible");
+      let codigo = codigoRecuperacion();
+      while (await tx.participante.findUnique({ where: { codigoRecuperacion: codigo } })) {
+        codigo = codigoRecuperacion();
+      }
+      return tx.participante.create({
+        data: {
+          nombre: datos.nombre,
+          empresaId: datos.empresaId,
+          grupoId,
+          urlFoto: urlFoto!,
+          codigoRecuperacion: codigo,
+        },
+        include: { grupo: true },
       });
-      grupoId = grupos.sort(
-        (a, b) => a._count.participantes - b._count.participantes || a.orden - b.orden,
-      )[0]?.id;
-    }
-    if (!grupoId) return Response.json({ error: "Selecciona un equipo" }, { status: 400 });
-    const urlFoto = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), "jpg", "perfiles");
-    let codigo = codigoRecuperacion();
-    while (await db.participante.findUnique({ where: { codigoRecuperacion: codigo } })) {
-      codigo = codigoRecuperacion();
-    }
-    const participante = await db.participante.create({
-      data: {
-        nombre: datos.nombre,
-        empresaId: datos.empresaId,
-        grupoId,
-        urlFoto,
-        codigoRecuperacion: codigo,
-      },
-      include: { grupo: true },
-    });
+    }, { maxWait: 10_000, timeout: 15_000 });
+    participantePersistido = true;
     await crearSesionParticipante(participante.id);
     anunciarCambio("participante");
     return Response.json({
@@ -61,6 +67,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error(error);
+    if (urlFoto && !participantePersistido) await storage.eliminar(urlFoto).catch(() => undefined);
     return Response.json(
       { error: "No pudimos completar el registro. Tus datos siguen en el formulario; vuelve a intentarlo." },
       { status: 500 },

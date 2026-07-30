@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, LoaderCircle, RotateCcw, Trash2, Flag, X } from "lucide-react";
 import { comprimirImagen } from "@/lib/imagen";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { usePollingVisible } from "@/lib/usePollingVisible";
 
 type Recuerdo = {
   id: string;
@@ -80,27 +81,13 @@ export function MuroRecuerdos({
 
   async function subirPendientes() {
     const pendientes = cargas.filter((c) => c.estado === "pendiente" || c.estado === "error");
-    await Promise.all(pendientes.map(subirUna));
+    for (let inicio = 0; inicio < pendientes.length; inicio += 2) {
+      await Promise.all(pendientes.slice(inicio, inicio + 2).map(subirUna));
+    }
     await recargar(mios);
   }
 
-  useEffect(() => {
-    const fuente = new EventSource("/api/stream");
-    const actualizar = () => void recargar(mios);
-    fuente.onmessage = actualizar;
-    fuente.onerror = () => {
-      fuente.close();
-      const intervalo = setInterval(actualizar, 5_000);
-      (fuente as unknown as { _intervalo?: ReturnType<typeof setInterval> })._intervalo = intervalo;
-    };
-    return () => {
-      fuente.close();
-      const intervalo = (fuente as unknown as { _intervalo?: ReturnType<typeof setInterval> })._intervalo;
-      if (intervalo) clearInterval(intervalo);
-    };
-    // mios activa un nuevo canal y limpia el anterior.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mios]);
+  usePollingVisible(() => recargar(mios), 30_000);
 
   useEffect(() => {
     const boton = cargarMasRef.current;

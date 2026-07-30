@@ -36,14 +36,25 @@ export async function POST(request: Request) {
   if (!(foto instanceof File) || !(miniatura instanceof File)) {
     return Response.json({ error: "Faltan los archivos de imagen." }, { status: 400 });
   }
+  if (!foto.type.startsWith("image/") || !miniatura.type.startsWith("image/")) {
+    return Response.json({ error: "Los archivos deben ser imágenes válidas." }, { status: 400 });
+  }
+  if (foto.size > 1_800_000 || miniatura.size > 250_000) {
+    return Response.json({ error: "La foto es demasiado pesada. Vuelve a seleccionarla para comprimirla." }, { status: 413 });
+  }
   if (clave) {
     const existente = await db.recuerdo.findUnique({ where: { claveIdempotencia: clave } });
     if (existente) return Response.json({ recuerdo: existente, repetido: true });
   }
-  const [urlFoto, urlMiniatura] = await Promise.all([
+  const cargas = await Promise.allSettled([
     storage.guardar(new Uint8Array(await foto.arrayBuffer()), "jpg", "recuerdos"),
     storage.guardar(new Uint8Array(await miniatura.arrayBuffer()), "jpg", "miniaturas"),
   ]);
+  if (cargas.some((carga) => carga.status === "rejected")) {
+    await Promise.allSettled(cargas.flatMap((carga) => carga.status === "fulfilled" ? [storage.eliminar(carga.value)] : []));
+    return Response.json({ error: "El almacenamiento está ocupado. Reintenta esta foto." }, { status: 503 });
+  }
+  const [urlFoto, urlMiniatura] = cargas.map((carga) => (carga as PromiseFulfilledResult<string>).value);
   try {
     const recuerdo = await db.$transaction(async (tx) => {
       const configuracion = await tx.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
@@ -80,6 +91,7 @@ export async function POST(request: Request) {
     anunciarCambio("recuerdo");
     return Response.json({ recuerdo });
   } catch (error) {
+    await Promise.allSettled([storage.eliminar(urlFoto), storage.eliminar(urlMiniatura)]);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" && clave) {
       const existente = await db.recuerdo.findUnique({ where: { claveIdempotencia: clave } });
       return Response.json({ recuerdo: existente, repetido: true });

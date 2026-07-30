@@ -62,11 +62,18 @@ export async function POST(
     if (!(foto instanceof File) || !foto.type.startsWith("image/")) {
       return Response.json({ error: "Adjunta una foto como evidencia." }, { status: 400 });
     }
-    urlEvidencia = await storage.guardar(
-      new Uint8Array(await foto.arrayBuffer()),
-      "jpg",
-      "evidencias",
-    );
+    if (foto.size > 2_500_000) {
+      return Response.json({ error: "La evidencia es demasiado pesada. Vuelve a seleccionarla para comprimirla." }, { status: 413 });
+    }
+    try {
+      urlEvidencia = await storage.guardar(
+        new Uint8Array(await foto.arrayBuffer()),
+        "jpg",
+        "evidencias",
+      );
+    } catch {
+      return Response.json({ error: "El almacenamiento está ocupado. Reintenta la evidencia." }, { status: 503 });
+    }
     puntos = 0;
     estado = "PENDIENTE";
   } else if (desafio.tipo === "ENCUESTA") {
@@ -97,6 +104,7 @@ export async function POST(
       nuevoTotal: resultado.nuevoTotal,
     });
   } catch (error) {
+    if (urlEvidencia) await storage.eliminar(urlEvidencia).catch(() => undefined);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const existente = await db.completitud.findUniqueOrThrow({
         where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },

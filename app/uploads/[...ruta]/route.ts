@@ -23,6 +23,8 @@ export async function GET(
       headers: {
         "Content-Type": tipos[extension] ?? "application/octet-stream",
         "Cache-Control": "public, max-age=31536000, immutable",
+        "CDN-Cache-Control": "public, max-age=31536000, immutable",
+        "Vercel-CDN-Cache-Control": "public, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
       },
     });

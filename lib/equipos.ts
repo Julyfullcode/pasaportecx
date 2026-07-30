@@ -1,11 +1,8 @@
 import { calcularPuntajeEquipo } from "@/lib/puntos";
 import { db } from "@/lib/db";
 
-export async function obtenerRankingEquipos() {
-  const configuracion = await db.configuracionEvento.findUniqueOrThrow({
-    where: { id: "evento" },
-  });
-  const grupos = await db.grupo.findMany({
+function consultarGrupos() {
+  return db.grupo.findMany({
     where: { activo: true },
     orderBy: { orden: "asc" },
     include: {
@@ -14,16 +11,41 @@ export async function obtenerRankingEquipos() {
       },
     },
   });
+}
+
+function ordenarRanking(
+  grupos: Awaited<ReturnType<typeof consultarGrupos>>,
+  metodo: "PROMEDIO" | "SUMA",
+) {
   return grupos
     .map((grupo) => ({
       ...grupo,
       integrantes: grupo.participantes.filter((p) => p.activo).length,
       puntaje: calcularPuntajeEquipo(
         grupo.participantes,
-        configuracion.metodoPuntajeEquipo,
+        metodo,
       ),
     }))
     .sort((a, b) => b.puntaje - a.puntaje || a.orden - b.orden);
+}
+
+export async function obtenerRankingEquipos(metodo?: "PROMEDIO" | "SUMA") {
+  const [configuracion, grupos] = await Promise.all([
+    metodo ? Promise.resolve(null) : db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
+    consultarGrupos(),
+  ]);
+  return ordenarRanking(grupos, metodo ?? configuracion!.metodoPuntajeEquipo);
+}
+
+export async function obtenerRankingConConfiguracion() {
+  const [configuracion, grupos] = await Promise.all([
+    db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
+    consultarGrupos(),
+  ]);
+  return {
+    configuracion,
+    equipos: ordenarRanking(grupos, configuracion.metodoPuntajeEquipo),
+  };
 }
 
 export function sugerirRebalanceo(

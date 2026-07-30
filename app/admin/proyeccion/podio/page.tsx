@@ -9,7 +9,18 @@ export default async function ProyeccionPodio() {
   await requerirAdmin();
   const [configuracion, personas] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
-    db.participante.findMany({ where: { activo: true }, orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }], include: { empresa: true, grupo: true } }),
+    db.participante.findMany({
+      where: { activo: true },
+      orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
+      select: {
+        id: true,
+        nombre: true,
+        urlFoto: true,
+        puntosTotales: true,
+        empresa: { select: { nombre: true, urlLogo: true } },
+        grupo: { select: { nombre: true, colorHex: true } },
+      },
+    }),
   ]);
   return <MarcoProyeccion primera="Personas que" segunda="dejan huella"><Podio inicial={personas} tamano={configuracion.tamanoPodioIndividual} /></MarcoProyeccion>;
 }

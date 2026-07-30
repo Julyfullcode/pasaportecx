@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { usePollingVisible } from "@/lib/usePollingVisible";
 
 type Persona = {
   id: string;
@@ -32,9 +33,7 @@ export function RotadorAsistentes({ inicial, modo, intervalo }: { inicial: Perso
     return () => clearInterval(temporizador);
   }, [cantidad, intervalo, personas.length]);
 
-  useEffect(() => {
-    let polling: ReturnType<typeof setInterval> | undefined;
-    const actualizar = async () => {
+  usePollingVisible(async () => {
       const r = await fetch("/api/ranking", { cache: "no-store" });
       if (!r.ok) return;
       const datos = (await r.json()).individual as Persona[];
@@ -47,12 +46,7 @@ export function RotadorAsistentes({ inicial, modo, intervalo }: { inicial: Perso
         setTimeout(() => setNuevos(new Set()), 12_000);
         return [...llegados, ...datos.filter((p) => !llegados.some((nuevo) => nuevo.id === p.id))];
       });
-    };
-    const fuente = new EventSource("/api/stream");
-    fuente.onmessage = actualizar;
-    fuente.onerror = () => { fuente.close(); polling = setInterval(actualizar, 5_000); };
-    return () => { fuente.close(); if (polling) clearInterval(polling); };
-  }, []);
+  }, 3_000);
 
   const visibles = useMemo(() => {
     if (!personas.length) return [];
