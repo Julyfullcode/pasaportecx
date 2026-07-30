@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Diploma() {
   const participante = await requerirParticipante("/diploma");
   const config = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-  const fecha = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
+  const fecha = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" }).format(new Date());
 
   return (
     <>

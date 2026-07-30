@@ -58,7 +58,7 @@ export async function generarDiplomaPdf(datos: DatosDiploma) {
   textoCentrado(pagina, "y por contribuir con su energía a una experiencia que deja huella.", 232, 14, normal, gris);
   textoCentrado(pagina, `${datos.empresa}  ·  ${datos.equipo}`, 187, 14, negrita, azul);
 
-  const fecha = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric" }).format(datos.fecha);
+  const fecha = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" }).format(datos.fecha);
   pagina.drawLine({ start: { x: 305, y: 128 }, end: { x: 537, y: 128 }, thickness: 1, color: rgb(0.75, 0.79, 0.82) });
   textoCentrado(pagina, fecha, 106, 12, normal, gris);
   textoCentrado(pagina, "Un recuerdo de tu participación en el Encuentro de Experiencia", 62, 12, negrita, azul);
