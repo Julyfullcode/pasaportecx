@@ -74,6 +74,7 @@ model Grupo {
 model Empresa {
   id            String         @id @default(cuid())
   nombre        String         @unique
+  urlLogo       String?
   orden         Int
   activa        Boolean        @default(true)
   participantes Participante[]

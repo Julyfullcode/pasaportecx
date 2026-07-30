@@ -287,6 +287,31 @@ export async function guardarCatalogo(formulario: FormData) {
   revalidatePath("/admin/configuracion");
 }
 
+export async function actualizarLogoEmpresa(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  const empresa = await db.empresa.findUniqueOrThrow({ where: { id } });
+  if (formulario.get("accion") === "quitar") {
+    await db.empresa.update({ where: { id }, data: { urlLogo: null } });
+    if (empresa.urlLogo) await storage.eliminar(empresa.urlLogo).catch(() => undefined);
+  } else {
+    const logo = formulario.get("logo");
+    if (!(logo instanceof File) || !logo.type.startsWith("image/") || logo.size > 2_000_000) return;
+    const extension = logo.type === "image/png" ? "png" : logo.type === "image/webp" ? "webp" : "jpg";
+    const urlLogo = await storage.guardar(
+      new Uint8Array(await logo.arrayBuffer()),
+      extension,
+      "empresas",
+    );
+    await db.empresa.update({ where: { id }, data: { urlLogo } });
+    if (empresa.urlLogo) await storage.eliminar(empresa.urlLogo).catch(() => undefined);
+  }
+  anunciarCambio("empresa");
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/proyeccion/asistentes");
+  revalidatePath("/admin/proyeccion/podio");
+}
+
 export async function alternarCatalogo(formulario: FormData) {
   await requerirAdmin();
   const tipo = String(formulario.get("tipo"));

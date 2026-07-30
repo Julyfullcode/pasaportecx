@@ -44,7 +44,7 @@ export default async function AdminParticipantes({
                 <h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{persona.nombre}</h2>
                 <p className="text-xs text-slate-500">{persona.empresa.nombre} · {persona.grupo.nombre} · {persona._count.completitudes} retos · {persona._count.recuerdos} recuerdos</p>
               </Link>
-              <strong className="font-display text-2xl text-[var(--epm-azul-profundo)]">{persona.puntosTotales} pts</strong>
+              <Link href={`/admin/participantes/${persona.id}#detalle-puntos`} className="rounded-xl px-3 py-2 text-right font-display text-2xl text-[var(--epm-azul-profundo)] transition hover:bg-sky-50 hover:text-[var(--epm-azul)]" title="Ver detalle de puntos">{persona.puntosTotales} pts<span className="block font-sans text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ver detalle</span></Link>
             </div>
             <div className="mt-3 grid gap-2 border-t pt-3 md:grid-cols-3">
               <form action={cambiarGrupoParticipante} className="flex gap-2">

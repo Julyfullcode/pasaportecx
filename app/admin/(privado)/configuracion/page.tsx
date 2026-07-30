@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { alternarCatalogo, guardarCatalogo, guardarConfiguracion } from "@/app/admin/actions";
+import { actualizarLogoEmpresa, alternarCatalogo, guardarCatalogo, guardarConfiguracion } from "@/app/admin/actions";
 import { PurgaDatos } from "@/components/admin/PurgaDatos";
 
 export const dynamic = "force-dynamic";
@@ -34,13 +34,59 @@ export default async function Configuracion() {
       </form>
       <section className="mt-6"><h2 className="text-2xl font-extrabold">Catálogos</h2><p className="text-sm text-slate-600">Edite, reordene o agregue registros; estarán disponibles de inmediato.</p>
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
-          <Catalogo titulo="Empresas" tipo="empresa" items={empresas} />
+          <CatalogoEmpresas items={empresas} />
           <Catalogo titulo="Componentes" tipo="componente" items={componentes} color />
           <Catalogo titulo="Grupos" tipo="grupo" items={grupos} color />
           <Catalogo titulo="Ubicaciones del Día 1" tipo="ubicacion" items={ubicaciones} />
         </div>
       </section>
       <section className="mt-6 rounded-2xl border-2 border-red-200 bg-red-50 p-5"><h2 className="text-xl font-extrabold text-red-900">Purga al finalizar el evento</h2><PurgaDatos /></section>
+    </div>
+  );
+}
+
+function CatalogoEmpresas({ items }: { items: { id: string; nombre: string; orden: number; urlLogo: string | null; activa: boolean }[] }) {
+  return (
+    <div className="tarjeta p-4">
+      <h3 className="text-lg font-extrabold">Empresas</h3>
+      <p className="mt-1 text-xs text-slate-500">El logo aparecerá junto a cada persona en las pantallas de proyección. PNG transparente recomendado.</p>
+      <div className="mt-3 space-y-3">
+        {items.map((item) => (
+          <div key={item.id} className="rounded-xl border border-slate-200 p-3">
+            <div className="flex items-center gap-2">
+              <form action={guardarCatalogo} className="grid min-w-0 flex-1 grid-cols-[1fr_55px_auto] gap-2">
+                <input type="hidden" name="tipo" value="empresa" />
+                <input type="hidden" name="id" value={item.id} />
+                <input className="campo !min-h-10 !py-1 text-sm" name="nombre" defaultValue={item.nombre} />
+                <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={item.orden} />
+                <button className="text-xs font-extrabold text-[var(--epm-azul)]">Guardar</button>
+              </form>
+              <form action={alternarCatalogo}>
+                <input type="hidden" name="tipo" value="empresa" />
+                <input type="hidden" name="id" value={item.id} />
+                <button className="text-[10px] font-extrabold text-slate-500">{item.activa ? "Desactivar" : "Activar"}</button>
+              </form>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3 border-t pt-3">
+              <div className="grid h-14 w-28 place-items-center overflow-hidden rounded-lg bg-slate-50 p-2">
+                {item.urlLogo ? <img src={item.urlLogo} alt={`Logo ${item.nombre}`} className="max-h-full max-w-full object-contain" /> : <span className="text-[10px] font-bold text-slate-400">Sin logo</span>}
+              </div>
+              <form action={actualizarLogoEmpresa} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <input type="hidden" name="id" value={item.id} />
+                <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" required className="min-h-0 min-w-[220px] flex-1 text-xs" />
+                <button className="boton-secundario !min-h-9 !px-3 text-xs">{item.urlLogo ? "Reemplazar logo" : "Cargar logo"}</button>
+              </form>
+              {item.urlLogo && <form action={actualizarLogoEmpresa}><input type="hidden" name="id" value={item.id} /><input type="hidden" name="accion" value="quitar" /><button className="text-xs font-extrabold text-red-700">Quitar</button></form>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <form action={guardarCatalogo} className="mt-4 grid grid-cols-[1fr_55px_auto] gap-2 border-t pt-4">
+        <input type="hidden" name="tipo" value="empresa" />
+        <input className="campo !min-h-10 !py-1 text-sm" name="nombre" placeholder="Nueva empresa" required />
+        <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={items.length + 1} />
+        <button className="text-xs font-extrabold text-[var(--epm-azul)]">Agregar</button>
+      </form>
     </div>
   );
 }

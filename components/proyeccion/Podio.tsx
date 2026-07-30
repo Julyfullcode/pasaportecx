@@ -8,7 +8,7 @@ export type PersonaPodio = {
   nombre: string;
   urlFoto: string;
   puntosTotales: number;
-  empresa: { nombre: string };
+  empresa: { nombre: string; urlLogo?: string | null };
   grupo: { nombre: string; colorHex: string };
 };
 
@@ -25,26 +25,45 @@ export function Podio({ inicial, tamano }: { inicial: PersonaPodio[]; tamano: nu
     fuente.onerror = () => { fuente.close(); intervalo = setInterval(actualizar, 5_000); };
     return () => { fuente.close(); if (intervalo) clearInterval(intervalo); };
   }, []);
+
   const top = personas.slice(0, tamano);
-  const orden = [top[1], top[0], top[2]].filter(Boolean);
+  const principales = [top[1], top[0], top[2]].filter(Boolean);
   return (
-    <div className="mt-[clamp(25px,4vh,55px)]">
-      <div className="mx-auto flex max-w-[1500px] items-end justify-center gap-[clamp(15px,3vw,55px)]">
-        {orden.map((persona) => {
+    <div className="flex h-full min-h-0 flex-col gap-[clamp(10px,1.5vh,18px)] py-[clamp(14px,2vh,24px)]">
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-[clamp(12px,1.7vw,28px)]">
+        {principales.map((persona) => {
           const puesto = top.findIndex((p) => p.id === persona.id) + 1;
-          const alto = puesto === 1 ? "h-[clamp(240px,34vh,390px)]" : puesto === 2 ? "h-[clamp(195px,27vh,320px)]" : "h-[clamp(165px,23vh,285px)]";
           return (
-            <div key={persona.id} className={`flex w-[27%] min-w-0 flex-col items-center justify-start rounded-t-[2rem] border border-white/20 bg-white/10 p-[clamp(12px,2vw,28px)] text-center shadow-2xl backdrop-blur-md transition-all duration-700 ${alto}`}>
-              <span className="mb-[-18px] grid h-[clamp(42px,4vw,66px)] w-[clamp(42px,4vw,66px)] place-items-center rounded-full bg-[var(--epm-verde)] font-display text-[clamp(22px,2.5vw,38px)] font-extrabold text-[var(--epm-azul-profundo)]">{puesto}</span>
-              <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(90px,10vw,165px)] w-[clamp(90px,10vw,165px)]" />
-              <h2 className="mt-3 truncate text-[clamp(16px,2vw,31px)] font-extrabold">{persona.nombre}</h2>
-              <p className="text-[clamp(11px,1.2vw,18px)] text-white/75">{persona.empresa.nombre} · {persona.grupo.nombre}</p>
-              <strong className="mt-auto font-display text-[clamp(24px,3vw,46px)] text-[var(--epm-verde)]">{persona.puntosTotales.toLocaleString("es-CO")}</strong>
-            </div>
+            <article key={persona.id} className={`relative flex min-h-0 items-center gap-[clamp(12px,1.5vw,24px)] overflow-hidden rounded-[clamp(20px,2vw,32px)] border p-[clamp(14px,1.7vw,28px)] shadow-2xl backdrop-blur-md ${puesto === 1 ? "border-[var(--epm-verde)] bg-white/20 ring-2 ring-[var(--epm-verde)]/35" : "border-white/20 bg-white/10"}`}>
+              <div className="relative shrink-0">
+                <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className={`${puesto === 1 ? "h-[clamp(160px,17vw,270px)] w-[clamp(160px,17vw,270px)]" : "h-[clamp(135px,14vw,225px)] w-[clamp(135px,14vw,225px)]"}`} />
+                <span className="absolute -left-1 -top-1 grid h-[clamp(42px,4vw,64px)] w-[clamp(42px,4vw,64px)] min-h-0 place-items-center rounded-full bg-[var(--epm-verde)] font-display text-[clamp(21px,2.2vw,36px)] font-extrabold text-[var(--epm-azul-profundo)] shadow-lg">{puesto}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[clamp(20px,2.3vw,38px)] font-extrabold leading-tight">{persona.nombre}</h2>
+                <div className="mt-3 flex items-center gap-2">
+                  {persona.empresa.urlLogo && <span className="grid h-10 w-20 shrink-0 place-items-center rounded-lg bg-white/90 p-1"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
+                  <p className="min-w-0 truncate text-[clamp(12px,1.1vw,18px)] text-white/75">{persona.empresa.nombre}</p>
+                </div>
+                <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[clamp(10px,.9vw,14px)] font-bold"><span className="h-3 w-3 rounded-full" style={{ background: persona.grupo.colorHex }} />{persona.grupo.nombre}</span>
+                <strong className="mt-4 block font-display text-[clamp(30px,4vw,64px)] leading-none text-[var(--epm-verde)]">{persona.puntosTotales.toLocaleString("es-CO")} <small className="text-[.38em] text-white/65">pts</small></strong>
+              </div>
+            </article>
           );
         })}
       </div>
-      {top.length > 3 && <div className="mx-auto mt-5 flex max-w-5xl justify-center gap-4">{top.slice(3).map((p, i) => <div key={p.id} className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-white/10 p-3 backdrop-blur"><strong className="text-2xl text-[var(--epm-verde)]">{i + 4}</strong><FotoCircular src={p.urlFoto} alt={`Foto de ${p.nombre}`} className="h-14 w-14" /><span className="min-w-0 flex-1 truncate font-extrabold">{p.nombre}</span><strong>{p.puntosTotales}</strong></div>)}</div>}
+      {top.length > 3 && (
+        <div className="grid shrink-0 grid-cols-2 gap-3">
+          {top.slice(3, 5).map((persona, indice) => (
+            <div key={persona.id} className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-2 backdrop-blur">
+              <strong className="text-2xl text-[var(--epm-verde)]">{indice + 4}</strong>
+              <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-14 w-14 shrink-0" />
+              <span className="min-w-0 flex-1 truncate font-extrabold">{persona.nombre}</span>
+              <strong>{persona.puntosTotales.toLocaleString("es-CO")} pts</strong>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
