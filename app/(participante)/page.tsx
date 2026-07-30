@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, ChevronRight, ImagePlus, Medal, Sparkles, Trophy } from "lucide-react";
+import { Award, Camera, ChevronRight, ImagePlus, Medal, Sparkles, Trophy } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { obtenerRankingEquipos } from "@/lib/equipos";
@@ -24,19 +24,19 @@ export default async function Inicio() {
   const posicionEquipo = equipos.findIndex((e) => e.id === participante.grupoId) + 1;
   return (
     <>
-      <MarcaHeader tituloVerde="Hola," tituloClaro={participante.nombre.split(" ")[0]} compacto>
-        <div className="mt-5 flex items-center gap-3">
-          <FotoCircular src={participante.urlFoto} alt={`Foto de ${participante.nombre}`} className="h-20 w-20" />
-          <div>
-            <p className="font-bold">{participante.empresa.nombre}</p>
-            <span className="mt-1 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-extrabold">
+      <MarcaHeader tituloVerde="Hola," tituloClaro={participante.nombre.split(" ")[0]} compacto lateral>
+        <div className="flex max-w-[52vw] items-center justify-end gap-2 text-right">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-bold text-white/85 sm:text-sm">{participante.empresa.nombre}</p>
+            <span className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold sm:text-xs">
               <span className="h-3 w-3 rounded-full" style={{ background: participante.grupo.colorHex }} />
-              {participante.grupo.nombre}
+              <span className="truncate">{participante.grupo.nombre}</span>
             </span>
           </div>
+          <FotoCircular src={participante.urlFoto} alt={`Foto de ${participante.nombre}`} className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
         </div>
       </MarcaHeader>
-      <div className="contenedor -mt-7 space-y-4">
+      <div className="contenedor relative z-20 -mt-3 space-y-4">
         <section className="tarjeta overflow-hidden p-5">
           <p className="text-sm font-extrabold uppercase tracking-wider text-slate-500">Tu puntaje total</p>
           <div className="mt-1 flex items-end justify-between">
@@ -70,6 +70,11 @@ export default async function Inicio() {
           <Camera size={24} /> Escanear QR
         </Link>
         <Link href="/recuerdos?subir=1" className="boton-secundario w-full"><ImagePlus size={20} /> Subir recuerdo</Link>
+        <Link href="/diploma" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>
+          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Mi diploma del encuentro</strong><small className="text-white/75">Genera y descarga tu recuerdo de participación</small></span>
+          <ChevronRight />
+        </Link>
       </div>
     </>
   );

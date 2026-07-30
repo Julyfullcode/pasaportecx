@@ -36,7 +36,7 @@ export default async function Configuracion() {
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />
           <Catalogo titulo="Componentes" tipo="componente" items={componentes} color />
-          <Catalogo titulo="Grupos" tipo="grupo" items={grupos} color />
+          <Catalogo titulo="Equipos (nombres editables)" tipo="grupo" items={grupos} color />
           <Catalogo titulo="Ubicaciones del Día 1" tipo="ubicacion" items={ubicaciones} />
         </div>
       </section>

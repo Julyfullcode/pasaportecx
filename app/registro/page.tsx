@@ -35,6 +35,7 @@ export default async function Registro({
             grupos={grupos.map((g) => ({ ...g, integrantes: g._count.participantes }))}
             automatico={configuracion.asignacionAutomatica}
             destino={destino.startsWith("/") ? destino : "/"}
+            nombreEvento={configuracion.nombreEvento}
           />
           <RecuperarSesion />
           <p className="mt-8 text-center text-xs text-slate-500">Vicepresidencia Experiencia Usuario-Cliente</p>

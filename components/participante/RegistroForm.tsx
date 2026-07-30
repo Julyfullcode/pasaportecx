@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { Camera, Check, LoaderCircle, RefreshCw, ShieldCheck } from "lucide-react";
+import { Camera, Check, Download, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Sparkles, Trophy } from "lucide-react";
 import { comprimirImagen } from "@/lib/imagen";
+import { Logo } from "@/components/marca/Logo";
+import { TexturaArcos } from "@/components/marca/TexturaArcos";
 
 type Empresa = { id: string; nombre: string };
 type Grupo = { id: string; nombre: string; colorHex: string; integrantes: number };
@@ -14,11 +16,13 @@ export function RegistroForm({
   grupos,
   automatico,
   destino,
+  nombreEvento,
 }: {
   empresas: Empresa[];
   grupos: Grupo[];
   automatico: boolean;
   destino: string;
+  nombreEvento: string;
 }) {
   const router = useRouter();
   const [foto, setFoto] = useState<Blob | null>(null);
@@ -88,18 +92,34 @@ export function RegistroForm({
 
   if (registro) {
     return (
-      <section className="tarjeta entrada-suave p-6 text-center" aria-live="polite">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-[var(--epm-verde-medio)]"><Check size={30} /></span>
-        <h2 className="mt-4 text-2xl font-extrabold text-[var(--epm-azul-profundo)]">¡Tu pasaporte está listo!</h2>
-        <p className="mt-2 text-slate-600">{registro.nombre} · {registro.grupo}</p>
-        <div className="my-5 rounded-2xl bg-[var(--epm-gris-fondo)] p-4">
-          <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Código de recuperación</p>
-          <p className="mt-1 font-display text-4xl font-extrabold tracking-[.16em] text-[var(--epm-azul-profundo)]">{registro.codigoRecuperacion}</p>
-          <img src={registro.qr} alt={`QR personal de recuperación ${registro.codigoRecuperacion}`} className="mx-auto mt-3 h-44 w-44 rounded-xl" />
-          <p className="mt-2 text-sm text-slate-600">Guárdalo: te permitirá recuperar tu perfil en otro dispositivo.</p>
+      <section className="tarjeta entrada-suave overflow-hidden text-center" aria-live="polite">
+        <div className="marca-gradiente relative overflow-hidden px-5 pb-6 pt-5 text-white">
+          <TexturaArcos />
+          <div className="relative z-10">
+            <span className="mx-auto inline-flex rounded-xl bg-white/95 px-4 py-2 shadow-lg"><Logo className="h-8 w-auto" /></span>
+            <span className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-lg"><Check size={30} /></span>
+            <p className="mt-4 text-xs font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">Tu experiencia comienza ahora</p>
+            <h2 className="mt-2 text-3xl font-extrabold leading-tight">¡Te damos la bienvenida al Encuentro de Experiencia!</h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-white/85">En <strong className="text-white">{nombreEvento}</strong>, conecta con otras personas, escanea los retos, suma puntos y comparte los momentos que dejarán huella. Tu participación hace especial este encuentro.</p>
+            <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] font-extrabold">
+              <span className="rounded-xl bg-white/10 p-2"><ScanLine className="mx-auto mb-1" size={20} />Escanea</span>
+              <span className="rounded-xl bg-white/10 p-2"><Trophy className="mx-auto mb-1" size={20} />Participa</span>
+              <span className="rounded-xl bg-white/10 p-2"><Sparkles className="mx-auto mb-1" size={20} />Deja huella</span>
+            </div>
+          </div>
         </div>
-        <a href={registro.qr} download="mi-pasaporte-cx.png" className="boton-secundario w-full">Descargar QR personal</a>
-        <button onClick={() => router.push(destino)} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
+        <div className="p-5 md:p-6">
+          <h3 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">¡Tu pasaporte está listo!</h3>
+          <p className="mt-1 text-slate-600">{registro.nombre} · {registro.grupo}</p>
+          <div className="my-5 rounded-2xl bg-[var(--epm-gris-fondo)] p-4">
+            <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Código de recuperación</p>
+            <p className="mt-1 font-display text-4xl font-extrabold tracking-[.16em] text-[var(--epm-azul-profundo)]">{registro.codigoRecuperacion}</p>
+            <img src={registro.qr} alt={`QR personal de recuperación ${registro.codigoRecuperacion}`} className="mx-auto mt-3 h-44 w-44 rounded-xl" />
+            <p className="mt-2 text-sm text-slate-600">Guárdalo: te permitirá recuperar tu perfil en otro dispositivo.</p>
+          </div>
+          <a href={registro.qr} download="mi-pasaporte-cx.png" className="boton-secundario w-full"><Download size={19} /> Descargar QR personal</a>
+          <button onClick={() => router.push(destino)} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
+        </div>
       </section>
     );
   }

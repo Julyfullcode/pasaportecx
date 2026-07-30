@@ -285,6 +285,7 @@ export async function guardarCatalogo(formulario: FormData) {
   }
   anunciarCambio("catalogo");
   revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/grupos");
 }
 
 export async function actualizarLogoEmpresa(formulario: FormData) {
