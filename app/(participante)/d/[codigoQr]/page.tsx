@@ -5,6 +5,8 @@ import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ResolverDesafio } from "@/components/participante/ResolverDesafio";
 import { FORMATO_COSECHA } from "@/lib/cosecha-config";
+import { CurvaMarca } from "@/components/marca/CurvaMarca";
+import { TexturaArcos } from "@/components/marca/TexturaArcos";
 
 export const dynamic = "force-dynamic";
 
@@ -26,16 +28,18 @@ export default async function DetalleDesafio({
   const esCosecha = (desafio.configuracion as { formato?: string }).formato === FORMATO_COSECHA;
   return (
     <div>
-      <header className="marca-gradiente relative overflow-hidden px-4 pb-14 pt-5 text-white">
-        <div className="mx-auto max-w-2xl">
+      <header className="marca-gradiente relative overflow-hidden px-4 pb-28 pt-5 text-white md:pb-32">
+        <TexturaArcos />
+        <div className="relative z-10 mx-auto max-w-2xl">
           <Link href="/desafios" className="inline-flex items-center gap-2 font-extrabold"><ArrowLeft size={20} /> Desafíos</Link>
           <div className="mt-8 flex items-center gap-2 text-sm font-extrabold text-white/85"><MapPin size={17} /> Día {desafio.dia} · {desafio.componente?.nombre || desafio.ubicacion}</div>
           <h1 className="mt-2 text-3xl font-extrabold">{desafio.titulo}</h1>
           <p className="mt-3 max-w-xl text-white/85">{desafio.descripcion}</p>
           <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 font-extrabold"><Sparkles className="text-[var(--epm-verde)]" /> {desafio.puntos} puntos</span>
         </div>
+        <CurvaMarca />
       </header>
-      <section className="mx-auto -mt-7 max-w-2xl px-4">
+      <section className="relative z-20 mx-auto -mt-4 max-w-2xl px-4">
         {desafio.completitudes[0] ? (
           <div className="tarjeta p-6 text-center">
             <CheckExistente estado={desafio.completitudes[0].estado} puntos={desafio.completitudes[0].puntosOtorgados} esCosecha={esCosecha} />
