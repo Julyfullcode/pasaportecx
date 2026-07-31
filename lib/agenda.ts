@@ -285,11 +285,13 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
     cajaRedondeada(pagina, 42, inferior - 4, 511, 76, 30, azulProfundo, 0.1);
     cajaRedondeada(pagina, 38, inferior, 519, 76, 30, teal);
     pagina.drawCircle({ x: 79, y: inferior + 38, size: 23, color: verde, opacity: 0.95 });
-    pagina.drawText("Nuestro compromiso", { x: 116, y: inferior + 46, size: 10, font: normal, color: blanco, opacity: 0.82 });
+    pagina.drawCircle({ x: 79, y: inferior + 46, size: 6, color: blanco });
+    pagina.drawEllipse({ x: 79, y: inferior + 28, xScale: 13, yScale: 10, color: blanco });
     const directiva = lineas(DIRECTIVA_EXPERIENCIA, negrita, 13, 414).slice(0, 2);
-    let directivaY = inferior + (directiva.length > 1 ? 29 : 24);
+    let directivaY = inferior + (directiva.length > 1 ? 42 : 33);
     for (const linea of directiva) {
-      pagina.drawText(seguro(linea), { x: 116, y: directivaY, size: 13, font: negrita, color: blanco });
+      const x = 116 + (414 - negrita.widthOfTextAtSize(seguro(linea), 13)) / 2;
+      pagina.drawText(seguro(linea), { x, y: directivaY, size: 13, font: negrita, color: blanco });
       directivaY -= 17;
     }
   }

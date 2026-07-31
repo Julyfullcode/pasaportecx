@@ -218,12 +218,11 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
     [0.89, 0.96, 0.98],
     24,
   );
-  pagina.drawText("Nuestra directiva", { x: textoCentrado("Nuestra directiva", normal, 9), y: 225, size: 9, font: normal, color: teal });
-  const lineasDirectiva = lineas(DIRECTIVA_EXPERIENCIA, normal, 12.2, 300).slice(0, 2);
+  const lineasDirectiva = lineas(DIRECTIVA_EXPERIENCIA, normal, 13.2, 310).slice(0, 2);
   lineasDirectiva.forEach((linea, indice) => pagina.drawText(linea, {
-    x: textoCentrado(linea, normal, 12.2),
-    y: 204 - indice * 17,
-    size: 12.2,
+    x: textoCentrado(linea, normal, 13.2),
+    y: 210 - indice * 20,
+    size: 13.2,
     font: normal,
     color: indice === 0 ? azul : teal,
   }));
