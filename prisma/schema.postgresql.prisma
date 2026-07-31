@@ -236,6 +236,8 @@ model ConfiguracionEvento {
   metodoPuntajeEquipo          MetodoPuntajeEquipo @default(PROMEDIO)
   puntosPorRecuerdo            Int                 @default(0)
   maxRecuerdosConPuntos        Int                 @default(0)
+  maxRecuerdosPorParticipante  Int                 @default(10)
+  eliminarEvidenciasRechazadas Boolean             @default(true)
   recuerdosRequierenAprobacion Boolean             @default(false)
   asignacionAutomatica         Boolean             @default(false)
   modoAsistentes               ModoAsistentes      @default(MOSAICO)

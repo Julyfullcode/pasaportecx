@@ -2,6 +2,7 @@ import { participanteActual } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
+import { extensionImagen } from "@/lib/archivos";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,14 +16,15 @@ export async function POST(request: Request) {
   try {
     const formulario = await request.formData();
     const foto = formulario.get("foto");
-    if (!(foto instanceof File) || foto.type !== "image/jpeg") {
+    const extension = foto instanceof File ? extensionImagen(foto.type) : null;
+    if (!(foto instanceof File) || !extension) {
       return Response.json({ error: "Selecciona una fotografía válida." }, { status: 400 });
     }
-    if (foto.size > 550_000) {
-      return Response.json({ error: "La fotografía supera 500 KB. Intenta con otra." }, { status: 400 });
+    if (foto.size > 250_000) {
+      return Response.json({ error: "La fotografía supera 250 KB. Intenta con otra." }, { status: 400 });
     }
 
-    nuevaUrl = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), "jpg", "perfiles");
+    nuevaUrl = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), extension, "perfiles");
     const actualizado = await db.participante.updateMany({
       where: { id: participante.id, urlFoto: participante.urlFoto },
       data: { urlFoto: nuevaUrl },

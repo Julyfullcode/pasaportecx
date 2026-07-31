@@ -5,12 +5,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const inicio = Date.now();
   try {
-    const [, agendaDias, , fotosDias, , reaccionesRecuerdos] = await Promise.all([
+    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos] = await Promise.all([
       db.$queryRaw`SELECT 1 AS "ok"`,
       db.diaAgenda.count(),
       db.momentoAgenda.findFirst({ select: { destacado: true, urlFotoExpositor: true } }),
       db.fotoDiaAgenda.count(),
-      db.configuracionEvento.findUnique({ where: { id: "evento" }, select: { descripcionAgenda: true, organizadoresAgenda: true } }),
+      db.configuracionEvento.findUnique({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true, eliminarEvidenciasRechazadas: true } }),
       db.reaccionRecuerdo.count(),
     ]);
     return Response.json(
@@ -22,6 +22,9 @@ export async function GET() {
         momentosDestacados: true,
         fotosDias,
         reaccionesRecuerdos,
+        maxRecuerdosPorParticipante: configuracion?.maxRecuerdosPorParticipante,
+        limpiezaEvidenciasRechazadas: configuracion?.eliminarEvidenciasRechazadas,
+        imagenesWebp: true,
         latenciaMs: Date.now() - inicio,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
       },

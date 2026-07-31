@@ -11,6 +11,8 @@ import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
 import type { Prisma } from "@prisma/client";
+import { extensionImagen } from "@/lib/archivos";
+import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
 
 export type EstadoLogin = { error?: string };
 
@@ -179,17 +181,25 @@ export async function revisarEvidencia(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("id"));
   const decision = String(formulario.get("decision"));
-  await db.$transaction(async (tx) => {
+  const urlParaEliminar = await db.$transaction(async (tx) => {
     const completitud = await tx.completitud.findUniqueOrThrow({ where: { id }, include: { desafio: true } });
+    const configuracion = await tx.configuracionEvento.findUniqueOrThrow({
+      where: { id: "evento" },
+      select: { eliminarEvidenciasRechazadas: true },
+    });
+    const eliminarFoto = decision !== "aprobar" && configuracion.eliminarEvidenciasRechazadas;
     await tx.completitud.update({
       where: { id },
       data: {
         estado: decision === "aprobar" ? "APROBADO" : "RECHAZADO",
         puntosOtorgados: decision === "aprobar" ? completitud.desafio.puntos : 0,
+        urlEvidencia: eliminarFoto ? null : completitud.urlEvidencia,
       },
     });
     await recalcularPuntosParticipante(tx, completitud.participanteId);
+    return eliminarFoto ? completitud.urlEvidencia : null;
   });
+  if (urlParaEliminar) await storage.eliminar(urlParaEliminar).catch(() => undefined);
   anunciarCambio("puntos");
   revalidatePath("/admin/evidencias");
 }
@@ -241,6 +251,7 @@ export async function moderarRecuerdo(formulario: FormData) {
 
 export async function guardarConfiguracion(formulario: FormData) {
   await requerirAdmin();
+  const eliminarEvidenciasRechazadas = formulario.get("eliminarEvidenciasRechazadas") === "on";
   await db.configuracionEvento.update({
     where: { id: "evento" },
     data: {
@@ -255,11 +266,37 @@ export async function guardarConfiguracion(formulario: FormData) {
       cicloMixto: String(formulario.get("cicloMixto")),
       puntosPorRecuerdo: Number(formulario.get("puntosPorRecuerdo")),
       maxRecuerdosConPuntos: Number(formulario.get("maxRecuerdosConPuntos")),
+      maxRecuerdosPorParticipante: Math.max(1, Math.min(50, Number(formulario.get("maxRecuerdosPorParticipante")) || 10)),
+      eliminarEvidenciasRechazadas,
       recuerdosRequierenAprobacion: formulario.get("recuerdosRequierenAprobacion") === "on",
       asignacionAutomatica: formulario.get("asignacionAutomatica") === "on",
     },
   });
+  if (eliminarEvidenciasRechazadas) {
+    const rechazadas = await db.completitud.findMany({
+      where: { estado: "RECHAZADO", urlEvidencia: { not: null } },
+      select: { id: true, urlEvidencia: true },
+    });
+    if (rechazadas.length > 0) {
+      await db.completitud.updateMany({
+        where: { id: { in: rechazadas.map((item) => item.id) } },
+        data: { urlEvidencia: null },
+      });
+      await Promise.allSettled(rechazadas.map((item) => storage.eliminar(item.urlEvidencia!)));
+    }
+  }
   anunciarCambio("configuracion");
+  revalidatePath("/admin/configuracion");
+}
+
+export async function limpiarArchivosHuerfanos(formulario: FormData) {
+  await requerirAdmin();
+  if (String(formulario.get("confirmacion") ?? "").trim() !== "ELIMINAR HUERFANOS") return;
+  const reporte = await obtenerReporteAlmacenamiento();
+  if (!reporte.disponible || reporte.huerfanos.length === 0) return;
+  await Promise.allSettled(
+    reporte.huerfanos.map((ruta) => storage.eliminar(`/uploads/${ruta}`)),
+  );
   revalidatePath("/admin/configuracion");
 }
 
@@ -306,10 +343,9 @@ export async function agregarFotosDiaAgenda(formulario: FormData) {
   await requerirAdmin();
   const diaId = String(formulario.get("diaId") ?? "");
   if (!diaId) return;
-  const permitidas: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png" };
   const archivos = formulario.getAll("fotosDia")
     .filter((archivo): archivo is File => archivo instanceof File && archivo.size > 0);
-  if (!archivos.length || archivos.some((archivo) => !permitidas[archivo.type] || archivo.size > 2_000_000)) return;
+  if (!archivos.length || archivos.some((archivo) => !extensionImagen(archivo.type) || archivo.size > 600_000)) return;
   const existentes = await db.fotoDiaAgenda.count({ where: { diaId } });
   const seleccionadas = archivos.slice(0, Math.min(2, Math.max(0, 6 - existentes)));
   if (!seleccionadas.length) return;
@@ -318,7 +354,7 @@ export async function agregarFotosDiaAgenda(formulario: FormData) {
     for (const archivo of seleccionadas) {
       guardadas.push(await storage.guardar(
         new Uint8Array(await archivo.arrayBuffer()),
-        permitidas[archivo.type],
+        extensionImagen(archivo.type)!,
         "agenda-dias",
       ));
     }
@@ -356,8 +392,7 @@ export async function guardarMomentoAgenda(formulario: FormData) {
   if (!diaId || !horaValida.test(horaInicio) || !horaValida.test(horaFin) || !nombre) return;
   const foto = formulario.get("fotoExpositor");
   const tieneFotoNueva = foto instanceof File && foto.size > 0;
-  const extensionesPermitidas: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png" };
-  if (tieneFotoNueva && (!extensionesPermitidas[foto.type] || foto.size > 2_000_000)) return;
+  if (tieneFotoNueva && (!extensionImagen(foto.type) || foto.size > 250_000)) return;
 
   const existente = id
     ? await db.momentoAgenda.findUniqueOrThrow({ where: { id }, select: { urlFotoExpositor: true } })
@@ -368,7 +403,7 @@ export async function guardarMomentoAgenda(formulario: FormData) {
     if (tieneFotoNueva) {
       nuevaUrl = await storage.guardar(
         new Uint8Array(await foto.arrayBuffer()),
-        extensionesPermitidas[foto.type],
+        extensionImagen(foto.type)!,
         "expositores",
       );
     }
@@ -438,8 +473,8 @@ export async function actualizarLogoEmpresa(formulario: FormData) {
     if (empresa.urlLogo) await storage.eliminar(empresa.urlLogo).catch(() => undefined);
   } else {
     const logo = formulario.get("logo");
-    if (!(logo instanceof File) || !logo.type.startsWith("image/") || logo.size > 2_000_000) return;
-    const extension = logo.type === "image/png" ? "png" : logo.type === "image/webp" ? "webp" : "jpg";
+    if (!(logo instanceof File) || !extensionImagen(logo.type) || logo.size > 250_000) return;
+    const extension = extensionImagen(logo.type)!;
     const urlLogo = await storage.guardar(
       new Uint8Array(await logo.arrayBuffer()),
       extension,

@@ -5,6 +5,7 @@ import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
 import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
+import { extensionImagen } from "@/lib/archivos";
 
 type Configuracion = {
   opciones?: Opcion[];
@@ -59,16 +60,17 @@ export async function POST(
     respuesta = { texto };
   } else if (desafio.tipo === "EVIDENCIA_FOTO") {
     const foto = formulario.get("evidencia");
-    if (!(foto instanceof File) || !foto.type.startsWith("image/")) {
+    const extension = foto instanceof File ? extensionImagen(foto.type) : null;
+    if (!(foto instanceof File) || !extension) {
       return Response.json({ error: "Adjunta una foto como evidencia." }, { status: 400 });
     }
-    if (foto.size > 2_500_000) {
+    if (foto.size > 800_000) {
       return Response.json({ error: "La evidencia es demasiado pesada. Vuelve a seleccionarla para comprimirla." }, { status: 413 });
     }
     try {
       urlEvidencia = await storage.guardar(
         new Uint8Array(await foto.arrayBuffer()),
-        "jpg",
+        extension,
         "evidencias",
       );
     } catch {

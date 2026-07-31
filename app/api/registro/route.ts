@@ -4,6 +4,7 @@ import { crearSesionParticipante } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import { registroSchema } from "@/lib/validacion";
 import { anunciarCambio } from "@/lib/eventos";
+import { extensionImagen } from "@/lib/archivos";
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -18,14 +19,15 @@ export async function POST(request: Request) {
     const formulario = await request.formData();
     const datos = registroSchema.parse(Object.fromEntries(formulario));
     const foto = formulario.get("foto");
-    if (!(foto instanceof File) || !foto.type.startsWith("image/")) {
+    const extension = foto instanceof File ? extensionImagen(foto.type) : null;
+    if (!(foto instanceof File) || !extension) {
       return Response.json({ error: "Selecciona una foto válida" }, { status: 400 });
     }
-    if (foto.size > 550_000) {
-      return Response.json({ error: "La foto supera 500 KB. Intenta comprimirla de nuevo." }, { status: 400 });
+    if (foto.size > 250_000) {
+      return Response.json({ error: "La foto supera 250 KB. Intenta comprimirla de nuevo." }, { status: 400 });
     }
     const configuracion = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-    urlFoto = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), "jpg", "perfiles");
+    urlFoto = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), extension, "perfiles");
     const participante = await db.$transaction(async (tx) => {
       let grupoId = datos.grupoId;
       if (configuracion.asignacionAutomatica) {

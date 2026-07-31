@@ -3,7 +3,8 @@
 export async function comprimirImagen(
   archivo: File,
   maximo: number,
-  calidad = 0.8,
+  calidad = 0.76,
+  formato: "image/webp" | "image/jpeg" = "image/webp",
 ): Promise<Blob> {
   const imagen = await createImageBitmap(archivo);
   const escala = Math.min(1, maximo / Math.max(imagen.width, imagen.height));
@@ -19,7 +20,7 @@ export async function comprimirImagen(
   return new Promise((resolve, reject) =>
     lienzo.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo comprimir la foto"))),
-      "image/jpeg",
+      formato,
       calidad,
     ),
   );

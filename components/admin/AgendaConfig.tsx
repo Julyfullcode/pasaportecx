@@ -2,6 +2,7 @@
 
 import { CalendarDays, Camera, Clock3, ImagePlus, Plus, Save, Trash2, UserRound } from "lucide-react";
 import { agregarFotosDiaAgenda, eliminarDiaAgenda, eliminarFotoDiaAgenda, eliminarMomentoAgenda, guardarDiaAgenda, guardarMomentoAgenda } from "@/app/admin/actions";
+import { InputImagenOptimizada } from "@/components/admin/InputImagenOptimizada";
 
 type DiaAgenda = {
   id: string;
@@ -52,7 +53,7 @@ export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
               </form>
 
               <div className="rounded-2xl bg-white/80 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="flex items-center gap-2 font-extrabold text-[var(--epm-azul-profundo)]"><ImagePlus size={18} className="text-[var(--epm-teal)]" /> Fotos del día</h3><p className="text-xs text-slate-500">Puedes cargar hasta 6; agrega máximo 2 por vez, JPG o PNG de hasta 2 MB.</p></div><form action={agregarFotosDiaAgenda} className="flex flex-wrap items-center gap-2"><input type="hidden" name="diaId" value={dia.id} /><input type="file" name="fotosDia" accept="image/jpeg,image/png" multiple required onChange={(evento) => { if ((evento.currentTarget.files?.length ?? 0) > 2) { window.alert("Selecciona máximo 2 fotos por carga. Luego podrás agregar más."); evento.currentTarget.value = ""; } }} className="max-w-[260px] text-xs" /><button className="boton-secundario !min-h-9 !px-3 text-xs"><ImagePlus size={16} /> Agregar fotos</button></form></div>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="flex items-center gap-2 font-extrabold text-[var(--epm-azul-profundo)]"><ImagePlus size={18} className="text-[var(--epm-teal)]" /> Fotos del día</h3><p className="text-xs text-slate-500">Puedes cargar hasta 6; agrega máximo 2 por vez. Se optimizan automáticamente a WebP.</p></div><form action={agregarFotosDiaAgenda} className="flex flex-wrap items-center gap-2"><input type="hidden" name="diaId" value={dia.id} /><InputImagenOptimizada name="fotosDia" maximo={1400} calidad={0.74} maxBytes={600_000} multiple maxArchivos={2} required className="max-w-[280px]" /><button className="boton-secundario !min-h-9 !px-3 text-xs"><ImagePlus size={16} /> Agregar fotos</button></form></div>
                 {dia.fotos.length > 0 && <div className="mt-4 flex flex-wrap gap-3">{dia.fotos.map((foto) => <div key={foto.id} className="group relative h-20 w-20 overflow-hidden rounded-[1.4rem] border-4 border-white shadow-md"><img src={foto.urlFoto} alt={`Foto de ${dia.nombre}`} className="h-full w-full object-cover" /><form action={eliminarFotoDiaAgenda} className="absolute right-1 top-1"><input type="hidden" name="id" value={foto.id} /><button className="grid h-7 w-7 place-items-center rounded-full bg-white/95 text-red-700 shadow" title="Eliminar foto"><Trash2 size={14} /></button></form></div>)}</div>}
               </div>
 
@@ -70,7 +71,7 @@ export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
                       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border-4 border-white bg-sky-100 shadow-sm">
                         {momento.urlFotoExpositor ? <img src={momento.urlFotoExpositor} alt={`Foto del expositor de ${momento.nombre}`} className="h-full w-full object-cover" /> : <UserRound size={28} className="text-sky-700" />}
                       </div>
-                      <div className="min-w-[220px] flex-1"><label className="etiqueta flex items-center gap-1 text-xs"><Camera size={15} /> Foto del expositor (opcional)</label><input type="file" name="fotoExpositor" accept="image/jpeg,image/png" className="mt-1 w-full text-xs" /><p className="mt-1 text-[11px] text-slate-500">JPG o PNG, máximo 2 MB. Una nueva foto reemplaza la anterior.</p><button className="boton-secundario mt-2 !min-h-9 !px-3 text-xs"><Save size={15} /> Guardar cambios y foto</button></div>
+                      <div className="min-w-[220px] flex-1"><label className="etiqueta flex items-center gap-1 text-xs"><Camera size={15} /> Foto del expositor (opcional)</label><InputImagenOptimizada name="fotoExpositor" maximo={600} calidad={0.76} maxBytes={250_000} className="mt-1" /><p className="mt-1 text-[11px] text-slate-500">Se optimiza automáticamente. Una nueva foto reemplaza la anterior.</p><button className="boton-secundario mt-2 !min-h-9 !px-3 text-xs"><Save size={15} /> Guardar cambios y foto</button></div>
                       {momento.urlFotoExpositor && <label className="flex items-center gap-2 text-xs font-bold text-red-700"><input type="checkbox" name="quitarFotoExpositor" /> Quitar foto actual</label>}
                     </div>
                   </form>
@@ -85,7 +86,7 @@ export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
                 <button className="boton-primario self-end"><Plus size={18} /> Agregar</button>
                 <div className="md:col-span-2 xl:col-span-4"><label className="etiqueta text-xs">Descripción (opcional)</label><textarea className="campo min-h-20 resize-y" name="descripcion" placeholder="Si lo deseas, describe qué sucederá durante este momento" maxLength={800} /></div>
                 <label className="flex items-center gap-3 rounded-2xl bg-emerald-100/70 p-3 text-sm font-extrabold text-emerald-900 md:col-span-2 xl:col-span-4"><input type="checkbox" name="destacado" /> Resaltar este momento en verde suave</label>
-                <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white/80 p-3 md:col-span-2 xl:col-span-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-700"><UserRound size={24} /></span><div className="min-w-[220px] flex-1"><label className="etiqueta flex items-center gap-1 text-xs"><Camera size={15} /> Foto del expositor (opcional)</label><input type="file" name="fotoExpositor" accept="image/jpeg,image/png" className="mt-1 w-full text-xs" /><p className="mt-1 text-[11px] text-slate-500">Se mostrará recortada en un círculo al lado del tema en la agenda PDF.</p></div></div>
+                <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white/80 p-3 md:col-span-2 xl:col-span-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-700"><UserRound size={24} /></span><div className="min-w-[220px] flex-1"><label className="etiqueta flex items-center gap-1 text-xs"><Camera size={15} /> Foto del expositor (opcional)</label><InputImagenOptimizada name="fotoExpositor" maximo={600} calidad={0.76} maxBytes={250_000} className="mt-1" /><p className="mt-1 text-[11px] text-slate-500">Se optimiza a WebP y aparecerá recortada en un círculo al lado del tema.</p></div></div>
               </form>
             </div>
           </details>

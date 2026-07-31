@@ -17,10 +17,10 @@ export function FotoPerfilEditable({ src, nombre }: { src: string; nombre: strin
     setProcesando(true);
     setError("");
     try {
-      const comprimida = await comprimirImagen(archivo, 700, 0.82);
-      if (comprimida.size > 500_000) throw new Error("La fotografía sigue siendo muy pesada. Selecciona otra.");
+      const comprimida = await comprimirImagen(archivo, 512, 0.76);
+      if (comprimida.size > 250_000) throw new Error("La fotografía sigue siendo muy pesada. Selecciona otra.");
       const datos = new FormData();
-      datos.set("foto", comprimida, "perfil.jpg");
+      datos.set("foto", comprimida, "perfil.webp");
       const respuesta = await fetch("/api/perfil/foto", { method: "POST", body: datos });
       const cuerpo = await respuesta.json();
       if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos actualizar tu foto.");

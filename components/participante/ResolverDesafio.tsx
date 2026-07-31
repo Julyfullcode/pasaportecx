@@ -38,7 +38,7 @@ export function ResolverDesafio({
     try {
       const foto = formulario.get("evidencia");
       if (foto instanceof File && foto.size) {
-        formulario.set("evidencia", await comprimirImagen(foto, 1200), "evidencia.jpg");
+        formulario.set("evidencia", await comprimirImagen(foto, 1200, 0.72), "evidencia.webp");
       }
       const respuesta = await fetch(`/api/desafios/${codigo}/completar`, {
         method: "POST",

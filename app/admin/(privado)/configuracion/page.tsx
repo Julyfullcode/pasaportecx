@@ -2,17 +2,21 @@ import { db } from "@/lib/db";
 import { actualizarLogoEmpresa, alternarCatalogo, guardarCatalogo, guardarConfiguracion } from "@/app/admin/actions";
 import { PurgaDatos } from "@/components/admin/PurgaDatos";
 import { AgendaConfig } from "@/components/admin/AgendaConfig";
+import { InputImagenOptimizada } from "@/components/admin/InputImagenOptimizada";
+import { EstadoAlmacenamiento } from "@/components/admin/EstadoAlmacenamiento";
+import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
 
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, componentes, grupos, ubicaciones, diasAgenda] = await Promise.all([
+  const [config, empresas, componentes, grupos, ubicaciones, diasAgenda, reporteAlmacenamiento] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.componente.findMany({ orderBy: { orden: "asc" } }),
     db.grupo.findMany({ orderBy: { orden: "asc" } }),
     db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
     db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
+    obtenerReporteAlmacenamiento(),
   ]);
   return (
     <div className="p-4 md:p-7">
@@ -33,9 +37,12 @@ export default async function Configuracion() {
         <h2 className="mt-3 text-xl font-extrabold md:col-span-2">Recuerdos</h2>
         <div><label className="etiqueta">Puntos por recuerdo</label><input className="campo" type="number" min={0} name="puntosPorRecuerdo" defaultValue={config.puntosPorRecuerdo} /></div>
         <div><label className="etiqueta">Máximo con puntos</label><input className="campo" type="number" min={0} name="maxRecuerdosConPuntos" defaultValue={config.maxRecuerdosConPuntos} /></div>
+        <div className="md:col-span-2"><label className="etiqueta">Máximo de recuerdos por participante</label><input className="campo" type="number" min={1} max={50} name="maxRecuerdosPorParticipante" defaultValue={config.maxRecuerdosPorParticipante} /><p className="mt-1 text-xs text-slate-500">Recomendado para el plan gratuito: 10 por persona.</p></div>
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="recuerdosRequierenAprobacion" defaultChecked={config.recuerdosRequierenAprobacion} /> Los recuerdos requieren aprobación previa</label>
+        <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 font-bold text-emerald-900"><input type="checkbox" name="eliminarEvidenciasRechazadas" defaultChecked={config.eliminarEvidenciasRechazadas} /> Eliminar del almacenamiento las evidencias rechazadas</label>
         <button className="boton-primario md:col-span-2">Guardar configuración</button>
       </form>
+      <EstadoAlmacenamiento reporte={reporteAlmacenamiento} />
       <AgendaConfig dias={diasAgenda} />
       <section className="mt-6"><h2 className="text-2xl font-extrabold">Catálogos</h2><p className="text-sm text-slate-600">Edite, reordene o agregue registros; estarán disponibles de inmediato.</p>
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
@@ -78,7 +85,7 @@ function CatalogoEmpresas({ items }: { items: { id: string; nombre: string; orde
               </div>
               <form action={actualizarLogoEmpresa} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 <input type="hidden" name="id" value={item.id} />
-                <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" required className="min-h-0 min-w-[220px] flex-1 text-xs" />
+                <InputImagenOptimizada name="logo" maximo={700} calidad={0.8} maxBytes={250_000} required className="min-w-[220px] flex-1" />
                 <button className="boton-secundario !min-h-9 !px-3 text-xs">{item.urlLogo ? "Reemplazar logo" : "Cargar logo"}</button>
               </form>
               {item.urlLogo && <form action={actualizarLogoEmpresa}><input type="hidden" name="id" value={item.id} /><input type="hidden" name="accion" value="quitar" /><button className="text-xs font-extrabold text-red-700">Quitar</button></form>}

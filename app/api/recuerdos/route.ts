@@ -5,6 +5,9 @@ import { storage } from "@/lib/storage";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { anunciarCambio } from "@/lib/eventos";
 import { presentarRecuerdo } from "@/lib/recuerdos";
+import { extensionImagen } from "@/lib/archivos";
+
+class LimiteRecuerdosError extends Error {}
 
 export async function GET(request: Request) {
   const participante = await participanteActual();
@@ -13,25 +16,37 @@ export async function GET(request: Request) {
   const pagina = Math.max(1, Number(url.searchParams.get("pagina") ?? 1));
   const propios = url.searchParams.get("mios") === "1";
   const populares = url.searchParams.get("orden") === "populares";
-  const recuerdosBase = await db.recuerdo.findMany({
-    where: {
-      visible: true,
-      pendiente: false,
-      reportado: false,
-      ...(propios ? { participanteId: participante.id } : {}),
-    },
-    orderBy: populares
-      ? [{ reacciones: { _count: "desc" } }, { creadoEn: "desc" }]
-      : { creadoEn: "desc" },
-    skip: (pagina - 1) * 18,
-    take: 18,
-    include: {
-      participante: { include: { grupo: true, empresa: true } },
-      reacciones: { select: { participanteId: true, tipo: true } },
+  const [recuerdosBase, configuracion, usados] = await Promise.all([
+    db.recuerdo.findMany({
+      where: {
+        visible: true,
+        pendiente: false,
+        reportado: false,
+        ...(propios ? { participanteId: participante.id } : {}),
+      },
+      orderBy: populares
+        ? [{ reacciones: { _count: "desc" } }, { creadoEn: "desc" }]
+        : { creadoEn: "desc" },
+      skip: (pagina - 1) * 18,
+      take: 18,
+      include: {
+        participante: { include: { grupo: true, empresa: true } },
+        reacciones: { select: { participanteId: true, tipo: true } },
+      },
+    }),
+    db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true } }),
+    db.recuerdo.count({ where: { participanteId: participante.id } }),
+  ]);
+  const recuerdos = recuerdosBase.map((recuerdo) => presentarRecuerdo(recuerdo, participante.id));
+  return Response.json({
+    recuerdos,
+    siguiente: recuerdos.length === 18 ? pagina + 1 : null,
+    cupo: {
+      limite: configuracion.maxRecuerdosPorParticipante,
+      usados,
+      restantes: Math.max(0, configuracion.maxRecuerdosPorParticipante - usados),
     },
   });
-  const recuerdos = recuerdosBase.map((recuerdo) => presentarRecuerdo(recuerdo, participante.id));
-  return Response.json({ recuerdos, siguiente: recuerdos.length === 18 ? pagina + 1 : null });
 }
 
 export async function POST(request: Request) {
@@ -40,15 +55,14 @@ export async function POST(request: Request) {
   const formulario = await request.formData();
   const foto = formulario.get("foto");
   const miniatura = formulario.get("miniatura");
+  const extensionFoto = foto instanceof File ? extensionImagen(foto.type) : null;
+  const extensionMiniatura = miniatura instanceof File ? extensionImagen(miniatura.type) : null;
   const descripcion = String(formulario.get("descripcion") ?? "").trim().slice(0, 140);
   const clave = request.headers.get("Idempotency-Key");
-  if (!(foto instanceof File) || !(miniatura instanceof File)) {
+  if (!(foto instanceof File) || !(miniatura instanceof File) || !extensionFoto || !extensionMiniatura) {
     return Response.json({ error: "Faltan los archivos de imagen." }, { status: 400 });
   }
-  if (!foto.type.startsWith("image/") || !miniatura.type.startsWith("image/")) {
-    return Response.json({ error: "Los archivos deben ser imágenes válidas." }, { status: 400 });
-  }
-  if (foto.size > 1_800_000 || miniatura.size > 250_000) {
+  if (foto.size > 700_000 || miniatura.size > 100_000) {
     return Response.json({ error: "La foto es demasiado pesada. Vuelve a seleccionarla para comprimirla." }, { status: 413 });
   }
   if (clave) {
@@ -56,8 +70,8 @@ export async function POST(request: Request) {
     if (existente) return Response.json({ recuerdo: existente, repetido: true });
   }
   const cargas = await Promise.allSettled([
-    storage.guardar(new Uint8Array(await foto.arrayBuffer()), "jpg", "recuerdos"),
-    storage.guardar(new Uint8Array(await miniatura.arrayBuffer()), "jpg", "miniaturas"),
+    storage.guardar(new Uint8Array(await foto.arrayBuffer()), extensionFoto, "recuerdos"),
+    storage.guardar(new Uint8Array(await miniatura.arrayBuffer()), extensionMiniatura, "miniaturas"),
   ]);
   if (cargas.some((carga) => carga.status === "rejected")) {
     await Promise.allSettled(cargas.flatMap((carga) => carga.status === "fulfilled" ? [storage.eliminar(carga.value)] : []));
@@ -67,6 +81,8 @@ export async function POST(request: Request) {
   try {
     const recuerdo = await db.$transaction(async (tx) => {
       const configuracion = await tx.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
+      const usados = await tx.recuerdo.count({ where: { participanteId: participante.id } });
+      if (usados >= configuracion.maxRecuerdosPorParticipante) throw new LimiteRecuerdosError();
       const creado = await tx.recuerdo.create({
         data: {
           participanteId: participante.id,
@@ -96,11 +112,14 @@ export async function POST(request: Request) {
         }
       }
       return creado;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     anunciarCambio("recuerdo");
     return Response.json({ recuerdo });
   } catch (error) {
     await Promise.allSettled([storage.eliminar(urlFoto), storage.eliminar(urlMiniatura)]);
+    if (error instanceof LimiteRecuerdosError) {
+      return Response.json({ error: "Ya alcanzaste el máximo de recuerdos permitidos." }, { status: 409 });
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" && clave) {
       const existente = await db.recuerdo.findUnique({ where: { claveIdempotencia: clave } });
       return Response.json({ recuerdo: existente, repetido: true });

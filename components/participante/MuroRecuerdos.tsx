@@ -31,6 +31,7 @@ type Recuerdo = {
 
 type Carga = { archivo: File; estado: "pendiente" | "subiendo" | "listo" | "error"; error?: string; clave: string };
 type Orden = "recientes" | "populares";
+type Cupo = { limite: number; usados: number; restantes: number };
 
 function BotonesReaccion({
   recuerdo,
@@ -75,10 +76,12 @@ export function MuroRecuerdos({
   iniciales,
   participanteId,
   abrirSubida,
+  cupoInicial,
 }: {
   iniciales: Recuerdo[];
   participanteId: string;
   abrirSubida: boolean;
+  cupoInicial: Cupo;
 }) {
   const [recuerdos, setRecuerdos] = useState(iniciales);
   const [mios, setMios] = useState(false);
@@ -89,6 +92,7 @@ export function MuroRecuerdos({
   const [descripcion, setDescripcion] = useState("");
   const [reaccionando, setReaccionando] = useState<string | null>(null);
   const [errorReaccion, setErrorReaccion] = useState("");
+  const [cupo, setCupo] = useState(cupoInicial);
   const pagina = useRef(1);
   const cargarMasRef = useRef<HTMLButtonElement>(null);
   const cargandoMas = useRef(false);
@@ -99,6 +103,7 @@ export function MuroRecuerdos({
     if (!respuesta.ok) return;
     const cuerpo = await respuesta.json();
     setRecuerdos(cuerpo.recuerdos);
+    if (cuerpo.cupo) setCupo(cuerpo.cupo);
     pagina.current = 1;
     setHayMas(Boolean(cuerpo.siguiente));
   }
@@ -130,12 +135,12 @@ export function MuroRecuerdos({
     setCargas((actual) => actual.map((c) => c.clave === carga.clave ? { ...c, estado: "subiendo", error: undefined } : c));
     try {
       const [foto, miniatura] = await Promise.all([
-        comprimirImagen(carga.archivo, 1200, 0.8),
-        comprimirImagen(carga.archivo, 300, 0.78),
+        comprimirImagen(carga.archivo, 1200, 0.74),
+        comprimirImagen(carga.archivo, 360, 0.68),
       ]);
       const datos = new FormData();
-      datos.set("foto", foto, "recuerdo.jpg");
-      datos.set("miniatura", miniatura, "miniatura.jpg");
+      datos.set("foto", foto, "recuerdo.webp");
+      datos.set("miniatura", miniatura, "miniatura.webp");
       datos.set("descripcion", descripcion);
       const controlador = new AbortController();
       const timeout = setTimeout(() => controlador.abort(), 30_000);
@@ -216,7 +221,10 @@ export function MuroRecuerdos({
           <button onClick={() => { setOrden("populares"); void recargar(mios, "populares"); }} className={`inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-extrabold ${orden === "populares" ? "bg-gradient-to-r from-rose-500 to-amber-400 text-white shadow" : "text-slate-600"}`}><Flame size={17} /> Populares</button>
         </div>
       </div>
-      <button onClick={() => setModalSubida(true)} className="boton-primario my-5 w-full"><Camera /> Subir recuerdo</button>
+      <div className="my-5 rounded-2xl bg-white p-3 shadow-soft">
+        <button disabled={cupo.restantes === 0} onClick={() => setModalSubida(true)} className="boton-primario w-full disabled:cursor-not-allowed disabled:opacity-50"><Camera /> {cupo.restantes > 0 ? "Subir recuerdo" : "Cupo de recuerdos completo"}</button>
+        <p className="mt-2 text-center text-xs font-bold text-slate-500">Has usado {cupo.usados} de {cupo.limite} recuerdos · {cupo.restantes} disponibles</p>
+      </div>
       {errorReaccion && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-center text-sm font-bold text-red-700">{errorReaccion}</p>}
       <div className="columns-2 gap-3 md:columns-3 lg:columns-4">
         {recuerdos.map((recuerdo) => (
@@ -264,7 +272,8 @@ export function MuroRecuerdos({
             <button onClick={() => setModalSubida(false)} className="ml-auto grid h-11 w-11 place-items-center rounded-full bg-slate-100" aria-label="Cerrar"><X /></button>
             <h2 id="titulo-subir-recuerdos" className="text-2xl font-extrabold">Subir recuerdos</h2>
             <p className="mt-1 text-sm text-slate-600">Elige hasta 5 fotos. Si una falla, podrás reintentar solo esa.</p>
-            <label className="boton-secundario mt-4 w-full cursor-pointer"><Camera /> Elegir fotos<input type="file" accept="image/*" multiple className="sr-only" onChange={(evento) => setCargas(Array.from(evento.target.files ?? []).slice(0, 5).map((archivo) => ({ archivo, estado: "pendiente", clave: crypto.randomUUID() })))} /></label>
+            <label className="boton-secundario mt-4 w-full cursor-pointer"><Camera /> Elegir fotos<input type="file" accept="image/*" multiple className="sr-only" onChange={(evento) => setCargas(Array.from(evento.target.files ?? []).slice(0, Math.min(5, cupo.restantes)).map((archivo) => ({ archivo, estado: "pendiente", clave: crypto.randomUUID() })))} /></label>
+            <p className="mt-2 text-center text-xs text-slate-500">Puedes elegir hasta {Math.min(5, cupo.restantes)} en esta carga.</p>
             <div className="mt-3 space-y-2">
               {cargas.map((carga) => (
                 <div key={carga.clave} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">

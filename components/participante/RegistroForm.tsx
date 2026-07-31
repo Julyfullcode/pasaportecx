@@ -42,8 +42,8 @@ export function RegistroForm({
     setProcesandoFoto(true);
     setError("");
     try {
-      const comprimida = await comprimirImagen(archivo, 600, 0.8);
-      if (comprimida.size > 500_000) throw new Error("La foto sigue siendo muy pesada. Prueba otra.");
+      const comprimida = await comprimirImagen(archivo, 512, 0.76);
+      if (comprimida.size > 250_000) throw new Error("La foto sigue siendo muy pesada. Prueba otra.");
       setFoto(comprimida);
       setVista(URL.createObjectURL(comprimida));
     } catch (e) {
@@ -59,7 +59,7 @@ export function RegistroForm({
     setEnviando(true);
     setError("");
     const datos = new FormData(evento.currentTarget);
-    datos.set("foto", foto, "perfil.jpg");
+    datos.set("foto", foto, "perfil.webp");
     const controlador = new AbortController();
     const timeout = setTimeout(() => controlador.abort(), 20_000);
     try {
