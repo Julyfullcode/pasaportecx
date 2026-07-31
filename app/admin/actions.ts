@@ -13,7 +13,12 @@ import { storage } from "@/lib/storage";
 import type { Prisma } from "@prisma/client";
 import { extensionImagen } from "@/lib/archivos";
 import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
-import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
+import {
+  CODIGO_DESAFIO_CIERRE,
+  FORMATO_COSECHA,
+  PREGUNTAS_COSECHA,
+  TITULO_DESAFIO_CIERRE,
+} from "@/lib/cosecha-config";
 
 export type EstadoLogin = { error?: string };
 
@@ -84,6 +89,33 @@ export async function guardarDesafio(formulario: FormData) {
   anunciarCambio("desafio");
   revalidatePath("/admin/desafios");
   revalidatePath("/desafios");
+}
+
+export async function crearDesafioCierre() {
+  await requerirAdmin();
+  const existente = await db.desafio.findUnique({ where: { codigoQr: CODIGO_DESAFIO_CIERRE } });
+  if (!existente) {
+    const [componente, ubicacion] = await Promise.all([
+      db.componente.findFirst({ where: { activo: true }, orderBy: { orden: "asc" } }),
+      db.ubicacion.findFirst({ where: { activa: true }, orderBy: { orden: "asc" } }),
+    ]);
+    await db.desafio.create({
+      data: {
+        codigoQr: CODIGO_DESAFIO_CIERRE,
+        titulo: TITULO_DESAFIO_CIERRE,
+        descripcion: "Recoge lo vivido en el encuentro: un aprendizaje, un agradecimiento y una acción para impulsar al regresar.",
+        tipo: "ENCUESTA",
+        puntos: 150,
+        dia: componente ? 2 : 1,
+        componenteId: componente?.id ?? null,
+        ubicacion: componente ? "" : (ubicacion?.nombre ?? ""),
+        estado: "BORRADOR",
+        esSecreto: false,
+        configuracion: { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA },
+      },
+    });
+  }
+  revalidatePath("/admin/desafios");
 }
 
 export async function cambiarEstadoDesafio(formulario: FormData) {

@@ -1,7 +1,8 @@
-import { Copy, Download, FileDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Copy, Download, FileDown, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
-import { cambiarEstadoDesafio, duplicarDesafio, eliminarDesafio } from "@/app/admin/actions";
+import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesafio } from "@/app/admin/actions";
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
+import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +12,28 @@ export default async function AdminDesafios() {
     db.componente.findMany({ where: { activo: true }, orderBy: { orden: "asc" } }),
     db.ubicacion.findMany({ where: { activa: true }, orderBy: { orden: "asc" } }),
   ]);
+  const desafioCierre = desafios.find((desafio) => desafio.codigoQr === CODIGO_DESAFIO_CIERRE);
   return (
     <div className="p-4 md:p-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Gestión en caliente</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Desafíos</h1></div>
         <a href="/api/qr/todos?formato=pdf" target="_blank" rel="noopener noreferrer" className="boton-secundario"><FileDown size={19} /> Ver PDF con todos los QR</a>
       </div>
+      {desafioCierre ? (
+        <a href={`#${CODIGO_DESAFIO_CIERRE}`} className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-sky-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-[var(--epm-teal)]"><CheckCircle2 /></span>
+          <span className="min-w-0 flex-1"><strong className="block">El desafío de cierre ya está creado</strong><small className="text-slate-600">{desafioCierre.estado === "BORRADOR" ? "Está en borrador. Toca aquí para localizarlo y publicarlo cuando quieras." : `Estado actual: ${desafioCierre.estado}.`}</small></span>
+        </a>
+      ) : (
+        <section className="mt-5 flex flex-wrap items-center gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-sky-50 p-5 shadow-soft">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Sprout /></span>
+          <div className="min-w-[220px] flex-1">
+            <h2 className="font-display text-lg font-extrabold text-[var(--epm-azul-profundo)]">{TITULO_DESAFIO_CIERRE}</h2>
+            <p className="mt-1 text-sm text-slate-600">Crea en Supabase el desafío con las preguntas Me llevo, Agradezco y Activo. Quedará como borrador con 150 puntos.</p>
+          </div>
+          <form action={crearDesafioCierre}><button className="boton-primario"><Plus size={18} /> Crear borrador de cierre</button></form>
+        </section>
+      )}
       <details className="tarjeta mt-6 p-5">
         <summary className="flex cursor-pointer list-none items-center gap-2 font-display text-lg font-extrabold text-[var(--epm-azul)]"><Plus /> Crear desafío ahora</summary>
         <div className="mt-5 border-t pt-5"><FormularioDesafio componentes={componentes} ubicaciones={ubicaciones} /></div>
@@ -32,7 +49,7 @@ export default async function AdminDesafios() {
       </details>
       <div className="mt-6 space-y-3">
         {desafios.map((desafio) => (
-          <article key={desafio.id} className="tarjeta overflow-hidden">
+          <article id={desafio.codigoQr === CODIGO_DESAFIO_CIERRE ? CODIGO_DESAFIO_CIERRE : undefined} key={desafio.id} className="tarjeta scroll-mt-5 overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 p-4">
               <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${desafio.estado === "PUBLICADO" ? "bg-emerald-50 text-emerald-700" : desafio.estado === "CERRADO" ? "bg-slate-200 text-slate-700" : "bg-amber-50 text-amber-700"}`}>{desafio.estado}</span>
               <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">Día {desafio.dia} · {desafio.componente?.nombre || desafio.ubicacion} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
