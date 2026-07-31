@@ -23,8 +23,8 @@ export async function POST(request: Request) {
     if (!(foto instanceof File) || !extension) {
       return Response.json({ error: "Selecciona una foto válida" }, { status: 400 });
     }
-    if (foto.size > 250_000) {
-      return Response.json({ error: "La foto supera 250 KB. Intenta comprimirla de nuevo." }, { status: 400 });
+    if (foto.size > 800_000) {
+      return Response.json({ error: "No pudimos optimizar esta fotografía. Intenta seleccionarla nuevamente." }, { status: 400 });
     }
     const configuracion = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
     urlFoto = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), extension, "perfiles");

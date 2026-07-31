@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { Camera, Check, Download, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Sparkles, Trophy } from "lucide-react";
-import { comprimirImagen } from "@/lib/imagen";
+import { comprimirImagenHasta } from "@/lib/imagen";
 import { Logo } from "@/components/marca/Logo";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 
@@ -42,8 +42,7 @@ export function RegistroForm({
     setProcesandoFoto(true);
     setError("");
     try {
-      const comprimida = await comprimirImagen(archivo, 512, 0.76);
-      if (comprimida.size > 250_000) throw new Error("La foto sigue siendo muy pesada. Prueba otra.");
+      const comprimida = await comprimirImagenHasta(archivo, 512, 450_000);
       setFoto(comprimida);
       setVista(URL.createObjectURL(comprimida));
     } catch (e) {

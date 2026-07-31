@@ -25,3 +25,18 @@ export async function comprimirImagen(
     ),
   );
 }
+
+export async function comprimirImagenHasta(
+  archivo: File,
+  maximo: number,
+  maxBytes: number,
+  calidadInicial = 0.78,
+): Promise<Blob> {
+  let calidad = calidadInicial;
+  let resultado = await comprimirImagen(archivo, maximo, calidad);
+  while (resultado.size > maxBytes && calidad > 0.34) {
+    calidad -= 0.08;
+    resultado = await comprimirImagen(archivo, maximo, calidad);
+  }
+  return resultado;
+}
