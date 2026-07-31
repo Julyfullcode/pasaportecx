@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import sharp from "sharp";
 import { participanteActual } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generarPasaportePdf } from "@/lib/pasaporte";
@@ -14,9 +15,15 @@ export async function GET(request: Request) {
 
   try {
     const config = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-    const [logo, foto] = await Promise.all([
-      readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-oficial.png")).catch(() => undefined),
-      participante.urlFoto.startsWith("/uploads/") ? storage.leer(participante.urlFoto).catch(() => undefined) : Promise.resolve(undefined),
+    const [logo, foto, fuenteRegular, fuenteSemibold] = await Promise.all([
+      readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).catch(() => undefined),
+      participante.urlFoto.startsWith("/uploads/")
+        ? storage.leer(participante.urlFoto)
+          .then((imagen) => sharp(imagen).rotate().resize(420, 420, { fit: "cover", position: "centre" }).png().toBuffer())
+          .catch(() => undefined)
+        : Promise.resolve(undefined),
+      readFile(join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf")).catch(() => undefined),
+      readFile(join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf")).catch(() => undefined),
     ]);
     const origen = new URL(request.url).origin;
     const pdf = await generarPasaportePdf({
@@ -28,6 +35,8 @@ export async function GET(request: Request) {
       urlRecuperacion: `${origen}/recuperar/${participante.codigoRecuperacion}`,
       logo,
       foto,
+      fuenteRegular,
+      fuenteSemibold,
     });
     const nombreSeguro = participante.nombre
       .normalize("NFD")
