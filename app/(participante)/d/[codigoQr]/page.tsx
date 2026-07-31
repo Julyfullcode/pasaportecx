@@ -7,6 +7,7 @@ import { ResolverDesafio } from "@/components/participante/ResolverDesafio";
 import { FORMATO_COSECHA } from "@/lib/cosecha-config";
 import { CurvaMarca } from "@/components/marca/CurvaMarca";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
+import { LogoBlanco } from "@/components/marca/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,10 @@ export default async function DetalleDesafio({
       <header className="marca-gradiente relative overflow-hidden px-4 pb-28 pt-5 text-white md:pb-32">
         <TexturaArcos />
         <div className="relative z-10 mx-auto max-w-2xl">
-          <Link href="/desafios" className="inline-flex items-center gap-2 font-extrabold"><ArrowLeft size={20} /> Desafíos</Link>
+          <div className="flex items-center justify-between gap-5">
+            <Link href="/desafios" className="inline-flex items-center gap-2 font-extrabold"><ArrowLeft size={20} /> Desafíos</Link>
+            <LogoBlanco className="h-7 w-auto shrink-0 md:h-8" />
+          </div>
           <div className="mt-8 flex items-center gap-2 text-sm font-extrabold text-white/85"><MapPin size={17} /> Día {desafio.dia} · {desafio.componente?.nombre || desafio.ubicacion}</div>
           <h1 className="mt-2 text-3xl font-extrabold">{desafio.titulo}</h1>
           <p className="mt-3 max-w-xl text-white/85">{desafio.descripcion}</p>

@@ -177,7 +177,7 @@ export async function generarTarjetaCosechaPdf(datos: DatosTarjetaCosecha) {
   pagina.drawCircle({ x: 405, y: 570, size: 98, color: verde, opacity: 0.15 });
   pagina.drawCircle({ x: 10, y: 20, size: 75, color: teal, opacity: 0.09 });
   cajaRedondeada(pagina, 18, 18, 384, 559, 34, blanco);
-  degradado(pagina, 30, 443, 360, 122, [0.043, 0.153, 0.255], [0.055, 0.486, 0.431], 30);
+  degradado(pagina, 30, 461, 360, 104, [0.043, 0.153, 0.255], [0.055, 0.486, 0.431], 30);
   pagina.drawCircle({ x: 357, y: 548, size: 58, color: verde, opacity: 0.2 });
 
   if (datos.logo) {
@@ -194,15 +194,15 @@ export async function generarTarjetaCosechaPdf(datos: DatosTarjetaCosecha) {
   const titulo = lineas(TITULO_DESAFIO_CIERRE, semibold, 18, 310).slice(0, 2);
   titulo.forEach((renglon, indice) => pagina.drawText(renglon, {
     x: (anchoPagina - semibold.widthOfTextAtSize(renglon, 18)) / 2,
-    y: 498 - indice * 22,
+    y: 504 - indice * 22,
     size: 18,
     font: semibold,
     color: blanco,
   }));
   const evento = lineas(datos.evento, normal, 8.5, 290).slice(0, 1)[0] ?? "";
-  pagina.drawText(evento, { x: (anchoPagina - normal.widthOfTextAtSize(evento, 8.5)) / 2, y: 455, size: 8.5, font: normal, color: blanco, opacity: 0.82 });
+  pagina.drawText(evento, { x: (anchoPagina - normal.widthOfTextAtSize(evento, 8.5)) / 2, y: 468, size: 8.5, font: normal, color: blanco, opacity: 0.82 });
 
-  cajaRedondeada(pagina, 38, 351, 344, 104, 28, rgb(0.975, 0.989, 0.993));
+  cajaRedondeada(pagina, 38, 349, 344, 102, 28, rgb(0.975, 0.989, 0.993));
   pagina.drawCircle({ x: 91, y: 403, size: 43, color: azul, opacity: 0.12 });
   pagina.drawCircle({ x: 91, y: 405, size: 40, color: blanco });
   if (datos.foto) {
@@ -218,7 +218,7 @@ export async function generarTarjetaCosechaPdf(datos: DatosTarjetaCosecha) {
   pagina.drawText(afiliacion, { x: 146, y: 386, size: tamanoQueCabe(afiliacion, normal, 9.5, 210, 7), font: normal, color: gris });
   pagina.drawText("Mi cosecha personal", { x: 146, y: 366, size: 9.5, font: normal, color: teal });
 
-  const posiciones = [245, 139, 33];
+  const posiciones = [253, 160, 67];
   const fondos: [number, number, number][][] = [
     [[0.91, 0.97, 0.99], [0.95, 0.985, 0.97]],
     [[0.94, 0.985, 0.95], [0.91, 0.97, 0.99]],
@@ -226,18 +226,30 @@ export async function generarTarjetaCosechaPdf(datos: DatosTarjetaCosecha) {
   ];
   PREGUNTAS_COSECHA.forEach((pregunta, indice) => {
     const y = posiciones[indice];
-    degradado(pagina, 38, y, 344, 90, fondos[indice][0] as [number, number, number], fondos[indice][1] as [number, number, number], 24);
+    degradado(pagina, 38, y, 344, 80, fondos[indice][0] as [number, number, number], fondos[indice][1] as [number, number, number], 23);
     const colorEtiqueta = indice === 0 ? azul : indice === 1 ? teal : rgb(0.31, 0.58, 0.11);
-    pagina.drawCircle({ x: 61, y: y + 66, size: 10, color: colorEtiqueta, opacity: 0.95 });
-    pagina.drawText(pregunta.titulo, { x: 79, y: y + 61, size: 12.5, font: semibold, color: azulProfundo });
+    pagina.drawCircle({ x: 61, y: y + 58, size: 9, color: colorEtiqueta, opacity: 0.95 });
+    pagina.drawText(pregunta.titulo, { x: 78, y: y + 53, size: 12, font: semibold, color: azulProfundo });
     const respuesta = textoAjustado(datos.respuestas[pregunta.id], normal, 300, 5);
     respuesta.renglones.forEach((renglon, linea) => pagina.drawText(renglon, {
       x: 58,
-      y: y + 43 - linea * (respuesta.tamano + 2),
+      y: y + 35 - linea * (respuesta.tamano + 2),
       size: respuesta.tamano,
       font: normal,
       color: gris,
     }));
+  });
+
+  const reflexion = "Lo que cosechamos hoy inspira la experiencia que construiremos mañana.";
+  const tamanoReflexion = tamanoQueCabe(reflexion, semibold, 8.8, 330, 7);
+  pagina.drawCircle({ x: 48, y: 40, size: 3.5, color: verde });
+  pagina.drawCircle({ x: 372, y: 40, size: 3.5, color: teal });
+  pagina.drawText(reflexion, {
+    x: (anchoPagina - semibold.widthOfTextAtSize(reflexion, tamanoReflexion)) / 2,
+    y: 36.5,
+    size: tamanoReflexion,
+    font: semibold,
+    color: teal,
   });
 
   const preferencias = documento.catalog.getOrCreateViewerPreferences();
