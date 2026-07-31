@@ -5,11 +5,15 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const inicio = Date.now();
   try {
-    await db.$queryRaw`SELECT 1 AS "ok"`;
+    const [, agendaDias] = await Promise.all([
+      db.$queryRaw`SELECT 1 AS "ok"`,
+      db.diaAgenda.count(),
+    ]);
     return Response.json(
       {
         ok: true,
         baseDeDatos: "conectada",
+        agendaDias,
         latenciaMs: Date.now() - inicio,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
       },
