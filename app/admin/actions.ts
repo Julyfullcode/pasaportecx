@@ -245,6 +245,8 @@ export async function guardarConfiguracion(formulario: FormData) {
     where: { id: "evento" },
     data: {
       nombreEvento: String(formulario.get("nombreEvento")),
+      descripcionAgenda: String(formulario.get("descripcionAgenda") ?? "").trim().slice(0, 800),
+      organizadoresAgenda: String(formulario.get("organizadoresAgenda") ?? "").trim().slice(0, 300),
       tamanoPodioIndividual: Number(formulario.get("tamanoPodioIndividual")),
       tamanoPodioEquipos: Number(formulario.get("tamanoPodioEquipos")),
       metodoPuntajeEquipo: String(formulario.get("metodoPuntajeEquipo")) as "PROMEDIO" | "SUMA",
@@ -265,11 +267,13 @@ export async function guardarDiaAgenda(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("id") ?? "");
   const nombre = String(formulario.get("nombre") ?? "").trim().slice(0, 100);
+  const fechaIngresada = String(formulario.get("fecha") ?? "");
+  const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaIngresada) ? fechaIngresada : null;
   const ordenIngresado = Number(formulario.get("orden") ?? 1);
   const orden = Number.isFinite(ordenIngresado) ? Math.max(1, Math.trunc(ordenIngresado)) : 1;
   if (!nombre) return;
-  if (id) await db.diaAgenda.update({ where: { id }, data: { nombre, orden } });
-  else await db.diaAgenda.create({ data: { nombre, orden } });
+  if (id) await db.diaAgenda.update({ where: { id }, data: { nombre, fecha, orden } });
+  else await db.diaAgenda.create({ data: { nombre, fecha, orden } });
   anunciarCambio("agenda");
   revalidatePath("/admin/configuracion");
 }
@@ -280,14 +284,62 @@ export async function eliminarDiaAgenda(formulario: FormData) {
   if (!id) return;
   const dia = await db.diaAgenda.findUnique({
     where: { id },
-    select: { momentos: { select: { urlFotoExpositor: true } } },
+    select: {
+      fotos: { select: { urlFoto: true } },
+      momentos: { select: { urlFotoExpositor: true } },
+    },
   });
   await db.diaAgenda.deleteMany({ where: { id } });
   await Promise.allSettled(
-    (dia?.momentos ?? [])
-      .filter((momento) => momento.urlFotoExpositor)
-      .map((momento) => storage.eliminar(momento.urlFotoExpositor!)),
+    [
+      ...(dia?.momentos ?? [])
+        .filter((momento) => momento.urlFotoExpositor)
+        .map((momento) => storage.eliminar(momento.urlFotoExpositor!)),
+      ...(dia?.fotos ?? []).map((foto) => storage.eliminar(foto.urlFoto)),
+    ],
   );
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+}
+
+export async function agregarFotosDiaAgenda(formulario: FormData) {
+  await requerirAdmin();
+  const diaId = String(formulario.get("diaId") ?? "");
+  if (!diaId) return;
+  const permitidas: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png" };
+  const archivos = formulario.getAll("fotosDia")
+    .filter((archivo): archivo is File => archivo instanceof File && archivo.size > 0);
+  if (!archivos.length || archivos.some((archivo) => !permitidas[archivo.type] || archivo.size > 2_000_000)) return;
+  const existentes = await db.fotoDiaAgenda.count({ where: { diaId } });
+  const seleccionadas = archivos.slice(0, Math.min(2, Math.max(0, 6 - existentes)));
+  if (!seleccionadas.length) return;
+  const guardadas: string[] = [];
+  try {
+    for (const archivo of seleccionadas) {
+      guardadas.push(await storage.guardar(
+        new Uint8Array(await archivo.arrayBuffer()),
+        permitidas[archivo.type],
+        "agenda-dias",
+      ));
+    }
+    await db.$transaction(guardadas.map((urlFoto, indice) => db.fotoDiaAgenda.create({
+      data: { diaId, urlFoto, orden: existentes + indice + 1 },
+    })));
+  } catch (error) {
+    await Promise.allSettled(guardadas.map((url) => storage.eliminar(url)));
+    throw error;
+  }
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+}
+
+export async function eliminarFotoDiaAgenda(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  if (!id) return;
+  const foto = await db.fotoDiaAgenda.findUnique({ where: { id } });
+  await db.fotoDiaAgenda.deleteMany({ where: { id } });
+  if (foto) await storage.eliminar(foto.urlFoto).catch(() => undefined);
   anunciarCambio("agenda");
   revalidatePath("/admin/configuracion");
 }

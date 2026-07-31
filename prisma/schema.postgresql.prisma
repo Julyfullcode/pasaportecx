@@ -190,6 +190,8 @@ model SesionAdmin {
 model ConfiguracionEvento {
   id String @id @default("evento")
   nombreEvento String @default("Pasaporte CX")
+  descripcionAgenda String @default("")
+  organizadoresAgenda String @default("Vicepresidencia Experiencia Usuario-Cliente")
   tamanoPodioIndividual Int @default(5)
   tamanoPodioEquipos Int @default(3)
   metodoPuntajeEquipo MetodoPuntajeEquipo @default(PROMEDIO)
@@ -204,9 +206,19 @@ model ConfiguracionEvento {
 model DiaAgenda {
   id String @id @default(cuid())
   nombre String
+  fecha String?
   orden Int
   momentos MomentoAgenda[]
+  fotos FotoDiaAgenda[]
   @@index([orden])
+}
+model FotoDiaAgenda {
+  id String @id @default(cuid())
+  diaId String
+  urlFoto String
+  orden Int @default(1)
+  dia DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  @@index([diaId, orden])
 }
 model MomentoAgenda {
   id               String    @id @default(cuid())

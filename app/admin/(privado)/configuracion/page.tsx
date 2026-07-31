@@ -12,14 +12,16 @@ export default async function Configuracion() {
     db.componente.findMany({ orderBy: { orden: "asc" } }),
     db.grupo.findMany({ orderBy: { orden: "asc" } }),
     db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
-    db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
+    db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
   ]);
   return (
     <div className="p-4 md:p-7">
       <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Todo editable, sin redespliegue</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Configuración</h1></div>
       <form action={guardarConfiguracion} className="tarjeta mt-6 grid gap-4 p-5 md:grid-cols-2">
         <h2 className="text-xl font-extrabold md:col-span-2">Evento y puntuación</h2>
-        <div className="md:col-span-2"><label className="etiqueta">Nombre del evento</label><input className="campo" name="nombreEvento" defaultValue={config.nombreEvento} /></div>
+        <div><label className="etiqueta">Nombre del evento</label><input className="campo" name="nombreEvento" defaultValue={config.nombreEvento} maxLength={140} required /></div>
+        <div><label className="etiqueta">Descripción para la agenda</label><textarea className="campo min-h-24 resize-y" name="descripcionAgenda" defaultValue={config.descripcionAgenda} maxLength={800} placeholder="Una invitación breve que acompañará el nombre del evento" /></div>
+        <div className="md:col-span-2"><label className="etiqueta">Organizadores</label><input className="campo" name="organizadoresAgenda" defaultValue={config.organizadoresAgenda} maxLength={300} placeholder="Ejemplo: Vicepresidencia Experiencia Usuario-Cliente" /><p className="mt-1 text-xs text-slate-500">Este texto aparecerá en el pie de todas las páginas de la agenda.</p></div>
         <div><label className="etiqueta">Podio individual</label><input className="campo" type="number" min={3} max={20} name="tamanoPodioIndividual" defaultValue={config.tamanoPodioIndividual} /></div>
         <div><label className="etiqueta">Podio de equipos</label><input className="campo" type="number" min={1} max={10} name="tamanoPodioEquipos" defaultValue={config.tamanoPodioEquipos} /></div>
         <div><label className="etiqueta">Método de puntaje de equipo</label><select className="campo" name="metodoPuntajeEquipo" defaultValue={config.metodoPuntajeEquipo}><option value="PROMEDIO">Promedio por integrante activo</option><option value="SUMA">Suma total</option></select></div>
