@@ -1,3 +1,4 @@
+import fontkit from "@pdf-lib/fontkit";
 import {
   PDFDocument,
   StandardFonts,
@@ -36,9 +37,10 @@ type DatosAgenda = {
   organizadores: string;
   dias: DiaAgendaPdf[];
   logo?: Uint8Array;
+  fuenteRegular?: Uint8Array;
+  fuenteSemibold?: Uint8Array;
 };
 
-const azul = rgb(0.043, 0.231, 0.376);
 const azulProfundo = rgb(0.043, 0.153, 0.255);
 const teal = rgb(0.055, 0.486, 0.431);
 const verde = rgb(0.463, 0.741, 0.118);
@@ -62,7 +64,7 @@ function lineas(texto: string, fuente: PDFFont, tamano: number, anchoMaximo: num
     } else actual = candidata;
   }
   if (actual) resultado.push(actual);
-  return resultado.length ? resultado : [""];
+  return resultado;
 }
 
 function tamanoQueCabe(texto: string, fuente: PDFFont, maximo: number, ancho: number, minimo = 8) {
@@ -76,6 +78,14 @@ function formatearFecha(fecha?: string | null) {
   const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const [ano, mes, dia] = fecha.split("-").map(Number);
   return `${dia} de ${meses[mes - 1]} de ${ano}`;
+}
+
+function formatearHora(hora: string) {
+  const coincidencia = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(hora);
+  if (!coincidencia) return seguro(hora);
+  const horas = Number(coincidencia[1]);
+  const hora12 = horas % 12 || 12;
+  return `${hora12}:${coincidencia[2]} ${horas >= 12 ? "p. m." : "a. m."}`;
 }
 
 function cajaRedondeada(pagina: PDFPage, x: number, y: number, ancho: number, alto: number, radio: number, color: RGB, opacity = 1) {
@@ -179,8 +189,13 @@ function dibujarTituloDia(pagina: PDFPage, y: number, nombre: string, fecha: str
 
 export async function generarAgendaPdf(datos: DatosAgenda) {
   const documento = await PDFDocument.create();
-  const normal = await documento.embedFont(StandardFonts.Helvetica);
-  const negrita = await documento.embedFont(StandardFonts.HelveticaBold);
+  documento.registerFontkit(fontkit);
+  const normal = datos.fuenteRegular
+    ? await documento.embedFont(datos.fuenteRegular, { subset: true })
+    : await documento.embedFont(StandardFonts.Helvetica);
+  const negrita = datos.fuenteSemibold
+    ? await documento.embedFont(datos.fuenteSemibold, { subset: true })
+    : await documento.embedFont(StandardFonts.HelveticaBold);
   const logo = await incrustarFoto(documento, datos.logo);
 
   function nuevaPagina() {
@@ -224,12 +239,12 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
         y = dibujarTituloDia(pagina, 625, dia.nombre, formatearFecha(dia.fecha), fotosDia, normal, negrita, true);
       }
       const inferior = y - alto;
-      cajaRedondeada(pagina, 130, inferior - 3, 427, alto - 4, 22, azulProfundo, 0.08);
-      cajaRedondeada(pagina, 126, inferior, 431, alto - 4, 22, blanco);
-      cajaRedondeada(pagina, 38, y - 58, 76, 45, 20, teal, 0.12);
-      pagina.drawText(seguro(momento.horaInicio), { x: 53, y: y - 34, size: 12.5, font: negrita, color: azulProfundo });
-      pagina.drawText(seguro(momento.horaFin), { x: 56, y: y - 49, size: 9, font: normal, color: teal });
-      pagina.drawCircle({ x: 127, y: y - 30, size: 6, color: verde, borderColor: blanco, borderWidth: 2 });
+      cajaRedondeada(pagina, 135, inferior - 3, 422, alto - 4, 22, azulProfundo, 0.08);
+      cajaRedondeada(pagina, 131, inferior, 426, alto - 4, 22, blanco);
+      pagina.drawLine({ start: { x: 116, y: y + 2 }, end: { x: 116, y: inferior - 12 }, thickness: 2, color: teal, opacity: 0.25 });
+      pagina.drawText(formatearHora(momento.horaInicio), { x: 38, y: y - 31, size: 9.5, font: negrita, color: azulProfundo });
+      pagina.drawText(formatearHora(momento.horaFin), { x: 38, y: y - 47, size: 8.2, font: normal, color: gris });
+      pagina.drawCircle({ x: 116, y: y - 30, size: 6, color: verde, borderColor: blanco, borderWidth: 2 });
       if (fotoExpositor) dibujarFotoCircular(pagina, fotoExpositor, 166, y - 45, 27, verde);
       let textoY = y - 27;
       for (const linea of titulo) {

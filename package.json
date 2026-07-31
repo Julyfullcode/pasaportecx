@@ -17,6 +17,7 @@
     "prisma:postgres": "prisma generate --schema prisma/schema.postgresql.prisma"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@prisma/client": "6.13.0",
     "bcryptjs": "3.0.2",
     "html5-qrcode": "2.3.8",

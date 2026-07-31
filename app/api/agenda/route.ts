@@ -20,6 +20,8 @@ async function pdfAgenda(
     momentos: { horaInicio: string; horaFin: string; nombre: string; descripcion: string; urlFotoExpositor: string | null }[];
   }[],
   logo?: Uint8Array,
+  fuenteRegular?: Uint8Array,
+  fuenteSemibold?: Uint8Array,
 ) {
   const clave = createHash("sha256")
     .update(process.env.VERCEL_GIT_COMMIT_SHA ?? "local")
@@ -48,6 +50,8 @@ async function pdfAgenda(
       organizadores: config.organizadoresAgenda,
       dias: diasConFotos,
       logo,
+      fuenteRegular,
+      fuenteSemibold,
     });
   })();
   cachePdfAgenda.set(clave, promesa);
@@ -67,7 +71,7 @@ async function cargarImagen(url: string, contexto: string) {
 export async function GET() {
   if (!(await participanteActual())) return Response.json({ error: "Debes iniciar sesión para descargar la agenda." }, { status: 401 });
   try {
-    const [config, dias, logo] = await Promise.all([
+    const [config, dias, logo, fuenteRegular, fuenteSemibold] = await Promise.all([
       db.configuracionEvento.findUniqueOrThrow({
         where: { id: "evento" },
         select: { nombreEvento: true, descripcionAgenda: true, organizadoresAgenda: true },
@@ -81,9 +85,11 @@ export async function GET() {
           momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }], select: { horaInicio: true, horaFin: true, nombre: true, descripcion: true, urlFotoExpositor: true } },
         },
       }),
-      readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-oficial.png")).catch(() => undefined),
+      readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).catch(() => undefined),
+      readFile(join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf")).catch(() => undefined),
+      readFile(join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf")).catch(() => undefined),
     ]);
-    const pdf = await pdfAgenda(config, dias, logo);
+    const pdf = await pdfAgenda(config, dias, logo, fuenteRegular, fuenteSemibold);
     return new Response(Buffer.from(pdf), {
       headers: {
         "Cache-Control": "private, no-store",

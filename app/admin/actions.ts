@@ -353,7 +353,7 @@ export async function guardarMomentoAgenda(formulario: FormData) {
   const nombre = String(formulario.get("nombre") ?? "").trim().slice(0, 120);
   const descripcion = String(formulario.get("descripcion") ?? "").trim().slice(0, 800);
   const horaValida = /^([01]\d|2[0-3]):[0-5]\d$/;
-  if (!diaId || !horaValida.test(horaInicio) || !horaValida.test(horaFin) || !nombre || !descripcion) return;
+  if (!diaId || !horaValida.test(horaInicio) || !horaValida.test(horaFin) || !nombre) return;
   const foto = formulario.get("fotoExpositor");
   const tieneFotoNueva = foto instanceof File && foto.size > 0;
   const extensionesPermitidas: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png" };
