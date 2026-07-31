@@ -258,6 +258,7 @@ export async function guardarConfiguracion(formulario: FormData) {
       nombreEvento: String(formulario.get("nombreEvento")),
       descripcionAgenda: String(formulario.get("descripcionAgenda") ?? "").trim().slice(0, 800),
       organizadoresAgenda: String(formulario.get("organizadoresAgenda") ?? "").trim().slice(0, 300),
+      diplomaHabilitado: formulario.get("diplomaHabilitado") === "on",
       tamanoPodioIndividual: Number(formulario.get("tamanoPodioIndividual")),
       tamanoPodioEquipos: Number(formulario.get("tamanoPodioEquipos")),
       metodoPuntajeEquipo: String(formulario.get("metodoPuntajeEquipo")) as "PROMEDIO" | "SUMA",
@@ -287,6 +288,8 @@ export async function guardarConfiguracion(formulario: FormData) {
   }
   anunciarCambio("configuracion");
   revalidatePath("/admin/configuracion");
+  revalidatePath("/");
+  revalidatePath("/diploma");
 }
 
 export async function limpiarArchivosHuerfanos(formulario: FormData) {

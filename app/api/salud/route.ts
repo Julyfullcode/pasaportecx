@@ -14,7 +14,7 @@ export async function GET() {
       db.diaAgenda.count(),
       db.momentoAgenda.findFirst({ select: { destacado: true, urlFotoExpositor: true } }),
       db.fotoDiaAgenda.count(),
-      db.configuracionEvento.findUnique({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true, eliminarEvidenciasRechazadas: true } }),
+      db.configuracionEvento.findUnique({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true, eliminarEvidenciasRechazadas: true, diplomaHabilitado: true } }),
       db.reaccionRecuerdo.count(),
       consultaStorage,
     ]);
@@ -29,6 +29,7 @@ export async function GET() {
         reaccionesRecuerdos,
         maxRecuerdosPorParticipante: configuracion?.maxRecuerdosPorParticipante,
         limpiezaEvidenciasRechazadas: configuracion?.eliminarEvidenciasRechazadas,
+        diplomaHabilitado: configuracion?.diplomaHabilitado,
         imagenesWebp: true,
         almacenamientoConsultable: true,
         objetosAlmacenados: Number(objetosStorage[0]?.total ?? 0),

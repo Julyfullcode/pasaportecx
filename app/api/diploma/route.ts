@@ -12,9 +12,15 @@ export async function GET() {
   if (!participante) return Response.json({ error: "Debes iniciar sesión para generar tu diploma." }, { status: 401 });
 
   const config = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
+  if (!config.diplomaHabilitado) {
+    return Response.json(
+      { error: "Tu diploma estará disponible al finalizar el encuentro." },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   let logo: Uint8Array | undefined;
   try {
-    logo = await readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-oficial.png"));
+    logo = await readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png"));
   } catch {
     logo = undefined;
   }
@@ -24,6 +30,7 @@ export async function GET() {
     empresa: participante.empresa.nombre,
     equipo: participante.grupo.nombre,
     evento: config.nombreEvento,
+    organizadores: config.organizadoresAgenda,
     fecha: new Date(),
     logo,
   });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, Medal, Sparkles, Trophy } from "lucide-react";
+import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Sparkles, Trophy } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { obtenerRankingEquipos } from "@/lib/equipos";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Inicio() {
   const participante = await requerirParticipante("/");
-  const [ranking, equipos, completados, totalPublicados] = await Promise.all([
+  const [ranking, equipos, completados, totalPublicados, configuracion] = await Promise.all([
     db.participante.findMany({
       where: { activo: true },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
@@ -19,6 +19,7 @@ export default async function Inicio() {
     obtenerRankingEquipos(),
     db.completitud.count({ where: { participanteId: participante.id } }),
     db.desafio.count({ where: { estado: "PUBLICADO", esSecreto: false } }),
+    db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { diplomaHabilitado: true } }),
   ]);
   const posicion = ranking.findIndex((p) => p.id === participante.id) + 1;
   const posicionEquipo = equipos.findIndex((e) => e.id === participante.grupoId) + 1;
@@ -78,11 +79,18 @@ export default async function Inicio() {
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-teal)] text-white"><CalendarDays /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver agenda</strong><small className="text-slate-600">Abre el PDF con los días, horarios y momentos del encuentro</small></span>
         </a>
-        <Link href="/diploma" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>
-          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Mi diploma del encuentro</strong><small className="text-white/75">Genera y descarga tu recuerdo de participación</small></span>
-          <ChevronRight />
-        </Link>
+        {configuracion.diplomaHabilitado ? (
+          <a href="/api/diploma" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>
+            <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi diploma</strong><small className="text-white/75">Se abrirá en PDF para que puedas guardarlo o imprimirlo</small></span>
+            <ChevronRight />
+          </a>
+        ) : (
+          <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-600 shadow-soft">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-slate-500"><LockKeyhole /></span>
+            <span className="min-w-0 flex-1"><strong className="block font-display text-lg text-[var(--epm-azul-profundo)]">Mi diploma del encuentro</strong><small className="text-slate-600">Estará disponible al finalizar el encuentro.</small></span>
+          </div>
+        )}
       </div>
     </>
   );

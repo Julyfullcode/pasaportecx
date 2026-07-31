@@ -228,6 +228,7 @@ model ConfiguracionEvento {
   nombreEvento                 String              @default("Pasaporte CX")
   descripcionAgenda            String              @default("")
   organizadoresAgenda          String              @default("Vicepresidencia Experiencia Usuario-Cliente")
+  diplomaHabilitado            Boolean             @default(false)
   tamanoPodioIndividual        Int                 @default(5)
   tamanoPodioEquipos           Int                 @default(3)
   metodoPuntajeEquipo          MetodoPuntajeEquipo @default(PROMEDIO)
