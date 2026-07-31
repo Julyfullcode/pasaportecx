@@ -4,6 +4,7 @@ import { participanteActual } from "@/lib/auth";
 import { storage } from "@/lib/storage";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { anunciarCambio } from "@/lib/eventos";
+import { presentarRecuerdo } from "@/lib/recuerdos";
 
 export async function GET(request: Request) {
   const participante = await participanteActual();
@@ -11,17 +12,25 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const pagina = Math.max(1, Number(url.searchParams.get("pagina") ?? 1));
   const propios = url.searchParams.get("mios") === "1";
-  const recuerdos = await db.recuerdo.findMany({
+  const populares = url.searchParams.get("orden") === "populares";
+  const recuerdosBase = await db.recuerdo.findMany({
     where: {
       visible: true,
       pendiente: false,
+      reportado: false,
       ...(propios ? { participanteId: participante.id } : {}),
     },
-    orderBy: { creadoEn: "desc" },
+    orderBy: populares
+      ? [{ reacciones: { _count: "desc" } }, { creadoEn: "desc" }]
+      : { creadoEn: "desc" },
     skip: (pagina - 1) * 18,
     take: 18,
-    include: { participante: { include: { grupo: true, empresa: true } } },
+    include: {
+      participante: { include: { grupo: true, empresa: true } },
+      reacciones: { select: { participanteId: true, tipo: true } },
+    },
   });
+  const recuerdos = recuerdosBase.map((recuerdo) => presentarRecuerdo(recuerdo, participante.id));
   return Response.json({ recuerdos, siguiente: recuerdos.length === 18 ? pagina + 1 : null });
 }
 

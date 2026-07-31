@@ -39,21 +39,22 @@ enum ModoAsistentes {
 }
 
 model Participante {
-  id                 String          @id @default(cuid())
-  nombre             String
-  empresaId          String
-  grupoId            String
-  urlFoto            String
-  codigoRecuperacion String          @unique
-  puntosTotales      Int             @default(0)
-  activo             Boolean         @default(true)
-  creadoEn           DateTime        @default(now())
-  empresa            Empresa         @relation(fields: [empresaId], references: [id])
-  grupo              Grupo           @relation(fields: [grupoId], references: [id])
-  completitudes      Completitud[]
-  recuerdos          Recuerdo[]
-  ajustes            AjustePuntos[]
-  sesiones           SesionParticipante[]
+  id                  String               @id @default(cuid())
+  nombre              String
+  empresaId           String
+  grupoId             String
+  urlFoto             String
+  codigoRecuperacion  String               @unique
+  puntosTotales       Int                  @default(0)
+  activo              Boolean              @default(true)
+  creadoEn            DateTime             @default(now())
+  empresa             Empresa              @relation(fields: [empresaId], references: [id])
+  grupo               Grupo                @relation(fields: [grupoId], references: [id])
+  completitudes       Completitud[]
+  recuerdos           Recuerdo[]
+  reaccionesRecuerdos ReaccionRecuerdo[]
+  ajustes             AjustePuntos[]
+  sesiones            SesionParticipante[]
 
   @@index([puntosTotales])
   @@index([grupoId])
@@ -83,11 +84,11 @@ model Empresa {
 }
 
 model Componente {
-  id       String     @id @default(cuid())
-  nombre   String     @unique
+  id       String    @id @default(cuid())
+  nombre   String    @unique
   orden    Int
   colorHex String
-  activo   Boolean    @default(true)
+  activo   Boolean   @default(true)
   desafios Desafio[]
 
   @@index([orden])
@@ -103,41 +104,41 @@ model Ubicacion {
 }
 
 model Desafio {
-  id                   String           @id @default(cuid())
-  codigoQr             String           @unique
-  titulo               String
-  descripcion          String
-  tipo                 TipoDesafio
-  puntos               Int
-  dia                  Int
-  componenteId         String?
-  ubicacion            String
-  estado               EstadoDesafio    @default(BORRADOR)
-  esSecreto            Boolean          @default(false)
-  disponibleDesde      DateTime?
-  disponibleHasta      DateTime?
-  limiteCompletitudes  Int?
-  configuracion        Json
-  urlImagen            String?
-  creadoEn             DateTime         @default(now())
-  componente           Componente?      @relation(fields: [componenteId], references: [id])
-  completitudes        Completitud[]
+  id                  String        @id @default(cuid())
+  codigoQr            String        @unique
+  titulo              String
+  descripcion         String
+  tipo                TipoDesafio
+  puntos              Int
+  dia                 Int
+  componenteId        String?
+  ubicacion           String
+  estado              EstadoDesafio @default(BORRADOR)
+  esSecreto           Boolean       @default(false)
+  disponibleDesde     DateTime?
+  disponibleHasta     DateTime?
+  limiteCompletitudes Int?
+  configuracion       Json
+  urlImagen           String?
+  creadoEn            DateTime      @default(now())
+  componente          Componente?   @relation(fields: [componenteId], references: [id])
+  completitudes       Completitud[]
 
   @@index([estado, dia])
   @@index([componenteId])
 }
 
 model Completitud {
-  id              String              @id @default(cuid())
+  id              String            @id @default(cuid())
   participanteId  String
   desafioId       String
   puntosOtorgados Int
   respuesta       Json?
   urlEvidencia    String?
-  estado          EstadoCompletitud   @default(APROBADO)
-  completadoEn    DateTime            @default(now())
-  participante    Participante        @relation(fields: [participanteId], references: [id], onDelete: Cascade)
-  desafio         Desafio             @relation(fields: [desafioId], references: [id], onDelete: Cascade)
+  estado          EstadoCompletitud @default(APROBADO)
+  completadoEn    DateTime          @default(now())
+  participante    Participante      @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  desafio         Desafio           @relation(fields: [desafioId], references: [id], onDelete: Cascade)
 
   @@unique([participanteId, desafioId])
   @@index([participanteId])
@@ -146,19 +147,34 @@ model Completitud {
 }
 
 model Recuerdo {
-  id              String       @id @default(cuid())
-  participanteId  String
-  urlFoto         String
-  urlMiniatura    String
-  descripcion     String?
-  visible         Boolean      @default(true)
-  reportado       Boolean      @default(false)
-  pendiente       Boolean      @default(false)
-  creadoEn        DateTime     @default(now())
-  claveIdempotencia String?    @unique
-  participante    Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  participanteId    String
+  urlFoto           String
+  urlMiniatura      String
+  descripcion       String?
+  visible           Boolean            @default(true)
+  reportado         Boolean            @default(false)
+  pendiente         Boolean            @default(false)
+  creadoEn          DateTime           @default(now())
+  claveIdempotencia String?            @unique
+  participante      Participante       @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  reacciones        ReaccionRecuerdo[]
 
   @@index([creadoEn])
+  @@index([participanteId])
+}
+
+model ReaccionRecuerdo {
+  id             String       @id @default(cuid())
+  recuerdoId     String
+  participanteId String
+  tipo           String
+  creadoEn       DateTime     @default(now())
+  recuerdo       Recuerdo     @relation(fields: [recuerdoId], references: [id], onDelete: Cascade)
+  participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+
+  @@unique([recuerdoId, participanteId, tipo])
+  @@index([recuerdoId, tipo])
   @@index([participanteId])
 }
 
@@ -176,10 +192,10 @@ model AjustePuntos {
 }
 
 model Admin {
-  id           String          @id @default(cuid())
-  usuario      String          @unique
+  id           String         @id @default(cuid())
+  usuario      String         @unique
   passwordHash String
-  creadoEn     DateTime        @default(now())
+  creadoEn     DateTime       @default(now())
   ajustes      AjustePuntos[]
   sesiones     SesionAdmin[]
 }
@@ -208,20 +224,20 @@ model SesionAdmin {
 }
 
 model ConfiguracionEvento {
-  id                           String               @id @default("evento")
-  nombreEvento                 String               @default("Pasaporte CX")
-  descripcionAgenda            String               @default("")
-  organizadoresAgenda          String               @default("Vicepresidencia Experiencia Usuario-Cliente")
-  tamanoPodioIndividual       Int                  @default(5)
-  tamanoPodioEquipos          Int                  @default(3)
-  metodoPuntajeEquipo         MetodoPuntajeEquipo @default(PROMEDIO)
-  puntosPorRecuerdo           Int                  @default(0)
-  maxRecuerdosConPuntos       Int                  @default(0)
-  recuerdosRequierenAprobacion Boolean              @default(false)
-  asignacionAutomatica         Boolean              @default(false)
-  modoAsistentes              ModoAsistentes       @default(MOSAICO)
-  intervaloAsistentesSegundos Int                  @default(6)
-  cicloMixto                  String               @default("asistentes:60,recuerdos:45,podio:30")
+  id                           String              @id @default("evento")
+  nombreEvento                 String              @default("Pasaporte CX")
+  descripcionAgenda            String              @default("")
+  organizadoresAgenda          String              @default("Vicepresidencia Experiencia Usuario-Cliente")
+  tamanoPodioIndividual        Int                 @default(5)
+  tamanoPodioEquipos           Int                 @default(3)
+  metodoPuntajeEquipo          MetodoPuntajeEquipo @default(PROMEDIO)
+  puntosPorRecuerdo            Int                 @default(0)
+  maxRecuerdosConPuntos        Int                 @default(0)
+  recuerdosRequierenAprobacion Boolean             @default(false)
+  asignacionAutomatica         Boolean             @default(false)
+  modoAsistentes               ModoAsistentes      @default(MOSAICO)
+  intervaloAsistentesSegundos  Int                 @default(6)
+  cicloMixto                   String              @default("asistentes:60,recuerdos:45,podio:30")
 }
 
 model DiaAgenda {

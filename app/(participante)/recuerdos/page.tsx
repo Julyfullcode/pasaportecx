@@ -1,20 +1,25 @@
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MuroRecuerdos } from "@/components/participante/MuroRecuerdos";
+import { presentarRecuerdo } from "@/lib/recuerdos";
 
 export const dynamic = "force-dynamic";
 
 export default async function Recuerdos({ searchParams }: { searchParams: Promise<{ subir?: string }> }) {
   const participante = await requerirParticipante("/recuerdos");
-  const [recuerdos, { subir }] = await Promise.all([
+  const [recuerdosBase, { subir }] = await Promise.all([
     db.recuerdo.findMany({
-      where: { visible: true, pendiente: false },
+      where: { visible: true, pendiente: false, reportado: false },
       orderBy: { creadoEn: "desc" },
       take: 18,
-      include: { participante: { include: { grupo: true, empresa: true } } },
+      include: {
+        participante: { include: { grupo: true, empresa: true } },
+        reacciones: { select: { participanteId: true, tipo: true } },
+      },
     }),
     searchParams,
   ]);
+  const recuerdos = recuerdosBase.map((recuerdo) => presentarRecuerdo(recuerdo, participante.id));
   return (
     <div className="contenedor py-6">
       <p className="font-extrabold text-[var(--epm-verde-medio)]">Lo que vivimos</p>

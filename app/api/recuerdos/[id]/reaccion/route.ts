@@ -1,0 +1,45 @@
+import { Prisma } from "@prisma/client";
+import { participanteActual } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { anunciarCambio } from "@/lib/eventos";
+import { resumirReacciones, TIPOS_REACCION, type TipoReaccionRecuerdo } from "@/lib/recuerdos";
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const participante = await participanteActual();
+  if (!participante) return Response.json({ error: "Tu sesión venció." }, { status: 401 });
+
+  const { id: recuerdoId } = await params;
+  const cuerpo = (await request.json().catch(() => null)) as { tipo?: string } | null;
+  if (!cuerpo?.tipo || !TIPOS_REACCION.includes(cuerpo.tipo as TipoReaccionRecuerdo)) {
+    return Response.json({ error: "La reacción no es válida." }, { status: 400 });
+  }
+  const tipo = cuerpo.tipo as TipoReaccionRecuerdo;
+  const recuerdo = await db.recuerdo.findFirst({
+    where: { id: recuerdoId, visible: true, pendiente: false, reportado: false },
+    select: { id: true },
+  });
+  if (!recuerdo) return Response.json({ error: "Este recuerdo ya no está disponible." }, { status: 404 });
+
+  try {
+    await db.$transaction(async (tx) => {
+      const existente = await tx.reaccionRecuerdo.findUnique({
+        where: { recuerdoId_participanteId_tipo: { recuerdoId, participanteId: participante.id, tipo } },
+        select: { id: true },
+      });
+      if (existente) {
+        await tx.reaccionRecuerdo.delete({ where: { id: existente.id } });
+      } else {
+        await tx.reaccionRecuerdo.create({ data: { recuerdoId, participanteId: participante.id, tipo } });
+      }
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+  }
+
+  const reacciones = await db.reaccionRecuerdo.findMany({
+    where: { recuerdoId },
+    select: { participanteId: true, tipo: true },
+  });
+  anunciarCambio("reaccion-recuerdo");
+  return Response.json({ reacciones: resumirReacciones(reacciones, participante.id) });
+}

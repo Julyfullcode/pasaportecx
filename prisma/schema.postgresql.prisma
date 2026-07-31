@@ -6,8 +6,8 @@ generator client {
 
 datasource db {
   directUrl = env("DIRECT_URL")
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 enum TipoDesafio {
@@ -42,184 +42,228 @@ enum ModoAsistentes {
 }
 
 model Participante {
-  id String @id @default(cuid())
-  nombre String
-  empresaId String
-  grupoId String
-  urlFoto String
-  codigoRecuperacion String @unique
-  puntosTotales Int @default(0)
-  activo Boolean @default(true)
-  creadoEn DateTime @default(now())
-  empresa Empresa @relation(fields: [empresaId], references: [id])
-  grupo Grupo @relation(fields: [grupoId], references: [id])
-  completitudes Completitud[]
-  recuerdos Recuerdo[]
-  ajustes AjustePuntos[]
-  sesiones SesionParticipante[]
+  id                  String               @id @default(cuid())
+  nombre              String
+  empresaId           String
+  grupoId             String
+  urlFoto             String
+  codigoRecuperacion  String               @unique
+  puntosTotales       Int                  @default(0)
+  activo              Boolean              @default(true)
+  creadoEn            DateTime             @default(now())
+  empresa             Empresa              @relation(fields: [empresaId], references: [id])
+  grupo               Grupo                @relation(fields: [grupoId], references: [id])
+  completitudes       Completitud[]
+  recuerdos           Recuerdo[]
+  reaccionesRecuerdos ReaccionRecuerdo[]
+  ajustes             AjustePuntos[]
+  sesiones            SesionParticipante[]
+
   @@index([puntosTotales])
   @@index([grupoId])
   @@index([empresaId])
 }
+
 model Grupo {
-  id String @id @default(cuid())
-  nombre String @unique
-  colorHex String
-  orden Int
-  activo Boolean @default(true)
+  id            String         @id @default(cuid())
+  nombre        String         @unique
+  colorHex      String
+  orden         Int
+  activo        Boolean        @default(true)
   participantes Participante[]
+
   @@index([orden])
 }
+
 model Empresa {
-  id String @id @default(cuid())
-  nombre String @unique
-  urlLogo String?
-  orden Int
-  activa Boolean @default(true)
+  id            String         @id @default(cuid())
+  nombre        String         @unique
+  urlLogo       String?
+  orden         Int
+  activa        Boolean        @default(true)
   participantes Participante[]
+
   @@index([orden])
 }
+
 model Componente {
-  id String @id @default(cuid())
-  nombre String @unique
-  orden Int
+  id       String    @id @default(cuid())
+  nombre   String    @unique
+  orden    Int
   colorHex String
-  activo Boolean @default(true)
+  activo   Boolean   @default(true)
   desafios Desafio[]
+
   @@index([orden])
 }
+
 model Ubicacion {
-  id String @id @default(cuid())
-  nombre String @unique
-  orden Int
+  id     String  @id @default(cuid())
+  nombre String  @unique
+  orden  Int
   activa Boolean @default(true)
+
   @@index([orden])
 }
+
 model Desafio {
-  id String @id @default(cuid())
-  codigoQr String @unique
-  titulo String
-  descripcion String
-  tipo TipoDesafio
-  puntos Int
-  dia Int
-  componenteId String?
-  ubicacion String
-  estado EstadoDesafio @default(BORRADOR)
-  esSecreto Boolean @default(false)
-  disponibleDesde DateTime?
-  disponibleHasta DateTime?
+  id                  String        @id @default(cuid())
+  codigoQr            String        @unique
+  titulo              String
+  descripcion         String
+  tipo                TipoDesafio
+  puntos              Int
+  dia                 Int
+  componenteId        String?
+  ubicacion           String
+  estado              EstadoDesafio @default(BORRADOR)
+  esSecreto           Boolean       @default(false)
+  disponibleDesde     DateTime?
+  disponibleHasta     DateTime?
   limiteCompletitudes Int?
-  configuracion Json
-  urlImagen String?
-  creadoEn DateTime @default(now())
-  componente Componente? @relation(fields: [componenteId], references: [id])
-  completitudes Completitud[]
+  configuracion       Json
+  urlImagen           String?
+  creadoEn            DateTime      @default(now())
+  componente          Componente?   @relation(fields: [componenteId], references: [id])
+  completitudes       Completitud[]
+
   @@index([estado, dia])
   @@index([componenteId])
 }
+
 model Completitud {
-  id String @id @default(cuid())
-  participanteId String
-  desafioId String
+  id              String            @id @default(cuid())
+  participanteId  String
+  desafioId       String
   puntosOtorgados Int
-  respuesta Json?
-  urlEvidencia String?
-  estado EstadoCompletitud @default(APROBADO)
-  completadoEn DateTime @default(now())
-  participante Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
-  desafio Desafio @relation(fields: [desafioId], references: [id], onDelete: Cascade)
+  respuesta       Json?
+  urlEvidencia    String?
+  estado          EstadoCompletitud @default(APROBADO)
+  completadoEn    DateTime          @default(now())
+  participante    Participante      @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  desafio         Desafio           @relation(fields: [desafioId], references: [id], onDelete: Cascade)
+
   @@unique([participanteId, desafioId])
   @@index([participanteId])
   @@index([desafioId])
   @@index([estado])
 }
+
 model Recuerdo {
-  id String @id @default(cuid())
-  participanteId String
-  urlFoto String
-  urlMiniatura String
-  descripcion String?
-  visible Boolean @default(true)
-  reportado Boolean @default(false)
-  pendiente Boolean @default(false)
-  creadoEn DateTime @default(now())
-  claveIdempotencia String? @unique
-  participante Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  participanteId    String
+  urlFoto           String
+  urlMiniatura      String
+  descripcion       String?
+  visible           Boolean            @default(true)
+  reportado         Boolean            @default(false)
+  pendiente         Boolean            @default(false)
+  creadoEn          DateTime           @default(now())
+  claveIdempotencia String?            @unique
+  participante      Participante       @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  reacciones        ReaccionRecuerdo[]
+
   @@index([creadoEn])
   @@index([participanteId])
 }
+
+model ReaccionRecuerdo {
+  id             String       @id @default(cuid())
+  recuerdoId     String
+  participanteId String
+  tipo           String
+  creadoEn       DateTime     @default(now())
+  recuerdo       Recuerdo     @relation(fields: [recuerdoId], references: [id], onDelete: Cascade)
+  participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+
+  @@unique([recuerdoId, participanteId, tipo])
+  @@index([recuerdoId, tipo])
+  @@index([participanteId])
+}
+
 model AjustePuntos {
-  id String @id @default(cuid())
+  id             String       @id @default(cuid())
   participanteId String
-  puntos Int
-  motivo String
-  adminId String
-  creadoEn DateTime @default(now())
-  participante Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
-  admin Admin @relation(fields: [adminId], references: [id])
+  puntos         Int
+  motivo         String
+  adminId        String
+  creadoEn       DateTime     @default(now())
+  participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  admin          Admin        @relation(fields: [adminId], references: [id])
+
   @@index([participanteId])
 }
+
 model Admin {
-  id String @id @default(cuid())
-  usuario String @unique
+  id           String         @id @default(cuid())
+  usuario      String         @unique
   passwordHash String
-  creadoEn DateTime @default(now())
-  ajustes AjustePuntos[]
-  sesiones SesionAdmin[]
+  creadoEn     DateTime       @default(now())
+  ajustes      AjustePuntos[]
+  sesiones     SesionAdmin[]
 }
+
 model SesionParticipante {
-  id String @id @default(cuid())
-  tokenHash String @unique
+  id             String       @id @default(cuid())
+  tokenHash      String       @unique
   participanteId String
-  expiraEn DateTime
-  creadoEn DateTime @default(now())
-  participante Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  expiraEn       DateTime
+  creadoEn       DateTime     @default(now())
+  participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+
   @@index([participanteId])
   @@index([expiraEn])
 }
+
 model SesionAdmin {
-  id String @id @default(cuid())
-  tokenHash String @unique
-  adminId String
-  expiraEn DateTime
-  creadoEn DateTime @default(now())
-  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  adminId   String
+  expiraEn  DateTime
+  creadoEn  DateTime @default(now())
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
   @@index([expiraEn])
 }
+
 model ConfiguracionEvento {
-  id String @id @default("evento")
-  nombreEvento String @default("Pasaporte CX")
-  descripcionAgenda String @default("")
-  organizadoresAgenda String @default("Vicepresidencia Experiencia Usuario-Cliente")
-  tamanoPodioIndividual Int @default(5)
-  tamanoPodioEquipos Int @default(3)
-  metodoPuntajeEquipo MetodoPuntajeEquipo @default(PROMEDIO)
-  puntosPorRecuerdo Int @default(0)
-  maxRecuerdosConPuntos Int @default(0)
-  recuerdosRequierenAprobacion Boolean @default(false)
-  asignacionAutomatica Boolean @default(false)
-  modoAsistentes ModoAsistentes @default(MOSAICO)
-  intervaloAsistentesSegundos Int @default(6)
-  cicloMixto String @default("asistentes:60,recuerdos:45,podio:30")
+  id                           String              @id @default("evento")
+  nombreEvento                 String              @default("Pasaporte CX")
+  descripcionAgenda            String              @default("")
+  organizadoresAgenda          String              @default("Vicepresidencia Experiencia Usuario-Cliente")
+  tamanoPodioIndividual        Int                 @default(5)
+  tamanoPodioEquipos           Int                 @default(3)
+  metodoPuntajeEquipo          MetodoPuntajeEquipo @default(PROMEDIO)
+  puntosPorRecuerdo            Int                 @default(0)
+  maxRecuerdosConPuntos        Int                 @default(0)
+  recuerdosRequierenAprobacion Boolean             @default(false)
+  asignacionAutomatica         Boolean             @default(false)
+  modoAsistentes               ModoAsistentes      @default(MOSAICO)
+  intervaloAsistentesSegundos  Int                 @default(6)
+  cicloMixto                   String              @default("asistentes:60,recuerdos:45,podio:30")
 }
+
 model DiaAgenda {
-  id String @id @default(cuid())
-  nombre String
-  fecha String?
-  orden Int
+  id       String          @id @default(cuid())
+  nombre   String
+  fecha    String?
+  orden    Int
   momentos MomentoAgenda[]
-  fotos FotoDiaAgenda[]
+  fotos    FotoDiaAgenda[]
+
   @@index([orden])
 }
+
 model FotoDiaAgenda {
-  id String @id @default(cuid())
-  diaId String
+  id      String    @id @default(cuid())
+  diaId   String
   urlFoto String
-  orden Int @default(1)
-  dia DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  orden   Int       @default(1)
+  dia     DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
+
   @@index([diaId, orden])
 }
+
 model MomentoAgenda {
   id               String    @id @default(cuid())
   diaId            String
@@ -230,5 +274,6 @@ model MomentoAgenda {
   destacado        Boolean   @default(false)
   urlFotoExpositor String?
   dia              DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
+
   @@index([diaId, horaInicio])
 }

@@ -22,13 +22,14 @@ export async function GET() {
     obtenerRankingConConfiguracion(),
     db.recuerdo.findMany({
       where: { visible: true, pendiente: false, reportado: false },
-      orderBy: { creadoEn: "desc" },
+      orderBy: [{ reacciones: { _count: "desc" } }, { creadoEn: "desc" }],
       take: 20,
       select: {
         id: true,
         urlFoto: true,
         descripcion: true,
-        participante: { select: { nombre: true } },
+        participante: { select: { nombre: true, urlFoto: true } },
+        reacciones: { select: { tipo: true } },
       },
     }),
   ]);
