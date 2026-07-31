@@ -209,12 +209,13 @@ model DiaAgenda {
   @@index([orden])
 }
 model MomentoAgenda {
-  id String @id @default(cuid())
-  diaId String
-  horaInicio String
-  horaFin String
-  nombre String
-  descripcion String
-  dia DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  diaId            String
+  horaInicio       String
+  horaFin          String
+  nombre           String
+  descripcion      String
+  urlFotoExpositor String?
+  dia              DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
   @@index([diaId, horaInicio])
 }

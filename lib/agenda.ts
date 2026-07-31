@@ -1,10 +1,25 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument,
+  StandardFonts,
+  appendBezierCurve,
+  clip,
+  closePath,
+  endPath,
+  moveTo,
+  popGraphicsState,
+  pushGraphicsState,
+  rgb,
+  type PDFFont,
+  type PDFImage,
+  type PDFPage,
+} from "pdf-lib";
 
 type MomentoAgendaPdf = {
   horaInicio: string;
   horaFin: string;
   nombre: string;
   descripcion: string;
+  fotoExpositor?: Uint8Array;
 };
 
 type DiaAgendaPdf = {
@@ -49,6 +64,36 @@ function tamanoQueCabe(texto: string, fuente: PDFFont, maximo: number, ancho: nu
   let tamano = maximo;
   while (tamano > minimo && fuente.widthOfTextAtSize(seguro(texto), tamano) > ancho) tamano -= 1;
   return tamano;
+}
+
+async function incrustarFoto(documento: PDFDocument, datos?: Uint8Array) {
+  if (!datos) return undefined;
+  try { return await documento.embedJpg(datos); } catch {
+    try { return await documento.embedPng(datos); } catch { return undefined; }
+  }
+}
+
+function dibujarFotoCircular(pagina: PDFPage, foto: PDFImage, centroX: number, centroY: number, radio: number) {
+  const kappa = 0.5522847498;
+  const control = radio * kappa;
+  pagina.pushOperators(
+    pushGraphicsState(),
+    moveTo(centroX + radio, centroY),
+    appendBezierCurve(centroX + radio, centroY + control, centroX + control, centroY + radio, centroX, centroY + radio),
+    appendBezierCurve(centroX - control, centroY + radio, centroX - radio, centroY + control, centroX - radio, centroY),
+    appendBezierCurve(centroX - radio, centroY - control, centroX - control, centroY - radio, centroX, centroY - radio),
+    appendBezierCurve(centroX + control, centroY - radio, centroX + radio, centroY - control, centroX + radio, centroY),
+    closePath(),
+    clip(),
+    endPath(),
+  );
+  const diametro = radio * 2;
+  const escala = Math.max(diametro / foto.width, diametro / foto.height);
+  const ancho = foto.width * escala;
+  const alto = foto.height * escala;
+  pagina.drawImage(foto, { x: centroX - ancho / 2, y: centroY - alto / 2, width: ancho, height: alto });
+  pagina.pushOperators(popGraphicsState());
+  pagina.drawCircle({ x: centroX, y: centroY, size: radio, borderColor: verde, borderWidth: 2 });
 }
 
 function dibujarEncabezado(pagina: PDFPage, logo: PDFImage | undefined, evento: string, dia: string, continuacion: boolean, normal: PDFFont, negrita: PDFFont) {
@@ -102,9 +147,12 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
     }
 
     for (const momento of dia.momentos) {
-      const titulo = lineas(momento.nombre, negrita, 14, 380);
-      const descripcion = lineas(momento.descripcion, normal, 10.5, 380);
-      const alto = Math.max(72, 27 + titulo.length * 17 + descripcion.length * 13);
+      const fotoExpositor = await incrustarFoto(documento, momento.fotoExpositor);
+      const textoX = fotoExpositor ? 202 : 146;
+      const anchoTexto = fotoExpositor ? 335 : 380;
+      const titulo = lineas(momento.nombre, negrita, 14, anchoTexto);
+      const descripcion = lineas(momento.descripcion, normal, 10.5, anchoTexto);
+      const alto = Math.max(fotoExpositor ? 82 : 72, 27 + titulo.length * 17 + descripcion.length * 13);
       if (y - alto < 54) {
         pagina = nuevaPagina(dia.nombre, true);
         y = 635;
@@ -116,14 +164,15 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
       pagina.drawCircle({ x: 108, y: y - 23, size: 7, color: verde, borderColor: rgb(1, 1, 1), borderWidth: 2 });
       pagina.drawText(seguro(momento.horaInicio), { x: 42, y: y - 19, size: 13, font: negrita, color: azul });
       pagina.drawText(seguro(momento.horaFin), { x: 43, y: y - 36, size: 10, font: normal, color: gris });
+      if (fotoExpositor) dibujarFotoCircular(pagina, fotoExpositor, 166, y - 34, 24);
       let textoY = y - 22;
       for (const linea of titulo) {
-        pagina.drawText(linea, { x: 146, y: textoY, size: 14, font: negrita, color: azul });
+        pagina.drawText(linea, { x: textoX, y: textoY, size: 14, font: negrita, color: azul });
         textoY -= 17;
       }
       textoY -= 3;
       for (const linea of descripcion) {
-        pagina.drawText(linea, { x: 146, y: textoY, size: 10.5, font: normal, color: gris });
+        pagina.drawText(linea, { x: textoX, y: textoY, size: 10.5, font: normal, color: gris });
         textoY -= 13;
       }
       y = inferior - 10;

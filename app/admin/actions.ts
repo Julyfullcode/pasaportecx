@@ -278,7 +278,16 @@ export async function eliminarDiaAgenda(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("id") ?? "");
   if (!id) return;
+  const dia = await db.diaAgenda.findUnique({
+    where: { id },
+    select: { momentos: { select: { urlFotoExpositor: true } } },
+  });
   await db.diaAgenda.deleteMany({ where: { id } });
+  await Promise.allSettled(
+    (dia?.momentos ?? [])
+      .filter((momento) => momento.urlFotoExpositor)
+      .map((momento) => storage.eliminar(momento.urlFotoExpositor!)),
+  );
   anunciarCambio("agenda");
   revalidatePath("/admin/configuracion");
 }
@@ -293,9 +302,36 @@ export async function guardarMomentoAgenda(formulario: FormData) {
   const descripcion = String(formulario.get("descripcion") ?? "").trim().slice(0, 800);
   const horaValida = /^([01]\d|2[0-3]):[0-5]\d$/;
   if (!diaId || !horaValida.test(horaInicio) || !horaValida.test(horaFin) || !nombre || !descripcion) return;
-  const datos = { diaId, horaInicio, horaFin, nombre, descripcion };
-  if (id) await db.momentoAgenda.update({ where: { id }, data: datos });
-  else await db.momentoAgenda.create({ data: datos });
+  const foto = formulario.get("fotoExpositor");
+  const tieneFotoNueva = foto instanceof File && foto.size > 0;
+  const extensionesPermitidas: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png" };
+  if (tieneFotoNueva && (!extensionesPermitidas[foto.type] || foto.size > 2_000_000)) return;
+
+  const existente = id
+    ? await db.momentoAgenda.findUniqueOrThrow({ where: { id }, select: { urlFotoExpositor: true } })
+    : null;
+  const anterior = existente?.urlFotoExpositor ?? null;
+  let nuevaUrl: string | null = null;
+  try {
+    if (tieneFotoNueva) {
+      nuevaUrl = await storage.guardar(
+        new Uint8Array(await foto.arrayBuffer()),
+        extensionesPermitidas[foto.type],
+        "expositores",
+      );
+    }
+    const quitarFoto = formulario.get("quitarFotoExpositor") === "on";
+    const urlFotoExpositor = nuevaUrl ?? (quitarFoto ? null : anterior);
+    const datos = { diaId, horaInicio, horaFin, nombre, descripcion, urlFotoExpositor };
+    if (id) await db.momentoAgenda.update({ where: { id }, data: datos });
+    else await db.momentoAgenda.create({ data: datos });
+    if (anterior && anterior !== urlFotoExpositor) {
+      await storage.eliminar(anterior).catch(() => undefined);
+    }
+  } catch (error) {
+    if (nuevaUrl) await storage.eliminar(nuevaUrl).catch(() => undefined);
+    throw error;
+  }
   anunciarCambio("agenda");
   revalidatePath("/admin/configuracion");
 }
@@ -304,7 +340,11 @@ export async function eliminarMomentoAgenda(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("id") ?? "");
   if (!id) return;
+  const momento = await db.momentoAgenda.findUnique({ where: { id }, select: { urlFotoExpositor: true } });
   await db.momentoAgenda.deleteMany({ where: { id } });
+  if (momento?.urlFotoExpositor) {
+    await storage.eliminar(momento.urlFotoExpositor).catch(() => undefined);
+  }
   anunciarCambio("agenda");
   revalidatePath("/admin/configuracion");
 }
