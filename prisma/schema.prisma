@@ -221,3 +221,24 @@ model ConfiguracionEvento {
   intervaloAsistentesSegundos Int                  @default(6)
   cicloMixto                  String               @default("asistentes:60,recuerdos:45,podio:30")
 }
+
+model DiaAgenda {
+  id       String          @id @default(cuid())
+  nombre   String
+  orden    Int
+  momentos MomentoAgenda[]
+
+  @@index([orden])
+}
+
+model MomentoAgenda {
+  id          String    @id @default(cuid())
+  diaId       String
+  horaInicio  String
+  horaFin     String
+  nombre      String
+  descripcion String
+  dia         DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
+
+  @@index([diaId, horaInicio])
+}

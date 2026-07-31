@@ -1,16 +1,18 @@
 import { db } from "@/lib/db";
 import { actualizarLogoEmpresa, alternarCatalogo, guardarCatalogo, guardarConfiguracion } from "@/app/admin/actions";
 import { PurgaDatos } from "@/components/admin/PurgaDatos";
+import { AgendaConfig } from "@/components/admin/AgendaConfig";
 
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, componentes, grupos, ubicaciones] = await Promise.all([
+  const [config, empresas, componentes, grupos, ubicaciones, diasAgenda] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.componente.findMany({ orderBy: { orden: "asc" } }),
     db.grupo.findMany({ orderBy: { orden: "asc" } }),
     db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
+    db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }),
   ]);
   return (
     <div className="p-4 md:p-7">
@@ -32,6 +34,7 @@ export default async function Configuracion() {
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="recuerdosRequierenAprobacion" defaultChecked={config.recuerdosRequierenAprobacion} /> Los recuerdos requieren aprobación previa</label>
         <button className="boton-primario md:col-span-2">Guardar configuración</button>
       </form>
+      <AgendaConfig dias={diasAgenda} />
       <section className="mt-6"><h2 className="text-2xl font-extrabold">Catálogos</h2><p className="text-sm text-slate-600">Edite, reordene o agregue registros; estarán disponibles de inmediato.</p>
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />

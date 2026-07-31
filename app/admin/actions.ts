@@ -261,6 +261,54 @@ export async function guardarConfiguracion(formulario: FormData) {
   revalidatePath("/admin/configuracion");
 }
 
+export async function guardarDiaAgenda(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  const nombre = String(formulario.get("nombre") ?? "").trim().slice(0, 100);
+  const ordenIngresado = Number(formulario.get("orden") ?? 1);
+  const orden = Number.isFinite(ordenIngresado) ? Math.max(1, Math.trunc(ordenIngresado)) : 1;
+  if (!nombre) return;
+  if (id) await db.diaAgenda.update({ where: { id }, data: { nombre, orden } });
+  else await db.diaAgenda.create({ data: { nombre, orden } });
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+}
+
+export async function eliminarDiaAgenda(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  if (!id) return;
+  await db.diaAgenda.deleteMany({ where: { id } });
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+}
+
+export async function guardarMomentoAgenda(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  const diaId = String(formulario.get("diaId") ?? "");
+  const horaInicio = String(formulario.get("horaInicio") ?? "");
+  const horaFin = String(formulario.get("horaFin") ?? "");
+  const nombre = String(formulario.get("nombre") ?? "").trim().slice(0, 120);
+  const descripcion = String(formulario.get("descripcion") ?? "").trim().slice(0, 800);
+  const horaValida = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!diaId || !horaValida.test(horaInicio) || !horaValida.test(horaFin) || !nombre || !descripcion) return;
+  const datos = { diaId, horaInicio, horaFin, nombre, descripcion };
+  if (id) await db.momentoAgenda.update({ where: { id }, data: datos });
+  else await db.momentoAgenda.create({ data: datos });
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+}
+
+export async function eliminarMomentoAgenda(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  if (!id) return;
+  await db.momentoAgenda.deleteMany({ where: { id } });
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+}
+
 export async function guardarCatalogo(formulario: FormData) {
   await requerirAdmin();
   const tipo = String(formulario.get("tipo"));

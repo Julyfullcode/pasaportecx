@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Award, Camera, ChevronRight, Download, ImagePlus, Medal, Sparkles, Trophy } from "lucide-react";
+import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, Medal, Sparkles, Trophy } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { obtenerRankingEquipos } from "@/lib/equipos";
@@ -73,6 +73,10 @@ export default async function Inicio() {
         <a href="/api/pasaporte" download className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Descargar mi pasaporte</strong><small className="text-slate-500">PDF con tu foto, QR y código de recuperación</small></span>
+        </a>
+        <a href="/api/agenda" download className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-teal)] bg-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-teal)] text-white"><CalendarDays /></span>
+          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Descargar agenda</strong><small className="text-slate-600">PDF con los días, horarios y momentos del encuentro</small></span>
         </a>
         <Link href="/diploma" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>
