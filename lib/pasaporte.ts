@@ -88,11 +88,18 @@ function recortarCajaRedondeada(pagina: PDFPage, x: number, y: number, ancho: nu
   );
 }
 
-function dibujarDegradado(pagina: PDFPage, x: number, y: number, ancho: number, alto: number) {
-  const inicio = [0.043, 0.153, 0.255];
-  const fin = [0.055, 0.486, 0.431];
+function dibujarDegradado(
+  pagina: PDFPage,
+  x: number,
+  y: number,
+  ancho: number,
+  alto: number,
+  inicio = [0.043, 0.153, 0.255],
+  fin = [0.055, 0.486, 0.431],
+  radio = 30,
+) {
   const pasos = 48;
-  recortarCajaRedondeada(pagina, x, y, ancho, alto, 30);
+  recortarCajaRedondeada(pagina, x, y, ancho, alto, radio);
   for (let indice = 0; indice < pasos; indice += 1) {
     const t = indice / (pasos - 1);
     pagina.drawRectangle({
@@ -166,12 +173,12 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
       const ancho = logo.width * escala;
       pagina.drawImage(logo, { x: (anchoPagina - ancho) / 2, y: 527, width: ancho, height: logo.height * escala });
     } catch {
-      pagina.drawText("Grupo EPM", { x: textoCentrado("Grupo EPM", negrita, 14), y: 535, size: 14, font: negrita, color: blanco });
+      pagina.drawText("Grupo EPM", { x: textoCentrado("Grupo EPM", normal, 14), y: 535, size: 14, font: normal, color: blanco });
     }
   }
 
   const titulo = "Pasaporte CX";
-  pagina.drawText(titulo, { x: textoCentrado(titulo, negrita, 27), y: 487, size: 27, font: negrita, color: blanco });
+  pagina.drawText(titulo, { x: textoCentrado(titulo, negrita, 25), y: 489, size: 25, font: negrita, color: blanco });
   const lineasEvento = lineas(datos.evento, normal, 10.5, 300).slice(0, 2);
   lineasEvento.forEach((linea, indice) => pagina.drawText(linea, {
     x: textoCentrado(linea, normal, 10.5),
@@ -189,24 +196,37 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
       const foto = await documento.embedPng(datos.foto);
       dibujarFotoCircular(pagina, foto, 210, 376, 62);
     } catch {
-      pagina.drawText("Tu foto", { x: textoCentrado("Tu foto", negrita, 12), y: 371, size: 12, font: negrita, color: teal });
+      pagina.drawText("Tu foto", { x: textoCentrado("Tu foto", normal, 12), y: 371, size: 12, font: normal, color: teal });
     }
   } else {
-    pagina.drawText("Tu foto", { x: textoCentrado("Tu foto", negrita, 12), y: 371, size: 12, font: negrita, color: teal });
+    pagina.drawText("Tu foto", { x: textoCentrado("Tu foto", normal, 12), y: 371, size: 12, font: normal, color: teal });
   }
 
-  const tamanoNombre = tamanoQueCabe(datos.nombre, negrita, 22, 330, 13);
-  pagina.drawText(datos.nombre, { x: textoCentrado(datos.nombre, negrita, tamanoNombre), y: 287, size: tamanoNombre, font: negrita, color: azul });
+  const tamanoNombre = tamanoQueCabe(datos.nombre, normal, 20, 330, 12);
+  pagina.drawText(datos.nombre, { x: textoCentrado(datos.nombre, normal, tamanoNombre), y: 279, size: tamanoNombre, font: normal, color: azul });
   const afiliacion = `${datos.empresa}  ·  ${datos.equipo}`;
-  const tamanoAfiliacion = tamanoQueCabe(afiliacion, normal, 11.5, 322, 8.5);
-  pagina.drawText(afiliacion, { x: textoCentrado(afiliacion, normal, tamanoAfiliacion), y: 265, size: tamanoAfiliacion, font: normal, color: gris });
+  const tamanoAfiliacion = tamanoQueCabe(afiliacion, normal, 10.5, 322, 8.5);
+  pagina.drawText(afiliacion, { x: textoCentrado(afiliacion, normal, tamanoAfiliacion), y: 256, size: tamanoAfiliacion, font: normal, color: gris });
 
-  cajaRedondeada(pagina, 42, 207, 336, 45, 18, rgb(0.91, 0.97, 0.94));
-  const corteDirectiva = DIRECTIVA_EXPERIENCIA.indexOf("transparencia");
-  const directiva1 = DIRECTIVA_EXPERIENCIA.slice(0, corteDirectiva).trim();
-  const directiva2 = DIRECTIVA_EXPERIENCIA.slice(corteDirectiva).trim();
-  pagina.drawText(directiva1, { x: textoCentrado(directiva1, negrita, 8.2), y: 230, size: 8.2, font: negrita, color: azul });
-  pagina.drawText(directiva2, { x: textoCentrado(directiva2, negrita, 8.2), y: 216, size: 8.2, font: negrita, color: teal });
+  dibujarDegradado(
+    pagina,
+    38,
+    166,
+    344,
+    78,
+    [0.91, 0.97, 0.94],
+    [0.89, 0.96, 0.98],
+    24,
+  );
+  pagina.drawText("Nuestra directiva", { x: textoCentrado("Nuestra directiva", normal, 9), y: 225, size: 9, font: normal, color: teal });
+  const lineasDirectiva = lineas(DIRECTIVA_EXPERIENCIA, normal, 12.2, 300).slice(0, 2);
+  lineasDirectiva.forEach((linea, indice) => pagina.drawText(linea, {
+    x: textoCentrado(linea, normal, 12.2),
+    y: 204 - indice * 17,
+    size: 12.2,
+    font: normal,
+    color: indice === 0 ? azul : teal,
+  }));
 
   const qrBytes = await QRCode.toBuffer(datos.urlRecuperacion, {
     type: "png",
@@ -216,12 +236,17 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
     errorCorrectionLevel: "H",
   });
   const qr = await documento.embedPng(qrBytes);
-  cajaRedondeada(pagina, 143, 75, 134, 126, 24, blanco);
-  pagina.drawImage(qr, { x: 157, y: 85, width: 106, height: 106 });
-  pagina.drawText("Código de recuperación", { x: textoCentrado("Código de recuperación", normal, 8.5), y: 67, size: 8.5, font: normal, color: gris });
-  pagina.drawText(datos.codigo, { x: textoCentrado(datos.codigo, negrita, 18), y: 43, size: 18, font: negrita, color: azul });
-  const instruccion = "Escanea el QR para recuperar tu perfil";
-  pagina.drawText(instruccion, { x: textoCentrado(instruccion, normal, 7.5), y: 30, size: 7.5, font: normal, color: gris });
+  cajaRedondeada(pagina, 38, 30, 344, 124, 26, rgb(0.965, 0.982, 0.988));
+  pagina.drawImage(qr, { x: 53, y: 44, width: 96, height: 96 });
+  pagina.drawLine({ start: { x: 168, y: 48 }, end: { x: 168, y: 136 }, thickness: 1, color: teal, opacity: 0.18 });
+  const centroInfo = 271;
+  const etiquetaCodigo = "Código de recuperación";
+  pagina.drawText(etiquetaCodigo, { x: centroInfo - normal.widthOfTextAtSize(etiquetaCodigo, 9.5) / 2, y: 119, size: 9.5, font: normal, color: gris });
+  pagina.drawText(datos.codigo, { x: centroInfo - normal.widthOfTextAtSize(datos.codigo, 20) / 2, y: 88, size: 20, font: normal, color: azul });
+  const instruccion1 = "Escanea el QR para";
+  const instruccion2 = "recuperar tu perfil";
+  pagina.drawText(instruccion1, { x: centroInfo - normal.widthOfTextAtSize(instruccion1, 8.2) / 2, y: 64, size: 8.2, font: normal, color: gris });
+  pagina.drawText(instruccion2, { x: centroInfo - normal.widthOfTextAtSize(instruccion2, 8.2) / 2, y: 51, size: 8.2, font: normal, color: gris });
 
   return documento.save();
 }
