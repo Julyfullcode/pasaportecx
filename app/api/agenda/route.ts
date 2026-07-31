@@ -15,7 +15,7 @@ export async function GET() {
       db.diaAgenda.findMany({
         orderBy: { orden: "asc" },
         select: { nombre: true, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }], select: { horaInicio: true, horaFin: true, nombre: true, descripcion: true } } },
-      }),
+      }).catch(() => []),
       readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-oficial.png")).catch(() => undefined),
     ]);
     const pdf = await generarAgendaPdf({ evento: config.nombreEvento, dias, logo });

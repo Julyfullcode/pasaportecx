@@ -12,7 +12,7 @@ export default async function Configuracion() {
     db.componente.findMany({ orderBy: { orden: "asc" } }),
     db.grupo.findMany({ orderBy: { orden: "asc" } }),
     db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
-    db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }),
+    db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
   ]);
   return (
     <div className="p-4 md:p-7">
