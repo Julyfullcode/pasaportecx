@@ -15,6 +15,7 @@ type DiaAgenda = {
     horaFin: string;
     nombre: string;
     descripcion: string;
+    destacado: boolean;
     urlFotoExpositor: string | null;
   }[];
 };
@@ -64,6 +65,7 @@ export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
                     <div><label className="etiqueta text-xs">Nombre</label><input className="campo" name="nombre" defaultValue={momento.nombre} maxLength={120} required /></div>
                     <div className="flex items-end gap-2 md:col-span-2 xl:col-span-1"><button className="boton-secundario"><Save size={17} /> Guardar</button><button formAction={eliminarMomentoAgenda} onClick={(evento) => { if (!window.confirm("¿Eliminar este momento de la agenda?")) evento.preventDefault(); }} className="grid h-11 w-11 place-items-center rounded-full text-red-700" title="Eliminar momento"><Trash2 size={18} /></button></div>
                     <div className="md:col-span-2 xl:col-span-4"><label className="etiqueta text-xs">Descripción (opcional)</label><textarea className="campo min-h-20 resize-y" name="descripcion" defaultValue={momento.descripcion} maxLength={800} /></div>
+                    <label className="flex items-center gap-3 rounded-2xl bg-emerald-50 p-3 text-sm font-extrabold text-emerald-900 md:col-span-2 xl:col-span-4"><input type="checkbox" name="destacado" defaultChecked={momento.destacado} /> Resaltar este momento en verde suave</label>
                     <div className="flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3 md:col-span-2 xl:col-span-4">
                       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border-4 border-white bg-sky-100 shadow-sm">
                         {momento.urlFotoExpositor ? <img src={momento.urlFotoExpositor} alt={`Foto del expositor de ${momento.nombre}`} className="h-full w-full object-cover" /> : <UserRound size={28} className="text-sky-700" />}
@@ -82,6 +84,7 @@ export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
                 <div><label className="etiqueta text-xs">Nombre del momento</label><input className="campo" name="nombre" placeholder="Ejemplo: Apertura del encuentro" maxLength={120} required /></div>
                 <button className="boton-primario self-end"><Plus size={18} /> Agregar</button>
                 <div className="md:col-span-2 xl:col-span-4"><label className="etiqueta text-xs">Descripción (opcional)</label><textarea className="campo min-h-20 resize-y" name="descripcion" placeholder="Si lo deseas, describe qué sucederá durante este momento" maxLength={800} /></div>
+                <label className="flex items-center gap-3 rounded-2xl bg-emerald-100/70 p-3 text-sm font-extrabold text-emerald-900 md:col-span-2 xl:col-span-4"><input type="checkbox" name="destacado" /> Resaltar este momento en verde suave</label>
                 <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white/80 p-3 md:col-span-2 xl:col-span-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-700"><UserRound size={24} /></span><div className="min-w-[220px] flex-1"><label className="etiqueta flex items-center gap-1 text-xs"><Camera size={15} /> Foto del expositor (opcional)</label><input type="file" name="fotoExpositor" accept="image/jpeg,image/png" className="mt-1 w-full text-xs" /><p className="mt-1 text-[11px] text-slate-500">Se mostrará recortada en un círculo al lado del tema en la agenda PDF.</p></div></div>
               </form>
             </div>

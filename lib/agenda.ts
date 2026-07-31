@@ -21,6 +21,7 @@ type MomentoAgendaPdf = {
   horaFin: string;
   nombre: string;
   descripcion: string;
+  destacado: boolean;
   fotoExpositor?: Uint8Array;
 };
 
@@ -44,6 +45,7 @@ type DatosAgenda = {
 const azulProfundo = rgb(0.043, 0.153, 0.255);
 const teal = rgb(0.055, 0.486, 0.431);
 const verde = rgb(0.463, 0.741, 0.118);
+const verdeSuave = rgb(0.918, 0.969, 0.886);
 const gris = rgb(0.34, 0.39, 0.43);
 const fondo = rgb(0.956, 0.973, 0.98);
 const blanco = rgb(1, 1, 1);
@@ -147,28 +149,33 @@ function dibujarFotoCircular(pagina: PDFPage, foto: PDFImage, centroX: number, c
 }
 
 function dibujarEncabezado(pagina: PDFPage, logo: PDFImage | undefined, datos: DatosAgenda, normal: PDFFont, negrita: PDFFont) {
+  const titulo = lineas(datos.evento, negrita, 29, 500).slice(0, 2);
+  const descripcion = lineas(datos.descripcion, normal, 10.5, 455).slice(0, 3);
+  const ultimoTituloY = 765 - Math.max(0, titulo.length - 1) * 33;
+  const primeraDescripcionY = 765 - titulo.length * 33 + 8;
+  const ultimaDescripcionY = primeraDescripcionY - Math.max(0, descripcion.length - 1) * 13;
+  const inferiorEncabezado = Math.max(650, descripcion.length ? ultimaDescripcionY - 28 : ultimoTituloY - 42);
   pagina.drawRectangle({ x: 0, y: 0, width: 595, height: 842, color: fondo });
-  dibujarDegradado(pagina, 650, 192);
+  dibujarDegradado(pagina, inferiorEncabezado, 842 - inferiorEncabezado);
   pagina.drawCircle({ x: 566, y: 820, size: 92, color: verde, opacity: 0.18 });
-  pagina.drawCircle({ x: 520, y: 676, size: 70, color: blanco, opacity: 0.07 });
-  pagina.drawCircle({ x: 32, y: 654, size: 56, color: verde, opacity: 0.18 });
+  pagina.drawCircle({ x: 520, y: inferiorEncabezado + 26, size: 70, color: blanco, opacity: 0.07 });
+  pagina.drawCircle({ x: 32, y: inferiorEncabezado + 4, size: 56, color: verde, opacity: 0.18 });
   pagina.drawText("Agenda del encuentro", { x: 38, y: 807, size: 11, font: negrita, color: verde });
   if (logo) {
     const escala = Math.min(142 / logo.width, 32 / logo.height);
     pagina.drawImage(logo, { x: 415, y: 794, width: logo.width * escala, height: logo.height * escala });
   }
-  const titulo = lineas(datos.evento, negrita, 29, 500).slice(0, 2);
   let tituloY = 765;
   for (const linea of titulo) {
     pagina.drawText(linea, { x: 38, y: tituloY, size: 29, font: negrita, color: blanco });
     tituloY -= 33;
   }
-  const descripcion = lineas(datos.descripcion, normal, 10.5, 455).slice(0, 3);
-  let descripcionY = Math.min(696, tituloY - 2);
+  let descripcionY = tituloY + 8;
   for (const linea of descripcion) {
     pagina.drawText(linea, { x: 39, y: descripcionY, size: 10.5, font: normal, color: blanco, opacity: 0.9 });
     descripcionY -= 13;
   }
+  return inferiorEncabezado - 25;
 }
 
 async function prepararFotos(documento: PDFDocument, fotos?: Uint8Array[]) {
@@ -200,12 +207,13 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
 
   function nuevaPagina() {
     const pagina = documento.addPage([595, 842]);
-    dibujarEncabezado(pagina, logo, datos, normal, negrita);
-    return pagina;
+    const yInicial = dibujarEncabezado(pagina, logo, datos, normal, negrita);
+    return { pagina, yInicial };
   }
 
-  let pagina = nuevaPagina();
-  let y = 625;
+  let nueva = nuevaPagina();
+  let pagina = nueva.pagina;
+  let y = nueva.yInicial;
 
   if (datos.dias.length === 0) {
     cajaRedondeada(pagina, 100, 380, 395, 112, 32, blanco);
@@ -217,8 +225,9 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
   for (const dia of datos.dias) {
     const fotosDia = await prepararFotos(documento, dia.fotos);
     if (y < (dia.momentos.length ? 220 : 132)) {
-      pagina = nuevaPagina();
-      y = 625;
+      nueva = nuevaPagina();
+      pagina = nueva.pagina;
+      y = nueva.yInicial;
     }
     y = dibujarTituloDia(pagina, y, dia.nombre, formatearFecha(dia.fecha), fotosDia, normal, negrita);
     if (dia.momentos.length === 0) {
@@ -233,20 +242,24 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
       const anchoTexto = fotoExpositor ? 322 : 378;
       const titulo = lineas(momento.nombre, negrita, 14, anchoTexto);
       const descripcion = lineas(momento.descripcion, normal, 10.3, anchoTexto);
-      const alto = Math.max(fotoExpositor ? 92 : 82, 31 + titulo.length * 17 + descripcion.length * 13);
+      const altoContenido = 14 + Math.max(0, titulo.length - 1) * 17
+        + (descripcion.length ? 20 + Math.max(0, descripcion.length - 1) * 13 : 0);
+      const alto = Math.max(fotoExpositor ? 72 : 52, altoContenido + 26);
       if (y - alto < 54) {
-        pagina = nuevaPagina();
-        y = dibujarTituloDia(pagina, 625, dia.nombre, formatearFecha(dia.fecha), fotosDia, normal, negrita, true);
+        nueva = nuevaPagina();
+        pagina = nueva.pagina;
+        y = dibujarTituloDia(pagina, nueva.yInicial, dia.nombre, formatearFecha(dia.fecha), fotosDia, normal, negrita, true);
       }
       const inferior = y - alto;
-      cajaRedondeada(pagina, 135, inferior - 3, 422, alto - 4, 22, azulProfundo, 0.08);
-      cajaRedondeada(pagina, 131, inferior, 426, alto - 4, 22, blanco);
+      const centroTarjetaY = inferior + (alto - 4) / 2;
+      cajaRedondeada(pagina, 135, inferior - 3, 422, alto - 4, 22, momento.destacado ? teal : azulProfundo, 0.08);
+      cajaRedondeada(pagina, 131, inferior, 426, alto - 4, 22, momento.destacado ? verdeSuave : blanco);
       pagina.drawLine({ start: { x: 116, y: y + 2 }, end: { x: 116, y: inferior - 12 }, thickness: 2, color: teal, opacity: 0.25 });
-      pagina.drawText(formatearHora(momento.horaInicio), { x: 38, y: y - 31, size: 9.5, font: negrita, color: azulProfundo });
-      pagina.drawText(formatearHora(momento.horaFin), { x: 38, y: y - 47, size: 8.2, font: normal, color: gris });
-      pagina.drawCircle({ x: 116, y: y - 30, size: 6, color: verde, borderColor: blanco, borderWidth: 2 });
-      if (fotoExpositor) dibujarFotoCircular(pagina, fotoExpositor, 166, y - 45, 27, verde);
-      let textoY = y - 27;
+      pagina.drawText(formatearHora(momento.horaInicio), { x: 38, y: centroTarjetaY + 5, size: 9.5, font: negrita, color: azulProfundo });
+      pagina.drawText(formatearHora(momento.horaFin), { x: 38, y: centroTarjetaY - 11, size: 8.2, font: normal, color: gris });
+      pagina.drawCircle({ x: 116, y: centroTarjetaY, size: 6, color: verde, borderColor: blanco, borderWidth: 2 });
+      if (fotoExpositor) dibujarFotoCircular(pagina, fotoExpositor, 166, centroTarjetaY, 27, verde);
+      let textoY = centroTarjetaY + altoContenido / 2 - 14;
       for (const linea of titulo) {
         pagina.drawText(linea, { x: textoX, y: textoY, size: 14, font: negrita, color: azulProfundo });
         textoY -= 17;
@@ -265,7 +278,12 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
   paginas.forEach((paginaActual, indice) => {
     paginaActual.drawLine({ start: { x: 38, y: 42 }, end: { x: 557, y: 42 }, thickness: 1, color: teal, opacity: 0.2 });
     const pie = datos.organizadores ? `Organizan: ${seguro(datos.organizadores)}` : "";
-    if (pie) paginaActual.drawText(pie, { x: 38, y: 24, size: tamanoQueCabe(pie, normal, 8.5, 445, 7), font: normal, color: teal });
+    const lineasPie = lineas(pie, normal, 7.5, 445).slice(0, 2);
+    let pieY = lineasPie.length > 1 ? 29 : 24;
+    for (const linea of lineasPie) {
+      paginaActual.drawText(linea, { x: 38, y: pieY, size: 7.5, font: normal, color: teal });
+      pieY -= 10;
+    }
     const numero = `${indice + 1} / ${paginas.length}`;
     paginaActual.drawText(numero, { x: 528, y: 24, size: 8.5, font: negrita, color: azulProfundo });
   });

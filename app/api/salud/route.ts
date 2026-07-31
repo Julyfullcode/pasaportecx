@@ -8,7 +8,7 @@ export async function GET() {
     const [, agendaDias, , fotosDias] = await Promise.all([
       db.$queryRaw`SELECT 1 AS "ok"`,
       db.diaAgenda.count(),
-      db.momentoAgenda.findFirst({ select: { urlFotoExpositor: true } }),
+      db.momentoAgenda.findFirst({ select: { destacado: true, urlFotoExpositor: true } }),
       db.fotoDiaAgenda.count(),
       db.configuracionEvento.findUnique({ where: { id: "evento" }, select: { descripcionAgenda: true, organizadoresAgenda: true } }),
     ]);
@@ -18,6 +18,7 @@ export async function GET() {
         baseDeDatos: "conectada",
         agendaDias,
         fotosExpositores: true,
+        momentosDestacados: true,
         fotosDias,
         latenciaMs: Date.now() - inicio,
         version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",

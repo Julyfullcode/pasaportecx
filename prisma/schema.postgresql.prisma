@@ -227,6 +227,7 @@ model MomentoAgenda {
   horaFin          String
   nombre           String
   descripcion      String
+  destacado        Boolean   @default(false)
   urlFotoExpositor String?
   dia              DiaAgenda @relation(fields: [diaId], references: [id], onDelete: Cascade)
   @@index([diaId, horaInicio])

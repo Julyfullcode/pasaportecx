@@ -17,7 +17,7 @@ async function pdfAgenda(
     fecha: string | null;
     nombre: string;
     fotos: { urlFoto: string }[];
-    momentos: { horaInicio: string; horaFin: string; nombre: string; descripcion: string; urlFotoExpositor: string | null }[];
+    momentos: { horaInicio: string; horaFin: string; nombre: string; descripcion: string; destacado: boolean; urlFotoExpositor: string | null }[];
   }[],
   logo?: Uint8Array,
   fuenteRegular?: Uint8Array,
@@ -82,7 +82,7 @@ export async function GET() {
           nombre: true,
           fecha: true,
           fotos: { orderBy: { orden: "asc" }, select: { urlFoto: true } },
-          momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }], select: { horaInicio: true, horaFin: true, nombre: true, descripcion: true, urlFotoExpositor: true } },
+          momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }], select: { horaInicio: true, horaFin: true, nombre: true, descripcion: true, destacado: true, urlFotoExpositor: true } },
         },
       }),
       readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).catch(() => undefined),

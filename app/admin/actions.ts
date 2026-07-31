@@ -374,7 +374,8 @@ export async function guardarMomentoAgenda(formulario: FormData) {
     }
     const quitarFoto = formulario.get("quitarFotoExpositor") === "on";
     const urlFotoExpositor = nuevaUrl ?? (quitarFoto ? null : anterior);
-    const datos = { diaId, horaInicio, horaFin, nombre, descripcion, urlFotoExpositor };
+    const destacado = formulario.get("destacado") === "on";
+    const datos = { diaId, horaInicio, horaFin, nombre, descripcion, destacado, urlFotoExpositor };
     if (id) await db.momentoAgenda.update({ where: { id }, data: datos });
     else await db.momentoAgenda.create({ data: datos });
     if (anterior && anterior !== urlFotoExpositor) {
