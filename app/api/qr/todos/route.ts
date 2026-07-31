@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   return new Response(await destino.save(), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": 'attachment; filename="qr-publicados-pasaporte-cx.pdf"',
+      "Content-Disposition": 'inline; filename="qr-publicados-pasaporte-cx.pdf"',
     },
   });
 }

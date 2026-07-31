@@ -70,13 +70,13 @@ export default async function Inicio() {
           <Camera size={24} /> Escanear QR
         </Link>
         <Link href="/recuerdos?subir=1" className="boton-secundario w-full"><ImagePlus size={20} /> Subir recuerdo</Link>
-        <a href="/api/pasaporte" download className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+        <a href="/api/pasaporte" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
-          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Descargar mi pasaporte</strong><small className="text-slate-500">PDF con tu foto, QR y código de recuperación</small></span>
+          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
         </a>
-        <a href="/api/agenda" download className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-teal)] bg-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+        <a href="/api/agenda" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-teal)] bg-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-teal)] text-white"><CalendarDays /></span>
-          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Descargar agenda</strong><small className="text-slate-600">PDF con los días, horarios y momentos del encuentro</small></span>
+          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver agenda</strong><small className="text-slate-600">Abre el PDF con los días, horarios y momentos del encuentro</small></span>
         </a>
         <Link href="/diploma" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>

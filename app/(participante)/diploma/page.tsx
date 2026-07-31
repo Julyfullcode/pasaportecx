@@ -30,8 +30,8 @@ export default async function Diploma() {
           </div>
           <div className="bg-[var(--epm-teal)] px-4 py-3 text-center text-xs font-bold text-white">Vicepresidencia Experiencia Usuario-Cliente</div>
         </section>
-        <a href="/api/diploma" download className="boton-primario w-full py-4 text-base"><Download size={21} /> Descargar mi diploma en PDF</a>
-        <p className="px-3 text-center text-xs leading-relaxed text-slate-500">Tu diploma se crea únicamente cuando lo descargas; no ocupa almacenamiento adicional.</p>
+        <a href="/api/diploma" target="_blank" rel="noopener noreferrer" className="boton-primario w-full py-4 text-base"><Download size={21} /> Ver mi diploma en PDF</a>
+        <p className="px-3 text-center text-xs leading-relaxed text-slate-500">Tu diploma se crea cuando lo abres y no ocupa almacenamiento adicional.</p>
       </div>
     </>
   );

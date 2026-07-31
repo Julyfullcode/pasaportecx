@@ -93,7 +93,7 @@ export async function GET() {
     return new Response(Buffer.from(pdf), {
       headers: {
         "Cache-Control": "private, no-store",
-        "Content-Disposition": "attachment; filename=agenda-encuentro.pdf",
+        "Content-Disposition": "inline; filename=agenda-encuentro.pdf",
         "Content-Type": "application/pdf",
       },
     });

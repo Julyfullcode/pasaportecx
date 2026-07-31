@@ -15,7 +15,7 @@ export async function GET(
     return new Response(await qrPdf(desafio), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${desafio.codigoQr}.pdf"`,
+        "Content-Disposition": `inline; filename="${desafio.codigoQr}.pdf"`,
       },
     });
   }

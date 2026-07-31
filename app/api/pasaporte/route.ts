@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     return new Response(Buffer.from(pdf), {
       headers: {
         "Cache-Control": "private, no-store",
-        "Content-Disposition": `attachment; filename="pasaporte-${nombreSeguro || "participante"}.pdf"`,
+        "Content-Disposition": `inline; filename="pasaporte-${nombreSeguro || "participante"}.pdf"`,
         "Content-Type": "application/pdf",
       },
     });
