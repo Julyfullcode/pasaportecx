@@ -13,6 +13,7 @@ import { storage } from "@/lib/storage";
 import type { Prisma } from "@prisma/client";
 import { extensionImagen } from "@/lib/archivos";
 import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
+import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 
 export type EstadoLogin = { error?: string };
 
@@ -52,7 +53,11 @@ function configuracionDesdeFormulario(tipo: string, formulario: FormData) {
     return { respuestasAceptadas: String(formulario.get("respuestasAceptadas") ?? "").split(",").map((r) => r.trim()).filter(Boolean) };
   }
   if (tipo === "EVIDENCIA_FOTO") return { instruccion: String(formulario.get("instruccion") ?? "") };
-  if (tipo === "ENCUESTA") return { pregunta: String(formulario.get("pregunta") ?? ""), formato: String(formulario.get("formato") ?? "texto") };
+  if (tipo === "ENCUESTA") {
+    const formato = String(formulario.get("formato") ?? "texto");
+    if (formato === FORMATO_COSECHA) return { formato, preguntas: PREGUNTAS_COSECHA };
+    return { pregunta: String(formulario.get("pregunta") ?? ""), formato };
+  }
   return {};
 }
 

@@ -284,6 +284,26 @@ async function main() {
       esSecreto: false,
       configuracion: { pregunta: "Califica el prototipo de 1 a 5", formato: "escala" },
     },
+    {
+      codigoQr: "cierre-cosecha-gratitud-celebracion",
+      titulo: "Cierre: Cosecha, gratitud y celebración",
+      descripcion: "Recoge lo vivido en el encuentro: un aprendizaje, un agradecimiento y una acción para impulsar al regresar.",
+      tipo: "ENCUESTA" as const,
+      puntos: 150,
+      dia: 2,
+      ubicacion: "",
+      componenteId: componentesCreados[0].id,
+      estado: "BORRADOR" as const,
+      esSecreto: false,
+      configuracion: {
+        formato: "cosecha",
+        preguntas: [
+          { id: "meLlevo", titulo: "Me llevo", ayuda: "Una idea o aprendizaje." },
+          { id: "agradezco", titulo: "Agradezco", ayuda: "Una persona, equipo, conversación o práctica." },
+          { id: "activo", titulo: "Activo", ayuda: "Una acción que quisiera impulsar al regresar." },
+        ],
+      },
+    },
   ];
   const desafios = [];
   for (const desafio of desafiosData) {

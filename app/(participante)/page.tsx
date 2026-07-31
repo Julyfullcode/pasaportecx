@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Sparkles, Trophy } from "lucide-react";
+import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Sparkles, Sprout, Trophy } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { obtenerRankingEquipos } from "@/lib/equipos";
 import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
 import { MarcaHeader } from "@/components/ui/MarcaHeader";
+import { CODIGO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
 export default async function Inicio() {
   const participante = await requerirParticipante("/");
-  const [ranking, equipos, completados, totalPublicados, configuracion] = await Promise.all([
+  const [ranking, equipos, completados, totalPublicados, configuracion, cosechaCompletada] = await Promise.all([
     db.participante.findMany({
       where: { activo: true },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
@@ -20,6 +21,7 @@ export default async function Inicio() {
     db.completitud.count({ where: { participanteId: participante.id } }),
     db.desafio.count({ where: { estado: "PUBLICADO", esSecreto: false } }),
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { diplomaHabilitado: true } }),
+    db.completitud.count({ where: { participanteId: participante.id, desafio: { codigoQr: CODIGO_DESAFIO_CIERRE } } }),
   ]);
   const posicion = ranking.findIndex((p) => p.id === participante.id) + 1;
   const posicionEquipo = equipos.findIndex((e) => e.id === participante.grupoId) + 1;
@@ -75,6 +77,12 @@ export default async function Inicio() {
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
         </a>
+        {cosechaCompletada > 0 && (
+          <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-verde)] bg-gradient-to-r from-lime-50 to-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Sprout /></span>
+            <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Mi tarjeta de cierre</strong><small className="text-slate-600">Abre tu cosecha, gratitud y acción en PDF</small></span>
+          </a>
+        )}
         <a href="/api/agenda" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-teal)] bg-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-teal)] text-white"><CalendarDays /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver agenda</strong><small className="text-slate-600">Abre el PDF con los días, horarios y momentos del encuentro</small></span>

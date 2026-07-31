@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Sprout } from "lucide-react";
 import { db } from "@/lib/db";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { CODIGO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 
 export default async function DetalleParticipante({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,6 +18,7 @@ export default async function DetalleParticipante({ params }: { params: Promise<
     },
   });
   if (!persona) notFound();
+  const tieneCosecha = persona.completitudes.some((completitud) => completitud.desafio.codigoQr === CODIGO_DESAFIO_CIERRE);
   return (
     <div className="p-4 md:p-7">
       <Link href="/admin/participantes" className="flex items-center gap-2 font-extrabold text-[var(--epm-azul)]"><ArrowLeft /> Volver</Link>
@@ -26,6 +28,7 @@ export default async function DetalleParticipante({ params }: { params: Promise<
         <div className="flex flex-col items-end gap-3">
           <strong className="font-display text-4xl text-[var(--epm-azul-profundo)]">{persona.puntosTotales} pts</strong>
           <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><FileText size={17} /> Ver pasaporte</a>
+          {tieneCosecha && <a href={`/api/admin/participantes/${persona.id}/cosecha#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><Sprout size={17} /> Tarjeta de cierre</a>}
         </div>
       </header>
       <div id="detalle-puntos" className="mt-5 grid scroll-mt-6 gap-5 xl:grid-cols-2">

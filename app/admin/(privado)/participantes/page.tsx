@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { FileText, Search, SlidersHorizontal } from "lucide-react";
+import { FileText, Search, SlidersHorizontal, Sprout } from "lucide-react";
 import { db } from "@/lib/db";
 import { ajustarPuntos, alternarParticipante, cambiarGrupoParticipante, eliminarParticipante } from "@/app/admin/actions";
 import { FotoCircular } from "@/components/marca/FotoCircular";
+import { CODIGO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ export default async function AdminParticipantes({
         ...(filtros.grupo ? { grupoId: filtros.grupo } : {}),
       },
       orderBy: { nombre: "asc" },
-      include: { empresa: true, grupo: true, _count: { select: { completitudes: true, recuerdos: true } } },
+      include: {
+        empresa: true,
+        grupo: true,
+        completitudes: { where: { desafio: { codigoQr: CODIGO_DESAFIO_CIERRE } }, select: { id: true }, take: 1 },
+        _count: { select: { completitudes: true, recuerdos: true } },
+      },
     }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.grupo.findMany({ orderBy: { orden: "asc" } }),
@@ -60,6 +66,7 @@ export default async function AdminParticipantes({
               </form>
               <div className="flex flex-wrap items-center justify-end gap-3">
                 <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-azul)] transition hover:bg-sky-100"><FileText size={17} /> Ver pasaporte</a>
+                {persona.completitudes.length > 0 && <a href={`/api/admin/participantes/${persona.id}/cosecha#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-teal)] transition hover:bg-emerald-100"><Sprout size={17} /> Tarjeta de cierre</a>}
                 <form action={alternarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-amber-700">{persona.activo ? "Desactivar" : "Reactivar"}</button></form>
                 <form action={eliminarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-red-700">Eliminar</button></form>
               </div>

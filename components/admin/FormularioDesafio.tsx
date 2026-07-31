@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { Eye } from "lucide-react";
 import type { Componente, Desafio, Ubicacion } from "@prisma/client";
 import { guardarDesafio } from "@/app/admin/actions";
+import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 
 type Config = {
   opciones?: { texto: string; correcta: boolean }[];
@@ -14,6 +15,7 @@ type Config = {
   instruccion?: string;
   pregunta?: string;
   formato?: string;
+  preguntas?: typeof PREGUNTAS_COSECHA;
 };
 
 export function FormularioDesafio({
@@ -28,6 +30,7 @@ export function FormularioDesafio({
   const config = (desafio?.configuracion ?? {}) as Config;
   const [tipo, setTipo] = useState(desafio?.tipo ?? "CHECK_IN");
   const [dia, setDia] = useState(desafio?.dia ?? 1);
+  const [formatoEncuesta, setFormatoEncuesta] = useState(config.formato ?? "texto");
   const [qrVistaPrevia, setQrVistaPrevia] = useState<string | null>(null);
 
   async function mostrarVistaPrevia(formulario: HTMLFormElement | null) {
@@ -66,7 +69,20 @@ export function FormularioDesafio({
       )}
       {tipo === "RESPUESTA_ABIERTA" && <div className="md:col-span-2"><label className="etiqueta">Respuestas aceptadas, separadas por coma</label><input className="campo" name="respuestasAceptadas" required defaultValue={config.respuestasAceptadas?.join(", ")} /></div>}
       {tipo === "EVIDENCIA_FOTO" && <div className="md:col-span-2"><label className="etiqueta">Instrucción para la foto</label><input className="campo" name="instruccion" required defaultValue={config.instruccion} /></div>}
-      {tipo === "ENCUESTA" && <><div><label className="etiqueta">Pregunta</label><input className="campo" name="pregunta" required defaultValue={config.pregunta} /></div><div><label className="etiqueta">Formato</label><select className="campo" name="formato" defaultValue={config.formato ?? "texto"}><option value="texto">Texto libre</option><option value="escala">Escala 1–5</option></select></div></>}
+      {tipo === "ENCUESTA" && (
+        <>
+          {formatoEncuesta !== FORMATO_COSECHA && <div><label className="etiqueta">Pregunta</label><input className="campo" name="pregunta" required defaultValue={config.pregunta} /></div>}
+          <div className={formatoEncuesta === FORMATO_COSECHA ? "md:col-span-2" : ""}><label className="etiqueta">Formato</label><select className="campo" name="formato" value={formatoEncuesta} onChange={(e) => setFormatoEncuesta(e.target.value)}><option value="texto">Texto libre</option><option value="escala">Escala 1–5</option><option value={FORMATO_COSECHA}>Cosecha, gratitud y acción</option></select></div>
+          {formatoEncuesta === FORMATO_COSECHA && (
+            <div className="md:col-span-2 rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 p-4">
+              <p className="font-extrabold text-[var(--epm-azul-profundo)]">Esta tarjeta tendrá tres respuestas:</p>
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                {PREGUNTAS_COSECHA.map((pregunta) => <div key={pregunta.id} className="rounded-xl bg-white p-3 text-sm shadow-sm"><strong className="text-[var(--epm-teal)]">{pregunta.titulo}</strong><span className="mt-1 block text-slate-600">{pregunta.ayuda}</span></div>)}
+              </div>
+            </div>
+          )}
+        </>
+      )}
       <div><label className="etiqueta">Estado inicial</label><select className="campo" name="estado" defaultValue={desafio?.estado ?? "BORRADOR"}><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="CERRADO">Cerrado</option></select></div>
       <div><label className="etiqueta">Límite de completitudes (opcional)</label><input className="campo" type="number" min={1} name="limiteCompletitudes" defaultValue={desafio?.limiteCompletitudes ?? ""} /></div>
       <div><label className="etiqueta">Disponible desde (opcional)</label><input className="campo" type="datetime-local" name="disponibleDesde" defaultValue={desafio?.disponibleDesde?.toISOString().slice(0, 16)} /></div>

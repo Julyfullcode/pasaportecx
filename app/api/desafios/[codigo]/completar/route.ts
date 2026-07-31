@@ -6,12 +6,13 @@ import { storage } from "@/lib/storage";
 import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { extensionImagen } from "@/lib/archivos";
+import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 
 type Configuracion = {
   opciones?: Opcion[];
   puntajeParcial?: boolean;
   respuestasAceptadas?: string[];
-  formato?: "texto" | "escala";
+  formato?: "texto" | "escala" | "cosecha";
 };
 
 export async function POST(
@@ -79,9 +80,22 @@ export async function POST(
     puntos = 0;
     estado = "PENDIENTE";
   } else if (desafio.tipo === "ENCUESTA") {
-    const valor = String(formulario.get("respuesta") ?? "");
-    if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });
-    respuesta = { valor };
+    if (configuracion.formato === FORMATO_COSECHA) {
+      const respuestas = Object.fromEntries(
+        PREGUNTAS_COSECHA.map(({ id }) => [id, String(formulario.get(id) ?? "").trim()]),
+      );
+      if (PREGUNTAS_COSECHA.some(({ id }) => respuestas[id].length < 2)) {
+        return Response.json({ error: "Completa las tres reflexiones para crear tu tarjeta." }, { status: 400 });
+      }
+      if (PREGUNTAS_COSECHA.some(({ id }) => respuestas[id].length > 600)) {
+        return Response.json({ error: "Cada reflexión puede tener máximo 600 caracteres." }, { status: 400 });
+      }
+      respuesta = respuestas;
+    } else {
+      const valor = String(formulario.get("respuesta") ?? "");
+      if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });
+      respuesta = { valor };
+    }
   }
 
   try {

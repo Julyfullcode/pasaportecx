@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { comprimirImagen } from "@/lib/imagen";
+import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 
 type Configuracion = {
   opciones?: { id: string; texto: string; correcta: boolean }[];
   multiple?: boolean;
   instruccion?: string;
   pregunta?: string;
-  formato?: "texto" | "escala";
+  formato?: "texto" | "escala" | "cosecha";
 };
 
 export function ResolverDesafio({
@@ -86,6 +87,7 @@ export function ResolverDesafio({
             <div aria-hidden="true" className="mt-3 flex justify-center gap-2 text-[var(--epm-verde)]"><Sparkles /><Sparkles /><Sparkles /></div>
           </>
         )}
+        {configuracion.formato === FORMATO_COSECHA && <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
       </div>
     );
   }
@@ -122,10 +124,22 @@ export function ResolverDesafio({
       )}
       {tipo === "ENCUESTA" && (
         <div>
-          <label className="etiqueta" htmlFor="respuesta">{configuracion.pregunta}</label>
-          {configuracion.formato === "escala" ? (
+          {configuracion.formato === FORMATO_COSECHA ? (
+            <div className="space-y-4">
+              {PREGUNTAS_COSECHA.map((pregunta) => (
+                <label key={pregunta.id} className="block rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 p-4">
+                  <span className="block font-display text-lg font-extrabold text-[var(--epm-azul-profundo)]">{pregunta.titulo}</span>
+                  <span className="mb-3 mt-1 block text-sm text-slate-600">{pregunta.ayuda}</span>
+                  <textarea className="campo min-h-24 bg-white" name={pregunta.id} maxLength={600} required />
+                </label>
+              ))}
+            </div>
+          ) : configuracion.formato === "escala" ? (
+            <>
+              <label className="etiqueta" htmlFor="respuesta">{configuracion.pregunta}</label>
             <div className="grid grid-cols-5 gap-2">{[1, 2, 3, 4, 5].map((n) => <label key={n} className="grid min-h-14 cursor-pointer place-items-center rounded-xl border bg-white font-extrabold has-[:checked]:border-[var(--epm-azul)] has-[:checked]:bg-sky-50"><input type="radio" name="respuesta" value={n} required className="sr-only" />{n}</label>)}</div>
-          ) : <textarea className="campo min-h-28" id="respuesta" name="respuesta" maxLength={500} required />}
+            </>
+          ) : <><label className="etiqueta" htmlFor="respuesta">{configuracion.pregunta}</label><textarea className="campo min-h-28" id="respuesta" name="respuesta" maxLength={500} required /></>}
         </div>
       )}
       {error && (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ResolverDesafio } from "@/components/participante/ResolverDesafio";
+import { FORMATO_COSECHA } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function DetalleDesafio({
     },
   });
   if (!desafio) notFound();
+  const esCosecha = (desafio.configuracion as { formato?: string }).formato === FORMATO_COSECHA;
   return (
     <div>
       <header className="marca-gradiente relative overflow-hidden px-4 pb-14 pt-5 text-white">
@@ -36,7 +38,7 @@ export default async function DetalleDesafio({
       <section className="mx-auto -mt-7 max-w-2xl px-4">
         {desafio.completitudes[0] ? (
           <div className="tarjeta p-6 text-center">
-            <CheckExistente estado={desafio.completitudes[0].estado} puntos={desafio.completitudes[0].puntosOtorgados} />
+            <CheckExistente estado={desafio.completitudes[0].estado} puntos={desafio.completitudes[0].puntosOtorgados} esCosecha={esCosecha} />
           </div>
         ) : (
           <ResolverDesafio codigo={desafio.codigoQr} tipo={desafio.tipo} puntos={desafio.puntos} configuracion={desafio.configuracion as never} />
@@ -46,12 +48,13 @@ export default async function DetalleDesafio({
   );
 }
 
-function CheckExistente({ estado, puntos }: { estado: string; puntos: number }) {
+function CheckExistente({ estado, puntos, esCosecha }: { estado: string; puntos: number; esCosecha: boolean }) {
   return (
     <>
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-[var(--epm-verde-medio)]">✓</div>
       <h2 className="mt-3 text-xl font-extrabold">Ya completaste este desafío</h2>
       <p className="mt-2 text-slate-600">{estado === "PENDIENTE" ? "Tu evidencia sigue pendiente de revisión." : `Ganaste ${puntos} puntos.`}</p>
+      {esCosecha && <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
     </>
   );
 }
