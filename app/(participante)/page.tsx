@@ -80,15 +80,15 @@ export default async function Inicio() {
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver agenda</strong><small className="text-slate-600">Abre el PDF con los días, horarios y momentos del encuentro</small></span>
         </a>
         {configuracion.diplomaHabilitado ? (
-          <a href="/api/diploma" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
+          <a href="/api/certificado" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>
-            <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi diploma</strong><small className="text-white/75">Se abrirá en PDF para que puedas guardarlo o imprimirlo</small></span>
+            <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi certificado</strong><small className="text-white/75">Se abrirá en PDF para que puedas guardarlo o imprimirlo</small></span>
             <ChevronRight />
           </a>
         ) : (
           <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-600 shadow-soft">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-slate-500"><LockKeyhole /></span>
-            <span className="min-w-0 flex-1"><strong className="block font-display text-lg text-[var(--epm-azul-profundo)]">Mi diploma del encuentro</strong><small className="text-slate-600">Estará disponible al finalizar el encuentro.</small></span>
+            <span className="min-w-0 flex-1"><strong className="block font-display text-lg text-[var(--epm-azul-profundo)]">Mi certificado del encuentro</strong><small className="text-slate-600">Estará disponible al finalizar el encuentro.</small></span>
           </div>
         )}
       </div>

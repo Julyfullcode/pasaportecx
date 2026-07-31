@@ -1,0 +1,32 @@
+import { adminActual } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { crearPasaporteParticipante } from "@/lib/pasaporte-servidor";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const admin = await adminActual();
+  if (!admin) return Response.json({ error: "Debes iniciar sesión como administrador." }, { status: 401 });
+
+  const { id } = await params;
+  const participante = await db.participante.findUnique({
+    where: { id },
+    include: { empresa: true, grupo: true },
+  });
+  if (!participante) return Response.json({ error: "No encontramos al participante." }, { status: 404 });
+
+  try {
+    const { pdf, nombreSeguro } = await crearPasaporteParticipante(participante, new URL(request.url).origin);
+    return new Response(Buffer.from(pdf), {
+      headers: {
+        "Cache-Control": "private, no-store",
+        "Content-Disposition": `inline; filename="pasaporte-${nombreSeguro || "participante"}.pdf"`,
+        "Content-Type": "application/pdf",
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo generar el pasaporte desde administración", error);
+    return Response.json({ error: "No pudimos generar el pasaporte del participante." }, { status: 500 });
+  }
+}

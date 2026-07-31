@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import {
   PDFDocument,
   PDFName,
+  PDFString,
   StandardFonts,
   appendBezierCurve,
   clip,
@@ -27,6 +28,7 @@ type DatosPasaporte = {
   evento: string;
   codigo: string;
   urlRecuperacion: string;
+  urlAplicacion: string;
   logo?: Uint8Array;
   foto?: Uint8Array;
   fuenteRegular?: Uint8Array;
@@ -140,6 +142,31 @@ function dibujarFotoCircular(pagina: PDFPage, foto: PDFImage, centroX: number, c
   pagina.drawCircle({ x: centroX, y: centroY, size: radio, borderColor: rgb(1, 1, 1), borderWidth: 4 });
 }
 
+function agregarVinculo(
+  documento: PDFDocument,
+  pagina: PDFPage,
+  url: string,
+  x: number,
+  y: number,
+  ancho: number,
+  alto: number,
+) {
+  const anotacion = documento.context.register(
+    documento.context.obj({
+      Type: "Annot",
+      Subtype: "Link",
+      Rect: [x, y, x + ancho, y + alto],
+      Border: [0, 0, 0],
+      A: {
+        Type: "Action",
+        S: "URI",
+        URI: PDFString.of(url),
+      },
+    }),
+  );
+  pagina.node.set(PDFName.of("Annots"), documento.context.obj([anotacion]));
+}
+
 export async function generarPasaportePdf(datos: DatosPasaporte) {
   const documento = await PDFDocument.create();
   documento.registerFontkit(fontkit);
@@ -238,13 +265,14 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
   const qr = await documento.embedPng(qrBytes);
   cajaRedondeada(pagina, 38, 30, 344, 124, 26, rgb(0.965, 0.982, 0.988));
   pagina.drawImage(qr, { x: 53, y: 44, width: 96, height: 96 });
+  agregarVinculo(documento, pagina, datos.urlAplicacion, 53, 44, 96, 96);
   pagina.drawLine({ start: { x: 168, y: 48 }, end: { x: 168, y: 136 }, thickness: 1, color: teal, opacity: 0.18 });
   const centroInfo = 271;
   const etiquetaCodigo = "Código de recuperación";
   pagina.drawText(etiquetaCodigo, { x: centroInfo - normal.widthOfTextAtSize(etiquetaCodigo, 9.5) / 2, y: 119, size: 9.5, font: normal, color: gris });
   pagina.drawText(datos.codigo, { x: centroInfo - normal.widthOfTextAtSize(datos.codigo, 20) / 2, y: 88, size: 20, font: normal, color: azul });
-  const instruccion1 = "Escanea el QR para";
-  const instruccion2 = "recuperar tu perfil";
+  const instruccion1 = "Escanéalo para recuperar tu perfil";
+  const instruccion2 = "Toca el QR para abrir la aplicación";
   pagina.drawText(instruccion1, { x: centroInfo - normal.widthOfTextAtSize(instruccion1, 8.2) / 2, y: 64, size: 8.2, font: normal, color: gris });
   pagina.drawText(instruccion2, { x: centroInfo - normal.widthOfTextAtSize(instruccion2, 8.2) / 2, y: 51, size: 8.2, font: normal, color: gris });
 

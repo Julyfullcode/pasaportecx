@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { db } from "@/lib/db";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 
@@ -23,7 +23,10 @@ export default async function DetalleParticipante({ params }: { params: Promise<
       <header className="tarjeta mt-4 flex flex-wrap items-center gap-4 p-5">
         <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-24 w-24" />
         <div className="flex-1"><h1 className="text-3xl font-extrabold">{persona.nombre}</h1><p>{persona.empresa.nombre} · {persona.grupo.nombre}</p><p className="mt-1 text-xs text-slate-500">Registro: {persona.creadoEn.toLocaleString("es-CO")}</p></div>
-        <strong className="font-display text-4xl text-[var(--epm-azul-profundo)]">{persona.puntosTotales} pts</strong>
+        <div className="flex flex-col items-end gap-3">
+          <strong className="font-display text-4xl text-[var(--epm-azul-profundo)]">{persona.puntosTotales} pts</strong>
+          <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><FileText size={17} /> Ver pasaporte</a>
+        </div>
       </header>
       <div id="detalle-puntos" className="mt-5 grid scroll-mt-6 gap-5 xl:grid-cols-2">
         <section className="tarjeta p-5"><h2 className="text-xl font-extrabold">Desafíos completados</h2><div className="mt-3 space-y-2">{persona.completitudes.map((c) => <div key={c.id} className="flex justify-between rounded-xl bg-slate-50 p-3 text-sm"><span><strong className="block">{c.desafio.titulo}</strong>{c.completadoEn.toLocaleString("es-CO")} · {c.estado}</span><strong>{c.puntosOtorgados} pts</strong></div>)}</div></section>

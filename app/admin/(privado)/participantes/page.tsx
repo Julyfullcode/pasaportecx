@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { FileText, Search, SlidersHorizontal } from "lucide-react";
 import { db } from "@/lib/db";
 import { ajustarPuntos, alternarParticipante, cambiarGrupoParticipante, eliminarParticipante } from "@/app/admin/actions";
 import { FotoCircular } from "@/components/marca/FotoCircular";
@@ -58,7 +58,11 @@ export default async function AdminParticipantes({
                 <input className="campo !min-h-10 !py-1 text-sm" name="motivo" placeholder="Motivo obligatorio" required />
                 <button className="text-sm font-extrabold text-[var(--epm-azul)]">Aplicar</button>
               </form>
-              <div className="flex items-center justify-end gap-3"><form action={alternarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-amber-700">{persona.activo ? "Desactivar" : "Reactivar"}</button></form><form action={eliminarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-red-700">Eliminar</button></form></div>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-azul)] transition hover:bg-sky-100"><FileText size={17} /> Ver pasaporte</a>
+                <form action={alternarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-amber-700">{persona.activo ? "Desactivar" : "Reactivar"}</button></form>
+                <form action={eliminarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-red-700">Eliminar</button></form>
+              </div>
             </div>
           </article>
         ))}

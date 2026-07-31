@@ -28,7 +28,7 @@ export default async function Configuracion() {
         <div className="md:col-span-2"><label className="etiqueta">Organizadores</label><input className="campo" name="organizadoresAgenda" defaultValue={config.organizadoresAgenda} maxLength={300} placeholder="Ejemplo: Vicepresidencia Experiencia Usuario-Cliente" /><p className="mt-1 text-xs text-slate-500">Este texto aparecerá en el pie de todas las páginas de la agenda.</p></div>
         <label className="md:col-span-2 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 font-bold text-amber-950">
           <input type="checkbox" name="diplomaHabilitado" defaultChecked={config.diplomaHabilitado} className="mt-1" />
-          <span><strong className="block">Habilitar diploma para los participantes</strong><small className="mt-1 block font-medium text-amber-800">Actívalo únicamente al finalizar el encuentro. Mientras esté desactivado, el diploma no podrá abrirse.</small></span>
+          <span><strong className="block">Habilitar certificado para los participantes</strong><small className="mt-1 block font-medium text-amber-800">Actívalo únicamente al finalizar el encuentro. Mientras esté desactivado, el certificado no podrá abrirse.</small></span>
         </label>
         <div><label className="etiqueta">Podio individual</label><input className="campo" type="number" min={3} max={20} name="tamanoPodioIndividual" defaultValue={config.tamanoPodioIndividual} /></div>
         <div><label className="etiqueta">Podio de equipos</label><input className="campo" type="number" min={1} max={10} name="tamanoPodioEquipos" defaultValue={config.tamanoPodioEquipos} /></div>

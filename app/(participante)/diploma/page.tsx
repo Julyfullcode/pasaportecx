@@ -13,7 +13,7 @@ export default async function Diploma() {
     select: { diplomaHabilitado: true },
   });
 
-  if (config.diplomaHabilitado) redirect("/api/diploma");
+  if (config.diplomaHabilitado) redirect("/api/certificado");
 
   return (
     <>
@@ -23,8 +23,8 @@ export default async function Diploma() {
           <div className="h-3 bg-gradient-to-r from-[var(--epm-azul-profundo)] via-[var(--epm-teal)] to-[var(--epm-verde)]" />
           <div className="px-6 py-12">
             <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-50 text-[var(--epm-teal)]"><LockKeyhole size={36} /></span>
-            <h1 className="mt-6 font-display text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Tu diploma estará disponible al finalizar el encuentro</h1>
-            <p className="mx-auto mt-3 max-w-xl leading-relaxed text-slate-600">Sigue participando, compartiendo y dejando tu huella. Cuando los organizadores lo habiliten, podrás abrir aquí tu diploma en PDF.</p>
+            <h1 className="mt-6 font-display text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Tu certificado estará disponible al finalizar el encuentro</h1>
+            <p className="mx-auto mt-3 max-w-xl leading-relaxed text-slate-600">Sigue participando, compartiendo y dejando tu huella. Cuando los organizadores lo habiliten, podrás abrir aquí tu certificado en PDF.</p>
           </div>
         </section>
       </div>
