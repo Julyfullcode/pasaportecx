@@ -1,4 +1,5 @@
 import fontkit from "@pdf-lib/fontkit";
+import { DIRECTIVA_EXPERIENCIA } from "@/lib/mensajes";
 import {
   PDFDocument,
   StandardFonts,
@@ -272,6 +273,25 @@ export async function generarAgendaPdf(datos: DatosAgenda) {
       y = inferior - 12;
     }
     y -= 8;
+  }
+
+  if (datos.dias.length > 0) {
+    if (y < 142) {
+      nueva = nuevaPagina();
+      pagina = nueva.pagina;
+      y = nueva.yInicial;
+    }
+    const inferior = y - 86;
+    cajaRedondeada(pagina, 42, inferior - 4, 511, 76, 30, azulProfundo, 0.1);
+    cajaRedondeada(pagina, 38, inferior, 519, 76, 30, teal);
+    pagina.drawCircle({ x: 79, y: inferior + 38, size: 23, color: verde, opacity: 0.95 });
+    pagina.drawText("Nuestro compromiso", { x: 116, y: inferior + 46, size: 10, font: normal, color: blanco, opacity: 0.82 });
+    const directiva = lineas(DIRECTIVA_EXPERIENCIA, negrita, 13, 414).slice(0, 2);
+    let directivaY = inferior + (directiva.length > 1 ? 29 : 24);
+    for (const linea of directiva) {
+      pagina.drawText(seguro(linea), { x: 116, y: directivaY, size: 13, font: negrita, color: blanco });
+      directivaY -= 17;
+    }
   }
 
   const paginas = documento.getPages();

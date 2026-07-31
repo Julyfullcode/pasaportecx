@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import { DIRECTIVA_EXPERIENCIA } from "@/lib/mensajes";
 
 type DatosPasaporte = {
   nombre: string;
@@ -77,6 +78,13 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
   const tamanoAfiliacion = tamanoQueCabe(afiliacion, normal, 13, 330, 10);
   pagina.drawText(afiliacion, { x: textoCentrado(420, afiliacion, normal, tamanoAfiliacion), y: 256, size: tamanoAfiliacion, font: normal, color: gris });
 
+  pagina.drawRectangle({ x: 50, y: 214, width: 320, height: 34, color: teal, opacity: 0.08 });
+  const corteDirectiva = DIRECTIVA_EXPERIENCIA.indexOf("transparencia");
+  const directiva1 = DIRECTIVA_EXPERIENCIA.slice(0, corteDirectiva).trim();
+  const directiva2 = DIRECTIVA_EXPERIENCIA.slice(corteDirectiva).trim();
+  pagina.drawText(directiva1, { x: textoCentrado(420, directiva1, negrita, 8.5), y: 232, size: 8.5, font: negrita, color: azul });
+  pagina.drawText(directiva2, { x: textoCentrado(420, directiva2, negrita, 8.5), y: 219, size: 8.5, font: negrita, color: teal });
+
   const qrBytes = await QRCode.toBuffer(datos.urlRecuperacion, {
     type: "png",
     width: 650,
@@ -85,10 +93,10 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
     errorCorrectionLevel: "H",
   });
   const qr = await documento.embedPng(qrBytes);
-  pagina.drawImage(qr, { x: 133, y: 91, width: 154, height: 154 });
-  pagina.drawText("CÓDIGO DE RECUPERACIÓN", { x: 128, y: 72, size: 9, font: negrita, color: gris });
-  pagina.drawText(datos.codigo, { x: textoCentrado(420, datos.codigo, negrita, 21), y: 47, size: 21, font: negrita, color: azul });
-  pagina.drawText("Escanea este QR para recuperar tu perfil en otro dispositivo", { x: 82, y: 30, size: 8, font: normal, color: gris });
+  pagina.drawImage(qr, { x: 145, y: 78, width: 130, height: 130 });
+  pagina.drawText("CÓDIGO DE RECUPERACIÓN", { x: 128, y: 64, size: 9, font: negrita, color: gris });
+  pagina.drawText(datos.codigo, { x: textoCentrado(420, datos.codigo, negrita, 20), y: 40, size: 20, font: negrita, color: azul });
+  pagina.drawText("Escanea este QR para recuperar tu perfil en otro dispositivo", { x: 82, y: 28, size: 8, font: normal, color: gris });
 
   return documento.save();
 }

@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
+import { DIRECTIVA_EXPERIENCIA } from "@/lib/mensajes";
 
 type DatosDiploma = {
   nombre: string;
@@ -113,12 +114,13 @@ export async function generarDiplomaPdf(datos: DatosDiploma) {
   );
   textoCentrado(pagina, "Juntos logramos experiencias más simples y confiables.", 239, 15, negrita, azul);
   textoCentrado(pagina, "Encontrarnos nos inspira para avanzar juntos.", 215, 15, negrita, teal);
-  textoCentrado(pagina, `${datos.empresa}  ·  ${datos.equipo}`, 177, 13, negrita, azul);
+  textoCentrado(pagina, DIRECTIVA_EXPERIENCIA, 181, tamanoQueCabe(DIRECTIVA_EXPERIENCIA, negrita, 12.5, 650), negrita, gris);
+  textoCentrado(pagina, `${datos.empresa}  ·  ${datos.equipo}`, 153, 13, negrita, azul);
 
   const fecha = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" }).format(datos.fecha);
-  pagina.drawLine({ start: { x: 304, y: 143 }, end: { x: 488, y: 143 }, thickness: 1, color: rgb(0.72, 0.78, 0.8) });
-  textoCentrado(pagina, fecha, 122, 11, normal, gris);
-  textoCentrado(pagina, "Un recuerdo de tu participación en el Encuentro de Experiencia", 86, 11, negrita, azul);
+  pagina.drawLine({ start: { x: 304, y: 127 }, end: { x: 488, y: 127 }, thickness: 1, color: rgb(0.72, 0.78, 0.8) });
+  textoCentrado(pagina, fecha, 106, 11, normal, gris);
+  textoCentrado(pagina, "Un recuerdo de tu participación en el Encuentro de Experiencia", 76, 11, negrita, azul);
 
   const organizadores = datos.organizadores.trim() || "Grupo EPM";
   textoAjustado(`Organizan: ${organizadores}`, normal, 9, 690, 2)
