@@ -38,7 +38,8 @@ export function puntuarOpcionMultiple(
 }
 
 export const registroSchema = z.object({
-  nombre: z.string().trim().min(3, "Escribe tu nombre completo").max(100),
+  nombres: z.string().trim().min(2, "Escribe tu nombre").max(60),
+  apellidos: z.string().trim().min(2, "Escribe tus apellidos").max(60),
   empresaId: z.string().min(1, "Selecciona una empresa"),
   grupoId: z.string().optional(),
   aceptaDatos: z.literal("on", {

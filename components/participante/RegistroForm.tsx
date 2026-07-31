@@ -125,9 +125,15 @@ export function RegistroForm({
 
   return (
     <form onSubmit={enviar} className="tarjeta space-y-5 p-5 md:p-7">
-      <div>
-        <label className="etiqueta" htmlFor="nombre">Nombre completo</label>
-        <input className="campo" id="nombre" name="nombre" autoComplete="name" minLength={3} maxLength={100} required placeholder="Como quieres que aparezca en el ranking" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="etiqueta" htmlFor="nombres">Nombre</label>
+          <input className="campo" id="nombres" name="nombres" autoComplete="given-name" minLength={2} maxLength={60} required placeholder="Tus nombres" />
+        </div>
+        <div>
+          <label className="etiqueta" htmlFor="apellidos">Apellidos</label>
+          <input className="campo" id="apellidos" name="apellidos" autoComplete="family-name" minLength={2} maxLength={60} required placeholder="Tus apellidos" />
+        </div>
       </div>
       <div>
         <label className="etiqueta" htmlFor="empresaId">Empresa del Grupo</label>

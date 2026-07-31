@@ -18,6 +18,7 @@ export async function POST(request: Request) {
   try {
     const formulario = await request.formData();
     const datos = registroSchema.parse(Object.fromEntries(formulario));
+    const nombreCompleto = `${datos.nombres} ${datos.apellidos}`.replace(/\s+/g, " ").trim();
     const foto = formulario.get("foto");
     const extension = foto instanceof File ? extensionImagen(foto.type) : null;
     if (!(foto instanceof File) || !extension) {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
       }
       return tx.participante.create({
         data: {
-          nombre: datos.nombre,
+          nombre: nombreCompleto,
           empresaId: datos.empresaId,
           grupoId,
           urlFoto: urlFoto!,

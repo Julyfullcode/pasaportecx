@@ -11,7 +11,8 @@ const foto = {
 
 async function registrar(page: Page, sufijo: string) {
   await page.goto("/registro");
-  await page.getByLabel("Nombre completo").fill(`Persona E2E ${sufijo}`);
+  await page.getByLabel("Nombre").fill("Persona E2E");
+  await page.getByLabel("Apellidos").fill(sufijo);
   await page.getByLabel("Empresa del Grupo").selectOption({ index: 1 });
   const equipo = page.getByRole("radio", { name: /Equipo/ }).first();
   if (await equipo.count()) await equipo.check({ force: true });
