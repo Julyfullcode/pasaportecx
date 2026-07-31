@@ -2,6 +2,7 @@ import fontkit from "@pdf-lib/fontkit";
 import QRCode from "qrcode";
 import {
   PDFDocument,
+  PDFName,
   StandardFonts,
   appendBezierCurve,
   clip,
@@ -246,6 +247,17 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
   const instruccion2 = "recuperar tu perfil";
   pagina.drawText(instruccion1, { x: centroInfo - normal.widthOfTextAtSize(instruccion1, 8.2) / 2, y: 64, size: 8.2, font: normal, color: gris });
   pagina.drawText(instruccion2, { x: centroInfo - normal.widthOfTextAtSize(instruccion2, 8.2) / 2, y: 51, size: 8.2, font: normal, color: gris });
+
+  const preferencias = documento.catalog.getOrCreateViewerPreferences();
+  preferencias.setFitWindow(true);
+  preferencias.setCenterWindow(true);
+  preferencias.setDisplayDocTitle(true);
+  documento.catalog.set(PDFName.of("PageLayout"), PDFName.of("SinglePage"));
+  documento.catalog.set(PDFName.of("PageMode"), PDFName.of("UseNone"));
+  documento.catalog.set(
+    PDFName.of("OpenAction"),
+    documento.context.obj([pagina.ref, PDFName.of("Fit")]),
+  );
 
   return documento.save();
 }
