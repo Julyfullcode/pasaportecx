@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { autenticarParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin } from "./ayudas";
+import { autenticarParticipante, contextoApiParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin } from "./ayudas";
 
 test.describe("Administrador", () => {
   test("las vistas y APIs administrativas están protegidas sin autenticación", async ({ page, request, playwright }) => {
@@ -128,6 +128,93 @@ test.describe("Fotos y carrusel", () => {
 
     await expect(page.getByText("Listo", { exact: true })).toBeVisible();
     expect(await db.recuerdo.count({ where: { participanteId: participante.id, descripcion: "Recuerdo automatizado E2E" } })).toBe(1);
+  });
+
+  test("una evidencia aprobada aparece en Recuerdos cuando el desafío lo permite", async ({ page, playwright }) => {
+    const marca = Date.now();
+    const titulo = "Foto para recuerdos " + marca;
+    await db.configuracionEvento.update({ where: { id: "evento" }, data: { puntosFotoMasReaccionada: 0 } });
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const creador = page.locator("details").first();
+    await creador.locator("summary").click();
+    await creador.locator('input[name="titulo"]').fill(titulo);
+    await creador.locator('textarea[name="descripcion"]').fill("Evidencia que se publicará después de aprobarse.");
+    await creador.locator('select[name="tipo"]').selectOption("EVIDENCIA_FOTO");
+    await creador.locator('input[name="puntos"]').fill("80");
+    await creador.locator('select[name="dia"]').selectOption("1");
+    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
+    await creador.locator('input[name="instruccion"]').fill("Toma una fotografía del encuentro.");
+    await creador.locator('input[name="publicarEnRecuerdos"]').check();
+    await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
+    await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
+    await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
+
+    const desafio = await db.desafio.findFirstOrThrow({ where: { titulo } });
+    expect(desafio.configuracion).toMatchObject({ publicarEnRecuerdos: true });
+    const { participante, token } = await crearParticipanteConToken({ nombre: "Autor evidencia " + marca });
+    const api = await contextoApiParticipante(playwright.request, token);
+    const respuesta = await api.post("/api/desafios/" + desafio.codigoQr + "/completar", {
+      multipart: { evidencia: fotoPng },
+    });
+    expect(respuesta.status()).toBe(200);
+    const completitud = await db.completitud.findUniqueOrThrow({
+      where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
+    });
+    expect(completitud.estado).toBe("PENDIENTE");
+    expect(await db.recuerdo.count({ where: { claveIdempotencia: "evidencia:" + completitud.id } })).toBe(0);
+
+    await page.goto("/admin/evidencias");
+    const tarjeta = page.locator("article").filter({ hasText: titulo });
+    await tarjeta.getByRole("button", { name: "Aprobar" }).click();
+    await expect.poll(() => db.recuerdo.count({
+      where: { claveIdempotencia: "evidencia:" + completitud.id },
+    })).toBe(1);
+    const recuerdo = await db.recuerdo.findUniqueOrThrow({
+      where: { claveIdempotencia: "evidencia:" + completitud.id },
+    });
+    expect(recuerdo.participanteId).toBe(participante.id);
+    expect(recuerdo.visible).toBe(true);
+    await api.dispose();
+  });
+
+  test("el premio pasa en tiempo real a la foto con más corazones y risas", async ({ playwright }) => {
+    const marca = Date.now();
+    await db.configuracionEvento.update({ where: { id: "evento" }, data: { puntosFotoMasReaccionada: 300 } });
+    const autorA = await crearParticipanteConToken({ nombre: "Autor A " + marca });
+    const autorB = await crearParticipanteConToken({ nombre: "Autor B " + marca });
+    const reactorA = await crearParticipanteConToken({ nombre: "Reactor A " + marca });
+    const reactorB = await crearParticipanteConToken({ nombre: "Reactor B " + marca });
+    const fotoA = await db.recuerdo.create({
+      data: {
+        participanteId: autorA.participante.id,
+        urlFoto: "/marca/logo-grupo-epm-oficial.png",
+        urlMiniatura: "/marca/logo-grupo-epm-oficial.png",
+        descripcion: "Candidata A",
+        creadoEn: new Date("2026-01-01T10:00:00Z"),
+      },
+    });
+    const fotoB = await db.recuerdo.create({
+      data: {
+        participanteId: autorB.participante.id,
+        urlFoto: "/marca/logo-grupo-epm-oficial.png",
+        urlMiniatura: "/marca/logo-grupo-epm-oficial.png",
+        descripcion: "Candidata B",
+        creadoEn: new Date("2026-01-01T10:01:00Z"),
+      },
+    });
+    const apiA = await contextoApiParticipante(playwright.request, reactorA.token);
+    const apiB = await contextoApiParticipante(playwright.request, reactorB.token);
+
+    expect((await apiA.post("/api/recuerdos/" + fotoA.id + "/reaccion", { data: { tipo: "CORAZON" } })).status()).toBe(200);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(325);
+    expect((await apiB.post("/api/recuerdos/" + fotoB.id + "/reaccion", { data: { tipo: "CORAZON" } })).status()).toBe(200);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(325);
+    expect((await apiA.post("/api/recuerdos/" + fotoB.id + "/reaccion", { data: { tipo: "RISA" } })).status()).toBe(200);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(25);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorB.participante.id } })).puntosTotales).toBe(325);
+    expect(await db.ajustePuntos.count({ where: { motivo: { startsWith: "Premio foto mas reaccionada: " } } })).toBe(1);
+    await Promise.all([apiA.dispose(), apiB.dispose()]);
   });
 
   test("el carrusel rota sin errores con al menos 50 participantes", async ({ page }) => {

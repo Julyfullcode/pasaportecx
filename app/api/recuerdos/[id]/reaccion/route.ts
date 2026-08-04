@@ -3,6 +3,7 @@ import { participanteActual } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { anunciarCambio } from "@/lib/eventos";
 import { resumirReacciones, TIPOS_REACCION, type TipoReaccionRecuerdo } from "@/lib/recuerdos";
+import { actualizarPremioFotoMasReaccionada } from "@/lib/premio-recuerdos";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const participante = await participanteActual();
@@ -31,6 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       } else {
         await tx.reaccionRecuerdo.create({ data: { recuerdoId, participanteId: participante.id, tipo } });
       }
+      await actualizarPremioFotoMasReaccionada(tx);
     });
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
@@ -41,5 +43,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     select: { participanteId: true, tipo: true },
   });
   anunciarCambio("reaccion-recuerdo");
+  anunciarCambio("puntos");
   return Response.json({ reacciones: resumirReacciones(reacciones, participante.id) });
 }

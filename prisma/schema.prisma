@@ -233,6 +233,8 @@ model ConfiguracionEvento {
   maxRecuerdosPorParticipante  Int            @default(10)
   eliminarEvidenciasRechazadas Boolean        @default(true)
   recuerdosRequierenAprobacion Boolean        @default(false)
+  puntosFotoMasReaccionada     Int            @default(0)
+  revisionPremioReacciones     Int            @default(0)
   modoAsistentes               ModoAsistentes @default(MOSAICO)
   intervaloAsistentesSegundos  Int            @default(6)
   cicloMixto                   String         @default("asistentes:60,recuerdos:45,podio:30")

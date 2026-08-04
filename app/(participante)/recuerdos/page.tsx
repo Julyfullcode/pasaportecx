@@ -2,6 +2,7 @@ import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MuroRecuerdos } from "@/components/participante/MuroRecuerdos";
 import { presentarRecuerdo } from "@/lib/recuerdos";
+import { PREFIJO_EVIDENCIA_RECUERDO } from "@/lib/premio-recuerdos";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,15 @@ export default async function Recuerdos({ searchParams }: { searchParams: Promis
     }),
     searchParams,
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true } }),
-    db.recuerdo.count({ where: { participanteId: participante.id } }),
+    db.recuerdo.count({
+      where: {
+        participanteId: participante.id,
+        OR: [
+          { claveIdempotencia: null },
+          { claveIdempotencia: { not: { startsWith: PREFIJO_EVIDENCIA_RECUERDO } } },
+        ],
+      },
+    }),
   ]);
   const recuerdos = recuerdosBase.map((recuerdo) => presentarRecuerdo(recuerdo, participante.id));
   return (

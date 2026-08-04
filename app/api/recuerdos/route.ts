@@ -5,6 +5,10 @@ import { storage } from "@/lib/storage";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { anunciarCambio } from "@/lib/eventos";
 import { presentarRecuerdo } from "@/lib/recuerdos";
+import {
+  actualizarPremioFotoMasReaccionada,
+  PREFIJO_EVIDENCIA_RECUERDO,
+} from "@/lib/premio-recuerdos";
 import { extensionImagen } from "@/lib/archivos";
 import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 
@@ -36,7 +40,15 @@ export async function GET(request: Request) {
       },
     }),
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true } }),
-    db.recuerdo.count({ where: { participanteId: participante.id } }),
+    db.recuerdo.count({
+      where: {
+        participanteId: participante.id,
+        OR: [
+          { claveIdempotencia: null },
+          { claveIdempotencia: { not: { startsWith: PREFIJO_EVIDENCIA_RECUERDO } } },
+        ],
+      },
+    }),
   ]);
   const recuerdos = recuerdosBase.map((recuerdo) => presentarRecuerdo(recuerdo, participante.id));
   return Response.json({
@@ -95,7 +107,15 @@ export async function POST(request: Request) {
   try {
     const recuerdo = await db.$transaction(async (tx) => {
       const configuracion = await tx.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-      const usados = await tx.recuerdo.count({ where: { participanteId: participante.id } });
+      const usados = await tx.recuerdo.count({
+        where: {
+          participanteId: participante.id,
+          OR: [
+            { claveIdempotencia: null },
+            { claveIdempotencia: { not: { startsWith: PREFIJO_EVIDENCIA_RECUERDO } } },
+          ],
+        },
+      });
       if (usados >= configuracion.maxRecuerdosPorParticipante) throw new LimiteRecuerdosError();
       const creado = await tx.recuerdo.create({
         data: {
@@ -149,7 +169,10 @@ export async function PATCH(request: Request) {
   const recuerdo = await db.recuerdo.findUnique({ where: { id } });
   if (!recuerdo) return Response.json({ error: "Recuerdo no encontrado" }, { status: 404 });
   if (accion === "reportar") {
-    await db.recuerdo.update({ where: { id }, data: { reportado: true } });
+    await db.$transaction(async (tx) => {
+      await tx.recuerdo.update({ where: { id }, data: { reportado: true } });
+      await actualizarPremioFotoMasReaccionada(tx);
+    });
   } else if (accion === "eliminar" && recuerdo.participanteId === participante.id) {
     await db.$transaction(async (tx) => {
       await tx.recuerdo.delete({ where: { id } });
@@ -157,11 +180,15 @@ export async function PATCH(request: Request) {
         where: { participanteId: participante.id, motivo: `Recuerdo #${id}` },
       });
       await recalcularPuntosParticipante(tx, participante.id);
+      await actualizarPremioFotoMasReaccionada(tx);
     });
-    await Promise.all([storage.eliminar(recuerdo.urlFoto), storage.eliminar(recuerdo.urlMiniatura)]);
+    if (!recuerdo.claveIdempotencia?.startsWith(PREFIJO_EVIDENCIA_RECUERDO)) {
+      await Promise.all([storage.eliminar(recuerdo.urlFoto), storage.eliminar(recuerdo.urlMiniatura)]);
+    }
   } else {
     return Response.json({ error: "Acción no permitida" }, { status: 403 });
   }
   anunciarCambio("recuerdo");
+  anunciarCambio("puntos");
   return Response.json({ ok: true });
 }

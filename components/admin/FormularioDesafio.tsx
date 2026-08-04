@@ -20,6 +20,7 @@ type Config = {
   tipoEspecial?: string;
   fechaHoraObjetivo?: string;
   toleranciaMinutos?: number;
+  publicarEnRecuerdos?: boolean;
 };
 
 export function FormularioDesafio({
@@ -86,7 +87,21 @@ export function FormularioDesafio({
           <p className="text-sm text-amber-900 md:col-span-2">La hora se interpreta en Colombia. Por ejemplo, con llegada a las 2:00 p. m. y 5 minutos de tolerancia, solo se permite registrar entre 1:55 p. m. y 2:05 p. m. Antes o después no se crea la completitud ni se entregan puntos.</p>
         </div>
       )}
-      {tipo === "EVIDENCIA_FOTO" && <div className="md:col-span-2"><label className="etiqueta">Instrucción para la foto</label><input className="campo" name="instruccion" required defaultValue={config.instruccion} /></div>}
+      {tipo === "EVIDENCIA_FOTO" && (
+        <div className="md:col-span-2 space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          <div>
+            <label className="etiqueta">Instrucción para la foto</label>
+            <input className="campo bg-white" name="instruccion" required defaultValue={config.instruccion} />
+          </div>
+          <label className="flex items-start gap-3 rounded-xl bg-white p-3 font-bold text-emerald-950">
+            <input type="checkbox" name="publicarEnRecuerdos" defaultChecked={config.publicarEnRecuerdos ?? false} className="mt-1" />
+            <span>
+              <strong className="block">Publicar las fotos aprobadas en Recuerdos</strong>
+              <small className="mt-1 block font-medium text-emerald-800">Al aprobar la evidencia aparecerá en el muro y podrá recibir corazones y risas.</small>
+            </span>
+          </label>
+        </div>
+      )}
       {tipo === "ENCUESTA" && (
         <>
           {formatoEncuesta !== FORMATO_COSECHA && <div><label className="etiqueta">Pregunta</label><input className="campo" name="pregunta" required defaultValue={config.pregunta} /></div>}

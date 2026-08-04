@@ -22,6 +22,11 @@ import {
   TITULO_DESAFIO_CIERRE,
 } from "@/lib/cosecha-config";
 import { crearConfiguracionPuntualidad } from "@/lib/puntualidad";
+import {
+  actualizarPremioFotoMasReaccionada,
+  claveRecuerdoEvidencia,
+  PREFIJO_EVIDENCIA_RECUERDO,
+} from "@/lib/premio-recuerdos";
 
 export type EstadoLogin = { error?: string };
 
@@ -92,7 +97,12 @@ function configuracionDesdeFormulario(tipo: string, formulario: FormData) {
   if (tipo === "RESPUESTA_ABIERTA") {
     return { respuestasAceptadas: String(formulario.get("respuestasAceptadas") ?? "").split(",").map((r) => r.trim()).filter(Boolean) };
   }
-  if (tipo === "EVIDENCIA_FOTO") return { instruccion: String(formulario.get("instruccion") ?? "") };
+  if (tipo === "EVIDENCIA_FOTO") {
+    return {
+      instruccion: String(formulario.get("instruccion") ?? ""),
+      publicarEnRecuerdos: formulario.get("publicarEnRecuerdos") === "on",
+    };
+  }
   if (tipo === "ENCUESTA") {
     const formato = String(formulario.get("formato") ?? "texto");
     if (formato === FORMATO_COSECHA) return { formato, preguntas: PREGUNTAS_COSECHA };
@@ -124,11 +134,50 @@ export async function guardarDesafio(formulario: FormData) {
       ? { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA }
       : configuracionDesdeFormulario(datos.tipo, formulario),
   };
-  if (id) {
-    await db.desafio.update({ where: { id }, data: comun });
-  } else {
-    await db.desafio.create({ data: { ...comun, codigoQr: crearCodigoQr(datos.titulo) } });
-  }
+  await db.$transaction(async (tx) => {
+    const guardado = id
+      ? await tx.desafio.update({ where: { id }, data: comun })
+      : await tx.desafio.create({ data: { ...comun, codigoQr: crearCodigoQr(datos.titulo) } });
+    const publicarEnRecuerdos = guardado.tipo === "EVIDENCIA_FOTO"
+      && Boolean((guardado.configuracion as { publicarEnRecuerdos?: boolean }).publicarEnRecuerdos);
+    const completitudes = await tx.completitud.findMany({
+      where: { desafioId: guardado.id },
+      select: { id: true, participanteId: true, urlEvidencia: true, estado: true, completadoEn: true },
+    });
+    if (publicarEnRecuerdos) {
+      for (const completitud of completitudes) {
+        if (completitud.estado !== "APROBADO" || !completitud.urlEvidencia) continue;
+        await tx.recuerdo.upsert({
+          where: { claveIdempotencia: claveRecuerdoEvidencia(completitud.id) },
+          update: {
+            participanteId: completitud.participanteId,
+            urlFoto: completitud.urlEvidencia,
+            urlMiniatura: completitud.urlEvidencia,
+            descripcion: guardado.titulo,
+            visible: true,
+            pendiente: false,
+            reportado: false,
+          },
+          create: {
+            participanteId: completitud.participanteId,
+            urlFoto: completitud.urlEvidencia,
+            urlMiniatura: completitud.urlEvidencia,
+            descripcion: guardado.titulo,
+            visible: true,
+            pendiente: false,
+            creadoEn: completitud.completadoEn,
+            claveIdempotencia: claveRecuerdoEvidencia(completitud.id),
+          },
+        });
+      }
+    } else if (completitudes.length > 0) {
+      await tx.recuerdo.updateMany({
+        where: { claveIdempotencia: { in: completitudes.map((item) => claveRecuerdoEvidencia(item.id)) } },
+        data: { visible: false },
+      });
+    }
+    await actualizarPremioFotoMasReaccionada(tx);
+  });
   anunciarCambio("desafio");
   revalidatePath("/admin/desafios");
   revalidatePath("/desafios");
@@ -239,7 +288,10 @@ export async function eliminarParticipante(formulario: FormData) {
     where: { id },
     include: { recuerdos: true, completitudes: { select: { urlEvidencia: true } } },
   });
-  await db.participante.delete({ where: { id } });
+  await db.$transaction(async (tx) => {
+    await tx.participante.delete({ where: { id } });
+    await actualizarPremioFotoMasReaccionada(tx);
+  });
   await Promise.allSettled([
     storage.eliminar(persona.urlFoto),
     ...persona.recuerdos.flatMap((recuerdo) => [
@@ -260,24 +312,58 @@ export async function revisarEvidencia(formulario: FormData) {
   const decision = String(formulario.get("decision"));
   const urlParaEliminar = await db.$transaction(async (tx) => {
     const completitud = await tx.completitud.findUniqueOrThrow({ where: { id }, include: { desafio: true } });
+    const aprobar = decision === "aprobar";
+    const publicarEnRecuerdos = aprobar
+      && Boolean((completitud.desafio.configuracion as { publicarEnRecuerdos?: boolean }).publicarEnRecuerdos);
     const configuracion = await tx.configuracionEvento.findUniqueOrThrow({
       where: { id: "evento" },
       select: { eliminarEvidenciasRechazadas: true },
     });
-    const eliminarFoto = decision !== "aprobar" && configuracion.eliminarEvidenciasRechazadas;
+    const eliminarFoto = !aprobar && configuracion.eliminarEvidenciasRechazadas;
     await tx.completitud.update({
       where: { id },
       data: {
-        estado: decision === "aprobar" ? "APROBADO" : "RECHAZADO",
-        puntosOtorgados: decision === "aprobar" ? completitud.desafio.puntos : 0,
+        estado: aprobar ? "APROBADO" : "RECHAZADO",
+        puntosOtorgados: aprobar ? completitud.desafio.puntos : 0,
         urlEvidencia: eliminarFoto ? null : completitud.urlEvidencia,
       },
     });
+    if (publicarEnRecuerdos && completitud.urlEvidencia) {
+      await tx.recuerdo.upsert({
+        where: { claveIdempotencia: claveRecuerdoEvidencia(completitud.id) },
+        update: {
+          participanteId: completitud.participanteId,
+          urlFoto: completitud.urlEvidencia,
+          urlMiniatura: completitud.urlEvidencia,
+          descripcion: completitud.desafio.titulo,
+          visible: true,
+          pendiente: false,
+          reportado: false,
+        },
+        create: {
+          participanteId: completitud.participanteId,
+          urlFoto: completitud.urlEvidencia,
+          urlMiniatura: completitud.urlEvidencia,
+          descripcion: completitud.desafio.titulo,
+          visible: true,
+          pendiente: false,
+          creadoEn: completitud.completadoEn,
+          claveIdempotencia: claveRecuerdoEvidencia(completitud.id),
+        },
+      });
+    } else {
+      await tx.recuerdo.updateMany({
+        where: { claveIdempotencia: claveRecuerdoEvidencia(completitud.id) },
+        data: { visible: false },
+      });
+    }
     await recalcularPuntosParticipante(tx, completitud.participanteId);
+    await actualizarPremioFotoMasReaccionada(tx);
     return eliminarFoto ? completitud.urlEvidencia : null;
   });
   if (urlParaEliminar) await storage.eliminar(urlParaEliminar).catch(() => undefined);
   anunciarCambio("puntos");
+  anunciarCambio("recuerdo");
   revalidatePath("/admin/evidencias");
 }
 
@@ -293,8 +379,11 @@ export async function moderarRecuerdo(formulario: FormData) {
         where: { participanteId: recuerdo.participanteId, motivo: `Recuerdo #${id}` },
       });
       await recalcularPuntosParticipante(tx, recuerdo.participanteId);
+      await actualizarPremioFotoMasReaccionada(tx);
     });
-    await Promise.all([storage.eliminar(recuerdo.urlFoto), storage.eliminar(recuerdo.urlMiniatura)]);
+    if (!recuerdo.claveIdempotencia?.startsWith(PREFIJO_EVIDENCIA_RECUERDO)) {
+      await Promise.all([storage.eliminar(recuerdo.urlFoto), storage.eliminar(recuerdo.urlMiniatura)]);
+    }
   } else if (accion === "mostrar") {
     await db.$transaction(async (tx) => {
       await tx.recuerdo.update({
@@ -318,20 +407,26 @@ export async function moderarRecuerdo(formulario: FormData) {
           await recalcularPuntosParticipante(tx, recuerdo.participanteId);
         }
       }
+      await actualizarPremioFotoMasReaccionada(tx);
     });
   } else {
-    await db.recuerdo.update({ where: { id }, data: { visible: false } });
+    await db.$transaction(async (tx) => {
+      await tx.recuerdo.update({ where: { id }, data: { visible: false } });
+      await actualizarPremioFotoMasReaccionada(tx);
+    });
   }
   anunciarCambio("recuerdo");
+  anunciarCambio("puntos");
   revalidatePath("/admin/recuerdos");
 }
 
 export async function guardarConfiguracion(formulario: FormData) {
   await requerirAdmin();
   const eliminarEvidenciasRechazadas = formulario.get("eliminarEvidenciasRechazadas") === "on";
-  await db.configuracionEvento.update({
-    where: { id: "evento" },
-    data: {
+  await db.$transaction(async (tx) => {
+    await tx.configuracionEvento.update({
+      where: { id: "evento" },
+      data: {
       nombreEvento: String(formulario.get("nombreEvento")),
       descripcionAgenda: String(formulario.get("descripcionAgenda") ?? "").trim().slice(0, 800),
       organizadoresAgenda: String(formulario.get("organizadoresAgenda") ?? "").trim().slice(0, 300),
@@ -345,8 +440,11 @@ export async function guardarConfiguracion(formulario: FormData) {
       maxRecuerdosConPuntos: Number(formulario.get("maxRecuerdosConPuntos")),
       maxRecuerdosPorParticipante: Math.max(1, Math.min(50, Number(formulario.get("maxRecuerdosPorParticipante")) || 10)),
       eliminarEvidenciasRechazadas,
-      recuerdosRequierenAprobacion: formulario.get("recuerdosRequierenAprobacion") === "on",
-    },
+        recuerdosRequierenAprobacion: formulario.get("recuerdosRequierenAprobacion") === "on",
+        puntosFotoMasReaccionada: Math.max(0, Math.min(100_000, Number(formulario.get("puntosFotoMasReaccionada")) || 0)),
+      },
+    });
+    await actualizarPremioFotoMasReaccionada(tx);
   });
   if (eliminarEvidenciasRechazadas) {
     const rechazadas = await db.completitud.findMany({
@@ -362,6 +460,7 @@ export async function guardarConfiguracion(formulario: FormData) {
     }
   }
   anunciarCambio("configuracion");
+  anunciarCambio("puntos");
   revalidatePath("/admin/configuracion");
   revalidatePath("/");
   revalidatePath("/diploma");

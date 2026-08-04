@@ -47,8 +47,13 @@ export default async function Configuracion() {
         <div className="md:col-span-2"><label className="etiqueta">Ciclo mixto</label><input className="campo" name="cicloMixto" defaultValue={config.cicloMixto} /><p className="mt-1 text-xs text-slate-500">Formato: asistentes:60,recuerdos:45,podio:30</p></div>
         <h2 className="mt-3 text-xl font-extrabold md:col-span-2">Recuerdos</h2>
         <div><label className="etiqueta">Puntos por recuerdo</label><input className="campo" type="number" min={0} name="puntosPorRecuerdo" defaultValue={config.puntosPorRecuerdo} /></div>
-        <div><label className="etiqueta">Máximo con puntos</label><input className="campo" type="number" min={0} name="maxRecuerdosConPuntos" defaultValue={config.maxRecuerdosConPuntos} /></div>
+        <div><label className="etiqueta">Cantidad máxima de recuerdos que otorgan puntos</label><input className="campo" type="number" min={0} name="maxRecuerdosConPuntos" defaultValue={config.maxRecuerdosConPuntos} /></div>
         <div className="md:col-span-2"><label className="etiqueta">Máximo de recuerdos por participante</label><input className="campo" type="number" min={1} max={50} name="maxRecuerdosPorParticipante" defaultValue={config.maxRecuerdosPorParticipante} /><p className="mt-1 text-xs text-slate-500">Recomendado para el plan gratuito: 10 por persona.</p></div>
+        <div className="md:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+          <label className="etiqueta">Puntos para la foto con más reacciones</label>
+          <input className="campo bg-white" type="number" min={0} max={100000} name="puntosFotoMasReaccionada" defaultValue={config.puntosFotoMasReaccionada} />
+          <p className="mt-2 text-xs text-rose-800">Suma corazones y risas. El premio se asigna en tiempo real a una sola foto visible; si cambia la ganadora, los puntos se trasladan a su creador. En empate gana la publicada primero. Usa 0 para desactivarlo.</p>
+        </div>
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="recuerdosRequierenAprobacion" defaultChecked={config.recuerdosRequierenAprobacion} /> Los recuerdos requieren aprobación previa</label>
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 font-bold text-emerald-900"><input type="checkbox" name="eliminarEvidenciasRechazadas" defaultChecked={config.eliminarEvidenciasRechazadas} /> Eliminar del almacenamiento las evidencias rechazadas</label>
         <button className="boton-primario md:col-span-2">Guardar configuración</button>
