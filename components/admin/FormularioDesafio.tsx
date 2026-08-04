@@ -80,10 +80,10 @@ export function FormularioDesafio({
             <input className="campo bg-white" type="datetime-local" name="fechaHoraObjetivo" required defaultValue={puntualidad?.fechaHoraObjetivo ?? ""} />
           </div>
           <div>
-            <label className="etiqueta">Tolerancia máxima (minutos)</label>
+            <label className="etiqueta">Ventana antes y después (minutos)</label>
             <input className="campo bg-white" type="number" name="toleranciaMinutos" min={0} max={1440} step={1} required defaultValue={puntualidad?.toleranciaMinutos ?? 5} />
           </div>
-          <p className="text-sm text-amber-900 md:col-span-2">La hora se interpreta en Colombia. Por ejemplo, con llegada a las 2:00 p. m. y 5 minutos de tolerancia, la persona obtiene puntos durante el minuto de las 2:05 p. m. Después podrá registrar su llegada, pero recibirá 0 puntos y verá cuántos minutos tarde llegó. Deja “Disponible hasta” vacío para conservar este mensaje después del límite.</p>
+          <p className="text-sm text-amber-900 md:col-span-2">La hora se interpreta en Colombia. Por ejemplo, con llegada a las 2:00 p. m. y 5 minutos de tolerancia, solo se permite registrar entre 1:55 p. m. y 2:05 p. m. Antes o después no se crea la completitud ni se entregan puntos.</p>
         </div>
       )}
       {tipo === "EVIDENCIA_FOTO" && <div className="md:col-span-2"><label className="etiqueta">Instrucción para la foto</label><input className="campo" name="instruccion" required defaultValue={config.instruccion} /></div>}

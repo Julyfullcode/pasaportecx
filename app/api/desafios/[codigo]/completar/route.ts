@@ -58,6 +58,19 @@ export async function POST(
       mensaje: puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
     });
   }
+  const evaluacionPuntualidad = esPuntualidad ? evaluarPuntualidad(configuracion, ahora) : null;
+  if (evaluacionPuntualidad && evaluacionPuntualidad.estadoVentana !== "DENTRO") {
+    const mensaje = mensajePuntualidad(evaluacionPuntualidad, desafio.puntos);
+    return Response.json({
+      error: mensaje,
+      noRegistrado: true,
+      estado: "FUERA_VENTANA",
+      puntosGanados: 0,
+      nuevoTotal: participante.puntosTotales,
+      puntualidad: evaluacionPuntualidad,
+      mensaje,
+    }, { status: 409 });
+  }
   if (!existente && desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
     return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
   }
@@ -69,11 +82,10 @@ export async function POST(
   let estado: EstadoCompletitud = "APROBADO";
   let urlEvidencia: string | undefined;
   let respuesta: Prisma.InputJsonValue = {};
-  let resultadoPuntualidad: ResultadoPuntualidad | null = null;
+  const resultadoPuntualidad: ResultadoPuntualidad | null = evaluacionPuntualidad;
 
-  if (esPuntualidad) {
-    resultadoPuntualidad = evaluarPuntualidad(configuracion, ahora);
-    puntos = resultadoPuntualidad.obtuvoPuntos ? desafio.puntos : 0;
+  if (esPuntualidad && resultadoPuntualidad) {
+    puntos = desafio.puntos;
     respuesta = { ...resultadoPuntualidad, evaluadoEn: ahora.toISOString() };
   } else if (esCosecha) {
     const respuestas = Object.fromEntries(

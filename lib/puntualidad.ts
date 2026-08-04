@@ -8,7 +8,9 @@ export type ConfiguracionPuntualidad = {
 };
 
 export type ResultadoPuntualidad = ConfiguracionPuntualidad & {
+  estadoVentana: "ANTES" | "DENTRO" | "DESPUES";
   obtuvoPuntos: boolean;
+  minutosAntes: number;
   minutosTarde: number;
 };
 
@@ -61,10 +63,19 @@ export function fechaHoraObjetivoComoFecha(configuracion: ConfiguracionPuntualid
 export function evaluarPuntualidad(configuracion: ConfiguracionPuntualidad, ahora = new Date()): ResultadoPuntualidad {
   const objetivo = fechaHoraObjetivoComoFecha(configuracion);
   const diferenciaMs = ahora.getTime() - objetivo.getTime();
-  const minutosTarde = diferenciaMs <= 0 ? 0 : Math.floor(diferenciaMs / 60_000);
+  const toleranciaMs = configuracion.toleranciaMinutos * 60_000;
+  const estadoVentana = ahora.getTime() < objetivo.getTime() - toleranciaMs
+    ? "ANTES"
+    : ahora.getTime() > objetivo.getTime() + toleranciaMs
+      ? "DESPUES"
+      : "DENTRO";
+  const minutosAntes = diferenciaMs >= 0 ? 0 : Math.ceil(Math.abs(diferenciaMs) / 60_000);
+  const minutosTarde = diferenciaMs <= 0 ? 0 : Math.ceil(diferenciaMs / 60_000);
   return {
     ...configuracion,
-    obtuvoPuntos: minutosTarde <= configuracion.toleranciaMinutos,
+    estadoVentana,
+    obtuvoPuntos: estadoVentana === "DENTRO",
+    minutosAntes,
     minutosTarde,
   };
 }
@@ -74,22 +85,31 @@ export function resultadoPuntualidadDesdeRespuesta(valor: unknown): ResultadoPun
   const respuestaCompleta = valor as Record<string, unknown>;
   if (!esConfiguracionPuntualidad(valor)) return null;
   if (typeof respuestaCompleta.obtuvoPuntos !== "boolean" || !Number.isInteger(respuestaCompleta.minutosTarde)) return null;
+  const estadoGuardado = respuestaCompleta.estadoVentana;
+  const estadoVentana = estadoGuardado === "ANTES" || estadoGuardado === "DENTRO" || estadoGuardado === "DESPUES"
+    ? estadoGuardado
+    : respuestaCompleta.obtuvoPuntos ? "DENTRO" : "DESPUES";
   return {
     tipoEspecial: TIPO_ESPECIAL_PUNTUALIDAD,
     fechaHoraObjetivo: valor.fechaHoraObjetivo,
     toleranciaMinutos: valor.toleranciaMinutos,
+    estadoVentana,
     obtuvoPuntos: respuestaCompleta.obtuvoPuntos,
+    minutosAntes: Number.isInteger(respuestaCompleta.minutosAntes) ? Number(respuestaCompleta.minutosAntes) : 0,
     minutosTarde: Number(respuestaCompleta.minutosTarde),
   };
 }
 
 export function mensajePuntualidad(resultado: ResultadoPuntualidad, puntos: number) {
+  if (resultado.estadoVentana === "ANTES") {
+    return `Este desafío todavía no está disponible. La hora objetivo está a ${resultado.minutosAntes} minutos y podrás registrarte cuando falten ${resultado.toleranciaMinutos} minutos.`;
+  }
   if (resultado.obtuvoPuntos) {
     return resultado.minutosTarde === 0
       ? `Llegaste a tiempo y ganaste ${puntos} puntos.`
       : `Llegaste ${resultado.minutosTarde} minutos después de la hora y estás dentro del límite. Ganaste ${puntos} puntos.`;
   }
-  return `Desafortunadamente, llegaste ${resultado.minutosTarde} minutos tarde y ya no aplican los ${puntos} puntos de este desafío.`;
+  return `Desafortunadamente, llegaste ${resultado.minutosTarde} minutos tarde. El registro cerró ${resultado.toleranciaMinutos} minutos después de la hora y ya no aplican los ${puntos} puntos de este desafío.`;
 }
 
 export function fechaHoraPuntualidadLegible(configuracion: ConfiguracionPuntualidad) {

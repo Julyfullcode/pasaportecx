@@ -34,7 +34,7 @@ export function ResolverDesafio({
 }) {
   const [cargando, setCargando] = useState(tipo === "CHECK_IN");
   const [error, setError] = useState("");
-  const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; yaCompletado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
+  const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
   const puntualidad = esConfiguracionPuntualidad(configuracion) ? configuracion : null;
 
@@ -56,6 +56,10 @@ export function ResolverDesafio({
         signal: controlador.signal,
       });
       const cuerpo = await respuesta.json();
+      if (!respuesta.ok && cuerpo.noRegistrado) {
+        setResultado(cuerpo);
+        return;
+      }
       if (!respuesta.ok) throw new Error(cuerpo.error);
       setResultado(cuerpo);
     } catch (e) {
@@ -79,17 +83,25 @@ export function ResolverDesafio({
 
   if (resultado) {
     const pendiente = resultado.estado === "PENDIENTE";
-    const llegadaTarde = Boolean(resultado.puntualidad && !resultado.puntualidad.obtuvoPuntos);
+    const antesDeVentana = resultado.puntualidad?.estadoVentana === "ANTES";
+    const llegadaTarde = resultado.puntualidad?.estadoVentana === "DESPUES";
+    const fueraDeVentana = Boolean(resultado.noRegistrado && (antesDeVentana || llegadaTarde));
     return (
       <div className="tarjeta entrada-suave p-6 text-center">
-        <span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${pendiente || llegadaTarde ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>
-          {pendiente || llegadaTarde ? <Clock3 size={34} /> : <CheckCircle2 size={34} />}
+        <span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${pendiente || antesDeVentana || llegadaTarde ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>
+          {pendiente || antesDeVentana || llegadaTarde ? <Clock3 size={34} /> : <CheckCircle2 size={34} />}
         </span>
         <h2 className="mt-4 text-2xl font-extrabold text-[var(--epm-azul-profundo)]">
-          {resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : llegadaTarde ? "Llegaste después del tiempo límite" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
+          {resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : antesDeVentana ? "El desafío aún no está disponible" : llegadaTarde ? "El tiempo para registrarte terminó" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
         </h2>
         {pendiente ? (
           <p className="mt-2 text-slate-600">La organización revisará tu foto. Los {puntos} puntos se sumarán al aprobarla.</p>
+        ) : fueraDeVentana ? (
+          <>
+            <p className="mt-3 text-slate-600">{resultado.mensaje}</p>
+            <p className="mt-3 font-bold text-slate-600">No se registró ninguna completitud.</p>
+            {antesDeVentana && <button type="button" onClick={() => window.location.reload()} className="boton-secundario mt-5 w-full">Comprobar nuevamente</button>}
+          </>
         ) : llegadaTarde ? (
           <>
             <p className="mt-3 text-slate-600">{resultado.mensaje}</p>
@@ -122,7 +134,7 @@ export function ResolverDesafio({
           <Clock3 className="mx-auto text-amber-600" size={34} />
           <p className="mt-3 text-sm font-bold uppercase tracking-wider text-amber-800">Hora de llegada</p>
           <p className="mt-1 text-lg font-extrabold text-[var(--epm-azul-profundo)]">{fechaHoraPuntualidadLegible(puntualidad)}</p>
-          <p className="mt-2 text-sm text-slate-600">Tienes hasta {puntualidad.toleranciaMinutos} minutos de tolerancia. La hora se validará en el servidor al tocar el botón.</p>
+          <p className="mt-2 text-sm text-slate-600">Solo puedes registrarte desde {puntualidad.toleranciaMinutos} minutos antes hasta {puntualidad.toleranciaMinutos} minutos después. La hora se validará en el servidor.</p>
         </div>
       )}
       {tipo === "OPCION_MULTIPLE" && (

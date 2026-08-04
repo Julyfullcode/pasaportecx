@@ -92,7 +92,36 @@ test.describe("Retos y puntos", () => {
     expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO + 80);
   });
 
-  test("el desafío de puntualidad registra la llegada tarde sin otorgar puntos", async ({ context, page }) => {
+  test("el desafío de puntualidad rechaza el registro antes de la ventana", async ({ context, page }) => {
+    const marca = Date.now();
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Temprano ${marca}` });
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `puntualidad-temprano-${marca}`,
+        titulo: "Llegada puntual",
+        descripcion: "Registra tu hora de llegada.",
+        tipo: "CHECK_IN",
+        puntos: 80,
+        dia: 1,
+        ubicacion: "Entrada",
+        estado: "PUBLICADO",
+        configuracion: {
+          tipoEspecial: "PUNTUALIDAD",
+          fechaHoraObjetivo: fechaHoraColombia(new Date(Date.now() + 7 * 60_000)),
+          toleranciaMinutos: 5,
+        },
+      },
+    });
+    await autenticarParticipante(context, token);
+    await page.goto(`/d/${desafio.codigoQr}`);
+    await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
+
+    await expect(page.getByRole("heading", { name: "El desafío aún no está disponible" })).toBeVisible();
+    await expect(page.getByText("No se registró ninguna completitud.", { exact: true })).toBeVisible();
+    expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: desafio.id } })).toBe(0);
+  });
+
+  test("el desafío de puntualidad rechaza la llegada después de la ventana", async ({ context, page }) => {
     const marca = Date.now();
     const { participante, token } = await crearParticipanteConToken({ nombre: `Tarde ${marca}` });
     const desafio = await db.desafio.create({
@@ -116,9 +145,10 @@ test.describe("Retos y puntos", () => {
     await page.goto(`/d/${desafio.codigoQr}`);
     await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
 
-    await expect(page.getByRole("heading", { name: "Llegaste después del tiempo límite" })).toBeVisible();
-    await expect(page.getByText(/Desafortunadamente, llegaste \d+ minutos tarde y ya no aplican los 80 puntos/)).toBeVisible();
-    expect((await db.completitud.findUniqueOrThrow({ where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } } })).puntosOtorgados).toBe(0);
+    await expect(page.getByRole("heading", { name: "El tiempo para registrarte terminó" })).toBeVisible();
+    await expect(page.getByText(/Desafortunadamente, llegaste \d+ minutos tarde. El registro cerró 5 minutos después/)).toBeVisible();
+    await expect(page.getByText("No se registró ninguna completitud.", { exact: true })).toBeVisible();
+    expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: desafio.id } })).toBe(0);
     expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO);
   });
 });
