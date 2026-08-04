@@ -4,7 +4,7 @@ import Link from "next/link";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ResolverDesafio } from "@/components/participante/ResolverDesafio";
-import { FORMATO_COSECHA } from "@/lib/cosecha-config";
+import { esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/cosecha-config";
 import { CurvaMarca } from "@/components/marca/CurvaMarca";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 import { LogoBlanco } from "@/components/marca/Logo";
@@ -27,6 +27,10 @@ export default async function DetalleDesafio({
   });
   if (!desafio) notFound();
   const esCosecha = (desafio.configuracion as { formato?: string }).formato === FORMATO_COSECHA;
+  const completitud = desafio.completitudes[0];
+  const estaCompletado = Boolean(
+    completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
+  );
   return (
     <div>
       <header className="marca-gradiente relative overflow-hidden px-4 pb-28 pt-5 text-white md:pb-32">
@@ -44,9 +48,9 @@ export default async function DetalleDesafio({
         <CurvaMarca />
       </header>
       <section className="relative z-20 mx-auto -mt-4 max-w-2xl px-4">
-        {desafio.completitudes[0] ? (
+        {estaCompletado && completitud ? (
           <div className="tarjeta p-6 text-center">
-            <CheckExistente estado={desafio.completitudes[0].estado} puntos={desafio.completitudes[0].puntosOtorgados} esCosecha={esCosecha} />
+            <CheckExistente estado={completitud.estado} puntos={completitud.puntosOtorgados} esCosecha={esCosecha} />
           </div>
         ) : (
           <ResolverDesafio codigo={desafio.codigoQr} tipo={desafio.tipo} puntos={desafio.puntos} configuracion={desafio.configuracion as never} />

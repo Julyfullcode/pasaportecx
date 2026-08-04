@@ -6,7 +6,7 @@ import { storage } from "@/lib/storage";
 import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { extensionImagen } from "@/lib/archivos";
-import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
+import { esRespuestasCosecha, FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 
 type Configuracion = {
   opciones?: Opcion[];
@@ -24,21 +24,35 @@ export async function POST(
   const { codigo } = await params;
   const desafio = await db.desafio.findUnique({
     where: { codigoQr: codigo },
-    include: { _count: { select: { completitudes: true } } },
+    include: {
+      _count: { select: { completitudes: true } },
+      completitudes: { where: { participanteId: participante.id }, take: 1 },
+    },
   });
   if (!desafio) return Response.json({ error: "Este código no corresponde a un desafío." }, { status: 404 });
+  const configuracion = desafio.configuracion as Configuracion;
+  const esCosecha = desafio.tipo === "ENCUESTA" && configuracion.formato === FORMATO_COSECHA;
+  const existente = desafio.completitudes[0];
+  const cosechaIncompleta = Boolean(existente && esCosecha && !esRespuestasCosecha(existente.respuesta));
   const ahora = new Date();
   if (desafio.estado !== "PUBLICADO") return Response.json({ error: "El desafío no está disponible." }, { status: 409 });
   if (desafio.disponibleDesde && desafio.disponibleDesde > ahora) return Response.json({ error: "Este desafío aún no comienza." }, { status: 409 });
   if (desafio.disponibleHasta && desafio.disponibleHasta < ahora) return Response.json({ error: "Este desafío ya finalizó." }, { status: 409 });
-  if (desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
+  if (existente && !cosechaIncompleta) {
+    return Response.json({
+      yaCompletado: true,
+      estado: existente.estado,
+      puntosGanados: existente.puntosOtorgados,
+      nuevoTotal: participante.puntosTotales,
+    });
+  }
+  if (!existente && desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
     return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
   }
 
   // Un check-in no lleva campos. Evitar parsear multipart vacío también hace el
   // flujo más resistente a navegadores que omiten el boundary cuando no hay partes.
   const formulario = desafio.tipo === "CHECK_IN" ? new FormData() : await request.formData();
-  const configuracion = desafio.configuracion as Configuracion;
   let puntos = desafio.puntos;
   let estado: EstadoCompletitud = "APROBADO";
   let urlEvidencia: string | undefined;
@@ -100,16 +114,21 @@ export async function POST(
 
   try {
     const resultado = await db.$transaction(async (tx) => {
-      const completitud = await tx.completitud.create({
-        data: {
-          participanteId: participante.id,
-          desafioId: desafio.id,
-          puntosOtorgados: puntos,
-          respuesta,
-          urlEvidencia,
-          estado,
-        },
-      });
+      const completitud = existente && esCosecha && !esRespuestasCosecha(existente.respuesta)
+        ? await tx.completitud.update({
+          where: { id: existente.id },
+          data: { puntosOtorgados: puntos, respuesta, estado },
+        })
+        : await tx.completitud.create({
+          data: {
+            participanteId: participante.id,
+            desafioId: desafio.id,
+            puntosOtorgados: puntos,
+            respuesta,
+            urlEvidencia,
+            estado,
+          },
+        });
       const nuevoTotal = await recalcularPuntosParticipante(tx, participante.id);
       return { completitud, nuevoTotal };
     });

@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { obtenerRankingEquipos } from "@/lib/equipos";
 import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
 import { MarcaHeader } from "@/components/ui/MarcaHeader";
-import { CODIGO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
+import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +21,13 @@ export default async function Inicio() {
     db.completitud.count({ where: { participanteId: participante.id } }),
     db.desafio.count({ where: { estado: "PUBLICADO", esSecreto: false } }),
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { diplomaHabilitado: true } }),
-    db.completitud.count({ where: { participanteId: participante.id, desafio: { codigoQr: CODIGO_DESAFIO_CIERRE } } }),
+    db.completitud.findFirst({
+      where: { participanteId: participante.id, desafio: { codigoQr: CODIGO_DESAFIO_CIERRE } },
+      select: { respuesta: true },
+    }),
   ]);
+  const tieneCosecha = esRespuestasCosecha(cosechaCompletada?.respuesta);
+  const completadosValidos = completados - (cosechaCompletada && !tieneCosecha ? 1 : 0);
   const posicion = ranking.findIndex((p) => p.id === participante.id) + 1;
   const posicionEquipo = equipos.findIndex((e) => e.id === participante.grupoId) + 1;
   return (
@@ -60,7 +65,7 @@ export default async function Inicio() {
         <section className="grid grid-cols-2 gap-3">
           <Link href="/desafios" className="tarjeta p-4">
             <span className="text-sm font-bold text-slate-500">Tu recorrido</span>
-            <strong className="mt-2 block text-2xl text-[var(--epm-azul-profundo)]">{completados}/{totalPublicados}</strong>
+            <strong className="mt-2 block text-2xl text-[var(--epm-azul-profundo)]">{completadosValidos}/{totalPublicados}</strong>
             <span className="mt-1 flex items-center text-xs font-extrabold text-[var(--epm-azul)]">Ver desafíos <ChevronRight size={15} /></span>
           </Link>
           <Link href="/ranking" className="tarjeta p-4">
@@ -77,7 +82,7 @@ export default async function Inicio() {
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
         </a>
-        {cosechaCompletada > 0 && (
+        {tieneCosecha && (
           <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-verde)] bg-gradient-to-r from-lime-50 to-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Sprout /></span>
             <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Mi tarjeta de cierre</strong><small className="text-slate-600">Abre tu cosecha, gratitud y acción en PDF</small></span>

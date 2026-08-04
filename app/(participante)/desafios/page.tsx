@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Clock3, LockKeyhole } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +28,13 @@ export default async function Desafios({
       completitudes: { where: { participanteId: participante.id }, take: 1 },
     },
   });
-  const completados = desafios.filter((d) => d.completitudes.length);
-  const pendientes = desafios.filter((d) => !d.completitudes.length);
+  const estaCompletado = (desafio: (typeof desafios)[number]) => {
+    const completitud = desafio.completitudes[0];
+    const esCosecha = (desafio.configuracion as { formato?: string }).formato === FORMATO_COSECHA;
+    return Boolean(completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)));
+  };
+  const completados = desafios.filter(estaCompletado);
+  const pendientes = desafios.filter((desafio) => !estaCompletado(desafio));
   return (
     <div className="contenedor py-6">
       <div className="flex items-end justify-between">
@@ -60,7 +66,7 @@ export default async function Desafios({
 
 type TarjetaDesafio = Awaited<ReturnType<typeof db.desafio.findMany>>[number] & {
   componente: { nombre: string; colorHex: string } | null;
-  completitudes: { puntosOtorgados: number; estado: string }[];
+  completitudes: { puntosOtorgados: number; estado: string; respuesta: unknown }[];
 };
 
 function Seccion({ titulo, desafios, completado }: { titulo: string; desafios: TarjetaDesafio[]; completado: boolean }) {
