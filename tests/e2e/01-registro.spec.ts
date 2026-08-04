@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { db } from "@/lib/db";
-import { EMPRESA_ID, fotoPng, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
+import { BASE_URL, EMPRESA_ID, fotoPng, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
 
 async function completarCamposBasicos(page: Page, sufijo: string) {
   await page.getByLabel("Apellidos").fill(sufijo);
@@ -30,9 +30,22 @@ test.describe("Registro de participante", () => {
     await page.goto("/registro");
     await page.getByLabel("Nombre", { exact: true }).fill(marca);
     await completarCamposBasicos(page, "E2E");
+    const registroCompletado = page.waitForResponse((respuesta) =>
+      respuesta.url().endsWith("/api/registro") && respuesta.request().method() === "POST",
+    );
     await page.getByRole("button", { name: "Crear mi pasaporte CX" }).click();
+    const respuestaRegistro = await registroCompletado;
 
     await expect(page.getByText("¡Tu pasaporte está listo!")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "¡Te damos la bienvenida al encuentro de experiencia y comunicaciones!" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Descargar Pasaporte CX" })).toHaveAttribute("href", "/api/pasaporte#view=Fit");
+    const tokenSesion = (await respuestaRegistro.headerValue("set-cookie"))?.match(/pasaporte_participante=([^;]+)/)?.[1];
+    expect(tokenSesion).toBeTruthy();
+    await page.context().addCookies([{ name: "pasaporte_participante", value: tokenSesion!, url: BASE_URL }]);
+    const pasaporte = await page.request.get("/api/pasaporte");
+    expect(pasaporte.status()).toBe(200);
+    expect(pasaporte.headers()["content-type"]).toContain("application/pdf");
+    expect((await pasaporte.body()).subarray(0, 4).toString()).toBe("%PDF");
     const participante = await db.participante.findFirstOrThrow({ where: { nombre: `${marca} E2E` } });
     expect(participante.puntosTotales).toBe(PUNTOS_REGISTRO);
   });
