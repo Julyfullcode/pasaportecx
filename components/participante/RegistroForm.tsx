@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import QRCode from "qrcode";
 import { Camera, Check, Download, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Sparkles, Trophy } from "lucide-react";
 import { comprimirImagenHasta } from "@/lib/imagen";
 import { LogoBlanco } from "@/components/marca/Logo";
@@ -23,7 +22,7 @@ export function RegistroForm({
   const [procesandoFoto, setProcesandoFoto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
-  const [registro, setRegistro] = useState<{ nombre: string; codigoRecuperacion: string; qr: string }>();
+  const [registro, setRegistro] = useState<{ nombre: string }>();
 
   async function cambiarFoto(archivo?: File) {
     if (!archivo) return;
@@ -57,12 +56,7 @@ export function RegistroForm({
       });
       const cuerpo = await respuesta.json();
       if (!respuesta.ok) throw new Error(cuerpo.error);
-      const qr = await QRCode.toDataURL(`${window.location.origin}/recuperar/${cuerpo.participante.codigoRecuperacion}`, {
-        width: 420,
-        margin: 2,
-        color: { dark: "#0B3B60", light: "#FFFFFF" },
-      });
-      setRegistro({ ...cuerpo.participante, qr });
+      setRegistro({ nombre: cuerpo.participante.nombre });
     } catch (e) {
       setError(
         e instanceof DOMException && e.name === "AbortError"
@@ -98,11 +92,14 @@ export function RegistroForm({
         <div className="p-5 md:p-6">
           <h3 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">¡Tu pasaporte está listo!</h3>
           <p className="mt-1 text-slate-600">{registro.nombre}</p>
-          <div className="my-5 rounded-2xl bg-[var(--epm-gris-fondo)] p-4">
-            <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Código de recuperación</p>
-            <p className="mt-1 font-display text-4xl font-extrabold tracking-[.16em] text-[var(--epm-azul-profundo)]">{registro.codigoRecuperacion}</p>
-            <img src={registro.qr} alt={`QR personal de recuperación ${registro.codigoRecuperacion}`} className="mx-auto mt-3 h-44 w-44 rounded-xl" />
-            <p className="mt-2 text-sm text-slate-600">Guárdalo: te permitirá recuperar tu perfil en otro dispositivo.</p>
+          <div className="my-5 rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 p-5">
+            <p className="text-xs font-extrabold uppercase tracking-[.18em] text-[var(--epm-teal)]">Ahora, vive la experiencia</p>
+            <p className="mx-auto mt-2 max-w-lg text-base font-bold leading-relaxed text-[var(--epm-azul-profundo)]">Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-extrabold">
+              <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-azul)] shadow-sm">Conéctate</span>
+              <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-teal)] shadow-sm">Escucha</span>
+              <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-verde-medio)] shadow-sm">Aporta</span>
+            </div>
           </div>
           <a href="/api/pasaporte#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario w-full"><Download size={19} /> Descargar Pasaporte CX</a>
           <button onClick={() => router.replace("/")} className="boton-primario mt-3 w-full">Entrar al encuentro</button>

@@ -38,6 +38,9 @@ test.describe("Registro de participante", () => {
 
     await expect(page.getByText("¡Tu pasaporte está listo!")).toBeVisible();
     await expect(page.getByRole("heading", { name: "¡Te damos la bienvenida al encuentro de experiencia y comunicaciones!" })).toBeVisible();
+    await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Código de recuperación", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("img", { name: /QR personal de recuperación/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Descargar Pasaporte CX" })).toHaveAttribute("href", "/api/pasaporte#view=Fit");
     const tokenSesion = (await respuestaRegistro.headerValue("set-cookie"))?.match(/pasaporte_participante=([^;]+)/)?.[1];
     expect(tokenSesion).toBeTruthy();
