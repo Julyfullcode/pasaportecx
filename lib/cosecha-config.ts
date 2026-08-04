@@ -26,6 +26,7 @@ export type RespuestasCosecha = {
   activo: string;
 };
 
+// Una completitud heredada no habilita la tarjeta hasta tener las tres reflexiones.
 export function esRespuestasCosecha(valor: unknown): valor is RespuestasCosecha {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) return false;
   const respuesta = valor as Record<string, unknown>;
