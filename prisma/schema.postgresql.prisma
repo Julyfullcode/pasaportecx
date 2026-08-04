@@ -48,6 +48,7 @@ model Participante {
   grupoId             String
   urlFoto             String
   codigoRecuperacion  String               @unique
+  puntosRegistro      Int                  @default(0)
   puntosTotales       Int                  @default(0)
   activo              Boolean              @default(true)
   creadoEn            DateTime             @default(now())
@@ -235,6 +236,7 @@ model ConfiguracionEvento {
   tamanoPodioIndividual        Int                 @default(5)
   tamanoPodioEquipos           Int                 @default(3)
   metodoPuntajeEquipo          MetodoPuntajeEquipo @default(PROMEDIO)
+  puntosPorRegistro            Int                 @default(0)
   puntosPorRecuerdo            Int                 @default(0)
   maxRecuerdosConPuntos        Int                 @default(0)
   maxRecuerdosPorParticipante  Int                 @default(10)

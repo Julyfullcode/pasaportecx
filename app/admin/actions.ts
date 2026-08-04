@@ -314,6 +314,7 @@ export async function guardarConfiguracion(formulario: FormData) {
       tamanoPodioIndividual: Number(formulario.get("tamanoPodioIndividual")),
       tamanoPodioEquipos: Number(formulario.get("tamanoPodioEquipos")),
       metodoPuntajeEquipo: String(formulario.get("metodoPuntajeEquipo")) as "PROMEDIO" | "SUMA",
+      puntosPorRegistro: Math.max(0, Math.min(10_000, Number(formulario.get("puntosPorRegistro")) || 0)),
       modoAsistentes: String(formulario.get("modoAsistentes")) as "MOSAICO" | "CARRUSEL" | "DESTACADO",
       intervaloAsistentesSegundos: Number(formulario.get("intervaloAsistentesSegundos")),
       cicloMixto: String(formulario.get("cicloMixto")),

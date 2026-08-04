@@ -54,6 +54,8 @@ export async function POST(request: Request) {
           grupoId,
           urlFoto: urlFoto!,
           codigoRecuperacion: codigo,
+          puntosRegistro: configuracion.puntosPorRegistro,
+          puntosTotales: configuracion.puntosPorRegistro,
         },
         include: { grupo: true },
       });
