@@ -76,13 +76,18 @@ export function LectorQr() {
         className="tarjeta mt-4 p-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const codigo = new FormData(e.currentTarget).get("codigo");
-          router.push(`/d/${encodeURIComponent(String(codigo).trim())}`);
+          const codigo = String(new FormData(e.currentTarget).get("codigo") ?? "").trim();
+          if (!/^[a-z0-9][a-z0-9-]{1,79}$/i.test(codigo)) {
+            setError("El código ingresado no tiene un formato válido. Revísalo e intenta nuevamente.");
+            return;
+          }
+          setError("");
+          router.push(`/d/${encodeURIComponent(codigo)}`);
         }}
       >
         <label className="etiqueta flex items-center gap-2" htmlFor="codigo"><Keyboard size={19} /> Ingresar código manualmente</label>
         <div className="flex gap-2">
-          <input className="campo" id="codigo" name="codigo" required autoComplete="off" placeholder="Código del desafío" />
+          <input className="campo" id="codigo" name="codigo" required minLength={2} maxLength={80} autoComplete="off" placeholder="Código del desafío" />
           <button className="boton-primario">Abrir</button>
         </div>
       </form>

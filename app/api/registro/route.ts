@@ -5,6 +5,7 @@ import { storage } from "@/lib/storage";
 import { registroSchema } from "@/lib/validacion";
 import { anunciarCambio } from "@/lib/eventos";
 import { extensionImagen } from "@/lib/archivos";
+import { ZodError } from "zod";
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -73,6 +74,12 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(error);
     if (urlFoto && !participantePersistido) await storage.eliminar(urlFoto).catch(() => undefined);
+    if (error instanceof ZodError) {
+      return Response.json(
+        { error: error.issues[0]?.message ?? "Revisa los datos del registro." },
+        { status: 400 },
+      );
+    }
     return Response.json(
       { error: "No pudimos completar el registro. Tus datos siguen en el formulario; vuelve a intentarlo." },
       { status: 500 },

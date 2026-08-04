@@ -8,7 +8,9 @@ export interface StorageAdapter {
   eliminar(url: string): Promise<void>;
 }
 
-const RAIZ_UPLOADS = path.join(process.cwd(), "uploads");
+const RAIZ_UPLOADS = process.env.UPLOADS_ROOT
+  ? path.resolve(process.env.UPLOADS_ROOT)
+  : path.join(process.cwd(), "uploads");
 
 function rutaSegura(url: string) {
   const relativa = url.replace(/^\/uploads\//, "");

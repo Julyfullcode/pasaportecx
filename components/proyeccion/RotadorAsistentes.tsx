@@ -18,7 +18,9 @@ function barajar<T>(datos: T[]) {
 }
 
 export function RotadorAsistentes({ inicial, modo, intervalo }: { inicial: Persona[]; modo: "MOSAICO" | "CARRUSEL" | "DESTACADO"; intervalo: number }) {
-  const [personas, setPersonas] = useState(() => barajar(inicial));
+  // El primer render debe ser idéntico en servidor y navegador para evitar
+  // errores de hidratación. El orden se baraja al terminar cada ciclo.
+  const [personas, setPersonas] = useState(inicial);
   const [inicio, setInicio] = useState(0);
   const [nuevos, setNuevos] = useState<Set<string>>(new Set());
   const cantidad = modo === "DESTACADO" ? 1 : modo === "CARRUSEL" ? 4 : 8;

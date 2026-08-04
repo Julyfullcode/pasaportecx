@@ -25,13 +25,14 @@ npm run dev          # desarrollo
 npm run lint         # ESLint
 npm run typecheck    # TypeScript strict
 npm test             # Vitest, incluida idempotencia contra SQLite
-npm run test:e2e     # Playwright: registro, check-in y recuerdo
+npm run test:e2e     # Playwright: suite funcional, podios, administración y concurrencia
 npm run build        # build de producción
 npm run seed         # repuebla la demostración (borra datos actuales)
 npm run db:studio    # inspector visual de Prisma
 ```
 
 La primera ejecución E2E requiere `npx playwright install chromium`.
+La suite crea y reinicia exclusivamente `prisma/test-e2e.db` y `.e2e-uploads`; nunca usa la base configurada en `.env` ni producción. La matriz completa de casos está en `docs/PRUEBAS_AUTOMATIZADAS.md`.
 
 ## Arquitectura y decisiones
 

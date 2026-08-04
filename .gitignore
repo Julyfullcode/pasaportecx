@@ -1,4 +1,6 @@
 node_modules
+.e2e-uploads/
+prisma/test-e2e.db*
 .next
 .env
 prisma/dev.db
