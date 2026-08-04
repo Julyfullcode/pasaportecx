@@ -193,12 +193,27 @@ model AjustePuntos {
 }
 
 model Admin {
-  id           String         @id @default(cuid())
-  usuario      String         @unique
-  passwordHash String
-  creadoEn     DateTime       @default(now())
-  ajustes      AjustePuntos[]
-  sesiones     SesionAdmin[]
+  id                  String         @id @default(cuid())
+  usuario             String         @unique
+  passwordHash         String
+  intentosFallidos     Int            @default(0)
+  ultimoIntentoFallido DateTime?
+  bloqueadoHasta       DateTime?
+  creadoEn             DateTime       @default(now())
+  ajustes              AjustePuntos[]
+  sesiones             SesionAdmin[]
+}
+
+model LimiteSolicitud {
+  id        String   @id @default(cuid())
+  accion    String
+  claveHash String
+  ventana   DateTime
+  cantidad  Int      @default(1)
+  expiraEn  DateTime
+
+  @@unique([accion, claveHash, ventana])
+  @@index([expiraEn])
 }
 
 model SesionParticipante {

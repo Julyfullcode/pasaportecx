@@ -6,6 +6,7 @@ import { storage } from "@/lib/storage";
 import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { extensionImagen } from "@/lib/archivos";
+import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { esDesafioCosecha, esRespuestasCosecha, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 
 type Configuracion = {
@@ -94,12 +95,19 @@ export async function POST(
       return Response.json({ error: "La evidencia es demasiado pesada. Vuelve a seleccionarla para comprimirla." }, { status: 413 });
     }
     try {
+      const imagen = await normalizarImagen(new Uint8Array(await foto.arrayBuffer()), {
+        dimensionMaxima: 1600,
+        calidad: 82,
+      });
       urlEvidencia = await storage.guardar(
-        new Uint8Array(await foto.arrayBuffer()),
-        extension,
+        imagen.datos,
+        imagen.extension,
         "evidencias",
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof ImagenInvalidaError) {
+        return Response.json({ error: "El archivo adjunto no contiene una imagen válida." }, { status: 400 });
+      }
       return Response.json({ error: "El almacenamiento está ocupado. Reintenta la evidencia." }, { status: 503 });
     }
     puntos = 0;
@@ -129,7 +137,7 @@ export async function POST(
         });
       const nuevoTotal = await recalcularPuntosParticipante(tx, participante.id);
       return { completitud, nuevoTotal };
-    });
+    }, { maxWait: 15_000, timeout: 20_000 });
     anunciarCambio("puntos");
     return Response.json({
       estado: resultado.completitud.estado,

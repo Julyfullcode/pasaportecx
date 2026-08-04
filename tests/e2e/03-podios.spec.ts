@@ -3,24 +3,32 @@ import { db } from "@/lib/db";
 import { crearParticipanteConToken, contextoApiParticipante, iniciarAdmin } from "./ayudas";
 
 test.describe.serial("Podio en tiempo real", () => {
-  test("el podio individual muestra el top 5 ordenado por puntos", async ({ page, request }) => {
-    const ranking = await (await request.get("/api/ranking")).json();
+  test("el podio individual muestra el top 5 ordenado por puntos", async ({ page }) => {
+    await iniciarAdmin(page);
+    const ranking = await page.evaluate(async () => {
+      const respuesta = await fetch("/api/ranking");
+      if (!respuesta.ok) throw new Error(`Ranking respondió ${respuesta.status}`);
+      return respuesta.json();
+    });
     expect(ranking.individual.slice(0, 5).map((persona: { nombre: string }) => persona.nombre)).toEqual([
       "Podio 1", "Podio 2", "Podio 3", "Podio 4", "Podio 5",
     ]);
-    await iniciarAdmin(page);
     await page.goto("/admin/proyeccion/podio");
     await expect(page.locator("article").filter({ hasText: "Primer lugar" })).toContainText("Podio 1");
     await expect(page.getByText("Podio 4", { exact: true })).toBeVisible();
     await expect(page.getByText("Podio 5", { exact: true })).toBeVisible();
   });
 
-  test("el podio de equipos muestra el top 3 ordenado por suma acumulada", async ({ page, request }) => {
-    const ranking = await (await request.get("/api/ranking")).json();
+  test("el podio de equipos muestra el top 3 ordenado por suma acumulada", async ({ page }) => {
+    await iniciarAdmin(page);
+    const ranking = await page.evaluate(async () => {
+      const respuesta = await fetch("/api/ranking");
+      if (!respuesta.ok) throw new Error(`Ranking respondió ${respuesta.status}`);
+      return respuesta.json();
+    });
     expect(ranking.equipos.slice(0, 3).map((equipo: { nombre: string }) => equipo.nombre)).toEqual([
       "Equipo Aurora", "Equipo Bosque", "Equipo Río",
     ]);
-    await iniciarAdmin(page);
     await page.goto("/admin/proyeccion/equipos");
     await expect(page.locator("article").filter({ hasText: "Primer lugar" })).toContainText("Equipo Aurora");
     await expect(page.locator("article").filter({ hasText: "Segundo lugar" })).toContainText("Equipo Bosque");

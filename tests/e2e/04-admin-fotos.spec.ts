@@ -1,13 +1,47 @@
 import { expect, test } from "@playwright/test";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { autenticarParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin } from "./ayudas";
 
 test.describe("Administrador", () => {
-  test("las vistas y APIs administrativas están protegidas sin autenticación", async ({ page, request }) => {
+  test("las vistas y APIs administrativas están protegidas sin autenticación", async ({ page, request, playwright }) => {
     await page.goto("/admin/participantes");
     await expect(page).toHaveURL(/\/admin\/login$/);
     await expect(page.getByRole("button", { name: "Ingresar" })).toBeVisible();
     expect((await request.get("/api/proyeccion/datos")).status()).toBe(401);
+    const anonimo = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
+    expect((await anonimo.get("/api/ranking")).status()).toBe(401);
+    await anonimo.dispose();
+  });
+
+  test("el acceso administrativo se bloquea temporalmente tras cinco intentos fallidos", async ({ page }) => {
+    const usuario = `admin-bloqueo-${Date.now()}`;
+    const password = "Clave-correcta-123!";
+    const admin = await db.admin.create({
+      data: { usuario, passwordHash: await bcrypt.hash(password, 4) },
+    });
+    await page.goto("/admin/login");
+    for (let intento = 0; intento < 5; intento += 1) {
+      await page.getByLabel("Usuario").fill(usuario);
+      await page.getByLabel("Contraseña").fill("incorrecta");
+      await page.getByRole("button", { name: "Ingresar" }).click();
+      await expect(page.getByText("Usuario o contraseña incorrectos.")).toBeVisible();
+      if (intento < 4) {
+        await expect.poll(async () => (
+          await db.admin.findUniqueOrThrow({ where: { id: admin.id } })
+        ).intentosFallidos).toBe(intento + 1);
+      } else {
+        await expect.poll(async () => Boolean((
+          await db.admin.findUniqueOrThrow({ where: { id: admin.id } })
+        ).bloqueadoHasta)).toBe(true);
+      }
+    }
+    expect((await db.admin.findUniqueOrThrow({ where: { id: admin.id } })).bloqueadoHasta).not.toBeNull();
+    await page.getByLabel("Usuario").fill(usuario);
+    await page.getByLabel("Contraseña").fill(password);
+    await page.getByRole("button", { name: "Ingresar" }).click();
+    await expect(page.getByText("Demasiados intentos. Intenta nuevamente en unos minutos.")).toBeVisible();
+    await db.admin.delete({ where: { id: admin.id } });
   });
 
   test("un reto creado durante el evento se refleja para participantes al refrescar", async ({ page, browser }) => {

@@ -12,7 +12,9 @@ import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
 import type { Prisma } from "@prisma/client";
 import { extensionImagen } from "@/lib/archivos";
+import { normalizarImagen } from "@/lib/imagenes-servidor";
 import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
+import { consumirLimite } from "@/lib/limite-solicitudes";
 import {
   CODIGO_DESAFIO_CIERRE,
   FORMATO_COSECHA,
@@ -28,10 +30,36 @@ export async function iniciarSesionAdmin(
 ): Promise<EstadoLogin> {
   const usuario = String(formulario.get("usuario") ?? "").trim();
   const password = String(formulario.get("password") ?? "");
+  const limite = await consumirLimite({ accion: "login-admin", limite: 20, ventanaSegundos: 600 });
+  if (!limite.permitido) {
+    return { error: "Demasiados intentos. Intenta nuevamente en unos minutos." };
+  }
   const admin = await db.admin.findUnique({ where: { usuario } });
+  const ahora = new Date();
+  if (admin?.bloqueadoHasta && admin.bloqueadoHasta > ahora) {
+    return { error: "Demasiados intentos. Intenta nuevamente en unos minutos." };
+  }
   if (!admin || !(await bcrypt.compare(password, admin.passwordHash))) {
+    if (admin) {
+      const ventanaIntentos = 15 * 60 * 1000;
+      const conservaIntentos = admin.ultimoIntentoFallido
+        && ahora.getTime() - admin.ultimoIntentoFallido.getTime() < ventanaIntentos;
+      const intentos = (conservaIntentos ? admin.intentosFallidos : 0) + 1;
+      await db.admin.update({
+        where: { id: admin.id },
+        data: {
+          intentosFallidos: intentos >= 5 ? 0 : intentos,
+          ultimoIntentoFallido: ahora,
+          bloqueadoHasta: intentos >= 5 ? new Date(ahora.getTime() + ventanaIntentos) : null,
+        },
+      });
+    }
     return { error: "Usuario o contraseña incorrectos." };
   }
+  await db.admin.update({
+    where: { id: admin.id },
+    data: { intentosFallidos: 0, ultimoIntentoFallido: null, bloqueadoHasta: null },
+  });
   await crearSesionAdmin(admin.id);
   redirect("/admin");
 }
@@ -408,9 +436,13 @@ export async function agregarFotosDiaAgenda(formulario: FormData) {
   const guardadas: string[] = [];
   try {
     for (const archivo of seleccionadas) {
+      const imagen = await normalizarImagen(new Uint8Array(await archivo.arrayBuffer()), {
+        dimensionMaxima: 1600,
+        calidad: 82,
+      });
       guardadas.push(await storage.guardar(
-        new Uint8Array(await archivo.arrayBuffer()),
-        extensionImagen(archivo.type)!,
+        imagen.datos,
+        imagen.extension,
         "agenda-dias",
       ));
     }
@@ -457,9 +489,13 @@ export async function guardarMomentoAgenda(formulario: FormData) {
   let nuevaUrl: string | null = null;
   try {
     if (tieneFotoNueva) {
+      const imagen = await normalizarImagen(new Uint8Array(await foto.arrayBuffer()), {
+        dimensionMaxima: 800,
+        calidad: 82,
+      });
       nuevaUrl = await storage.guardar(
-        new Uint8Array(await foto.arrayBuffer()),
-        extensionImagen(foto.type)!,
+        imagen.datos,
+        imagen.extension,
         "expositores",
       );
     }
@@ -530,10 +566,13 @@ export async function actualizarLogoEmpresa(formulario: FormData) {
   } else {
     const logo = formulario.get("logo");
     if (!(logo instanceof File) || !extensionImagen(logo.type) || logo.size > 250_000) return;
-    const extension = extensionImagen(logo.type)!;
+    const imagen = await normalizarImagen(new Uint8Array(await logo.arrayBuffer()), {
+      dimensionMaxima: 800,
+      calidad: 85,
+    });
     const urlLogo = await storage.guardar(
-      new Uint8Array(await logo.arrayBuffer()),
-      extension,
+      imagen.datos,
+      imagen.extension,
       "empresas",
     );
     await db.empresa.update({ where: { id }, data: { urlLogo } });
@@ -606,6 +645,7 @@ export async function prepararAplicacionPublico(
   ].filter((url) => url.startsWith("/uploads/")))];
 
   const eliminados = await db.$transaction(async (tx) => {
+    await tx.limiteSolicitud.deleteMany();
     const reacciones = await tx.reaccionRecuerdo.deleteMany();
     const recuerdosEliminados = await tx.recuerdo.deleteMany();
     const completitudes = await tx.completitud.deleteMany();

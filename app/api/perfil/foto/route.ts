@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
 import { extensionImagen } from "@/lib/archivos";
+import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,11 @@ export async function POST(request: Request) {
       return Response.json({ error: "La fotografía supera 250 KB. Intenta con otra." }, { status: 400 });
     }
 
-    nuevaUrl = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), extension, "perfiles");
+    const imagen = await normalizarImagen(new Uint8Array(await foto.arrayBuffer()), {
+      dimensionMaxima: 800,
+      calidad: 82,
+    });
+    nuevaUrl = await storage.guardar(imagen.datos, imagen.extension, "perfiles");
     const actualizado = await db.participante.updateMany({
       where: { id: participante.id, urlFoto: participante.urlFoto },
       data: { urlFoto: nuevaUrl },
@@ -47,6 +52,9 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(error);
     if (nuevaUrl && !perfilActualizado) await storage.eliminar(nuevaUrl).catch(() => undefined);
+    if (error instanceof ImagenInvalidaError) {
+      return Response.json({ error: "La foto seleccionada no contiene una imagen válida." }, { status: 400 });
+    }
     return Response.json({ error: "No pudimos actualizar tu foto. Vuelve a intentarlo." }, { status: 500 });
   }
 }

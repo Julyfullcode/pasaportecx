@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { contextoApiParticipante, crearParticipanteConToken, registrarPorApi } from "./ayudas";
 
 test.describe("Rendimiento y concurrencia", () => {
-  test("60 usuarios virtuales interactúan simultáneamente sin pérdida de datos", async ({ playwright, request }) => {
+  test("60 usuarios virtuales interactúan simultáneamente sin pérdida de datos", async ({ playwright }) => {
     const marca = Date.now();
     const participantesEscaneo = [];
     for (let indice = 0; indice < 10; indice += 1) {
@@ -16,7 +16,7 @@ test.describe("Rendimiento y concurrencia", () => {
     const [registros, escaneos, rankings] = await Promise.all([
       Promise.all(contextosRegistro.map((api, indice) => registrarPorApi(api, `Carga registro ${marca}-${indice}`))),
       Promise.all(contextosEscaneo.map((api) => api.post("/api/desafios/reto-carga-50/completar"))),
-      Promise.all(Array.from({ length: 45 }, () => request.get("/api/ranking"))),
+      Promise.all(Array.from({ length: 45 }, () => contextosEscaneo[0].get("/api/ranking"))),
     ]);
     const duracionMs = Date.now() - inicio;
 

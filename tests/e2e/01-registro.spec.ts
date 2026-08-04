@@ -51,6 +51,25 @@ test.describe("Registro de participante", () => {
     expect(await db.participante.count()).toBe(antes);
   });
 
+  test("un archivo falso declarado como imagen es rechazado por el servidor", async ({ playwright }) => {
+    const antes = await db.participante.count();
+    const api = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
+    const respuesta = await api.post("/api/registro", {
+      multipart: {
+        nombres: "Imagen",
+        apellidos: `Falsa ${Date.now()}`,
+        empresaId: EMPRESA_ID,
+        grupoId: GRUPO_ID,
+        aceptaDatos: "on",
+        foto: { name: "falsa.png", mimeType: "image/png", buffer: Buffer.from("esto no es una imagen") },
+      },
+    });
+    expect(respuesta.status()).toBe(400);
+    expect((await respuesta.json()).error).toContain("imagen válida");
+    expect(await db.participante.count()).toBe(antes);
+    await api.dispose();
+  });
+
   test("dos altas con el mismo nombre crean pasaportes distintos", async ({ playwright }) => {
     const nombre = `Nombre repetido ${Date.now()}`;
     const apiUno = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });

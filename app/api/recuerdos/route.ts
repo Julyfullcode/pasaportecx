@@ -6,6 +6,7 @@ import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { anunciarCambio } from "@/lib/eventos";
 import { presentarRecuerdo } from "@/lib/recuerdos";
 import { extensionImagen } from "@/lib/archivos";
+import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 
 class LimiteRecuerdosError extends Error {}
 
@@ -69,9 +70,22 @@ export async function POST(request: Request) {
     const existente = await db.recuerdo.findUnique({ where: { claveIdempotencia: clave } });
     if (existente) return Response.json({ recuerdo: existente, repetido: true });
   }
+  let fotoNormalizada;
+  let miniaturaNormalizada;
+  try {
+    [fotoNormalizada, miniaturaNormalizada] = await Promise.all([
+      normalizarImagen(new Uint8Array(await foto.arrayBuffer()), { dimensionMaxima: 1600, calidad: 82 }),
+      normalizarImagen(new Uint8Array(await miniatura.arrayBuffer()), { dimensionMaxima: 480, calidad: 72 }),
+    ]);
+  } catch (error) {
+    if (error instanceof ImagenInvalidaError) {
+      return Response.json({ error: "Uno de los archivos no contiene una imagen válida." }, { status: 400 });
+    }
+    throw error;
+  }
   const cargas = await Promise.allSettled([
-    storage.guardar(new Uint8Array(await foto.arrayBuffer()), extensionFoto, "recuerdos"),
-    storage.guardar(new Uint8Array(await miniatura.arrayBuffer()), extensionMiniatura, "miniaturas"),
+    storage.guardar(fotoNormalizada.datos, fotoNormalizada.extension, "recuerdos"),
+    storage.guardar(miniaturaNormalizada.datos, miniaturaNormalizada.extension, "miniaturas"),
   ]);
   if (cargas.some((carga) => carga.status === "rejected")) {
     await Promise.allSettled(cargas.flatMap((carga) => carga.status === "fulfilled" ? [storage.eliminar(carga.value)] : []));

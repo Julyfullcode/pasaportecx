@@ -5,7 +5,9 @@ import { storage } from "@/lib/storage";
 import { registroSchema } from "@/lib/validacion";
 import { anunciarCambio } from "@/lib/eventos";
 import { extensionImagen } from "@/lib/archivos";
+import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { ZodError } from "zod";
+import { consumirLimite } from "@/lib/limite-solicitudes";
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -14,6 +16,13 @@ function codigoRecuperacion() {
 }
 
 export async function POST(request: Request) {
+  const limite = await consumirLimite({ accion: "registro", limite: 120, ventanaSegundos: 60, request });
+  if (!limite.permitido) {
+    return Response.json(
+      { error: "Hay demasiados registros en este momento. Espera un momento e intenta nuevamente." },
+      { status: 429, headers: { "Retry-After": String(limite.reintentarEn) } },
+    );
+  }
   let urlFoto: string | undefined;
   let participantePersistido = false;
   try {
@@ -29,7 +38,11 @@ export async function POST(request: Request) {
       return Response.json({ error: "No pudimos optimizar esta fotografía. Intenta seleccionarla nuevamente." }, { status: 400 });
     }
     const configuracion = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-    urlFoto = await storage.guardar(new Uint8Array(await foto.arrayBuffer()), extension, "perfiles");
+    const imagen = await normalizarImagen(new Uint8Array(await foto.arrayBuffer()), {
+      dimensionMaxima: 800,
+      calidad: 82,
+    });
+    urlFoto = await storage.guardar(imagen.datos, imagen.extension, "perfiles");
     const participante = await db.$transaction(async (tx) => {
       let grupoId = datos.grupoId;
       if (configuracion.asignacionAutomatica) {
@@ -79,6 +92,9 @@ export async function POST(request: Request) {
         { error: error.issues[0]?.message ?? "Revisa los datos del registro." },
         { status: 400 },
       );
+    }
+    if (error instanceof ImagenInvalidaError) {
+      return Response.json({ error: "La foto seleccionada no contiene una imagen válida." }, { status: 400 });
     }
     return Response.json(
       { error: "No pudimos completar el registro. Tus datos siguen en el formulario; vuelve a intentarlo." },
