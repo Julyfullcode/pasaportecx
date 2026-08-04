@@ -15,13 +15,11 @@ export function RegistroForm({
   empresas,
   grupos,
   automatico,
-  destino,
   nombreEvento,
 }: {
   empresas: Empresa[];
   grupos: Grupo[];
   automatico: boolean;
-  destino: string;
   nombreEvento: string;
 }) {
   const router = useRouter();
@@ -117,7 +115,7 @@ export function RegistroForm({
             <p className="mt-2 text-sm text-slate-600">Guárdalo: te permitirá recuperar tu perfil en otro dispositivo.</p>
           </div>
           <a href={registro.qr} download="mi-pasaporte-cx.png" className="boton-secundario w-full"><Download size={19} /> Descargar QR personal</a>
-          <button onClick={() => router.push(destino)} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
+          <button onClick={() => router.replace("/")} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
         </div>
       </section>
     );

@@ -9,8 +9,8 @@ const foto = {
   ),
 };
 
-async function registrar(page: Page, sufijo: string) {
-  await page.goto("/registro");
+async function registrar(page: Page, sufijo: string, ruta = "/registro") {
+  await page.goto(ruta);
   await page.getByLabel("Nombre").fill("Persona E2E");
   await page.getByLabel("Apellidos").fill(sufijo);
   await page.getByLabel("Empresa del Grupo").selectOption({ index: 1 });
@@ -24,7 +24,8 @@ async function registrar(page: Page, sufijo: string) {
 }
 
 test("registro con empresa, grupo y foto", async ({ page }) => {
-  await registrar(page, `registro-${Date.now()}`);
+  await registrar(page, `registro-${Date.now()}`, "/registro?destino=%2Fdesafios");
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByText("Tu puntaje total")).toBeVisible();
   await expect(page.getByText(/Equipo 1/).first()).toBeVisible();
 });

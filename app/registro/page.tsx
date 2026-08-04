@@ -7,14 +7,9 @@ import { RecuperarSesion } from "@/components/participante/RecuperarSesion";
 
 export const dynamic = "force-dynamic";
 
-export default async function Registro({
-  searchParams,
-}: {
-  searchParams: Promise<{ destino?: string }>;
-}) {
+export default async function Registro() {
   if (await participanteActual()) redirect("/");
-  const [{ destino = "/" }, empresas, grupos, configuracion] = await Promise.all([
-    searchParams,
+  const [empresas, grupos, configuracion] = await Promise.all([
     db.empresa.findMany({ where: { activa: true }, orderBy: { orden: "asc" } }),
     db.grupo.findMany({
       where: { activo: true },
@@ -34,7 +29,6 @@ export default async function Registro({
             empresas={empresas}
             grupos={grupos.map((g) => ({ ...g, integrantes: g._count.participantes }))}
             automatico={configuracion.asignacionAutomatica}
-            destino={destino.startsWith("/") ? destino : "/"}
             nombreEvento={configuracion.nombreEvento}
           />
           <RecuperarSesion />
