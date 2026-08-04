@@ -25,6 +25,19 @@ test.describe("Administrador", () => {
     expect(retirada?.status()).toBe(404);
   });
 
+  test("la barra lateral abre la invitación de registro en modo presentación", async ({ page }) => {
+    await iniciarAdmin(page);
+    const invitacion = page.getByRole("link", { name: "Invitar a registrarse" });
+    await expect(invitacion).toHaveAttribute("href", "/admin/proyeccion/registro");
+    await expect(invitacion).toHaveAttribute("target", "_blank");
+
+    await page.goto("/admin/proyeccion/registro");
+    await expect(page.getByRole("heading", { name: "Vive la experiencia" })).toBeVisible();
+    await expect(page.getByText("Escanea para registrarte", { exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Código QR para registrarse en Pasaporte CX" })).toHaveAttribute("src", /^data:image\/png;base64,/);
+    await expect(page.getByRole("link", { name: "Abrir registro de Pasaporte CX" })).toHaveAttribute("href", /^http:\/\/(?:127\.0\.0\.1|localhost):3000\/registro$/);
+  });
+
   test("el acceso administrativo se bloquea temporalmente tras cinco intentos fallidos", async ({ page }) => {
     const usuario = `admin-bloqueo-${Date.now()}`;
     const password = "Clave-correcta-123!";

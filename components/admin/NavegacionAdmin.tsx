@@ -9,6 +9,7 @@ import {
   Image,
   LayoutDashboard,
   MonitorPlay,
+  QrCode,
   Settings,
   Target,
   Users,
@@ -45,7 +46,8 @@ export function NavegacionAdmin({ pendientes }: { pendientes: number }) {
             );
           })}
         </nav>
-        <Link href="/admin/proyeccion/mixto" target="_blank" className="mb-2 flex items-center gap-2 rounded-xl bg-white/10 p-3 font-bold"><MonitorPlay /> Abrir proyección</Link>
+        <Link href="/admin/proyeccion/registro" target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-2 rounded-xl bg-[var(--epm-verde)] p-3 font-bold text-[var(--epm-azul-profundo)] transition hover:brightness-105"><QrCode /> Invitar a registrarse</Link>
+        <Link href="/admin/proyeccion/mixto" target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-2 rounded-xl bg-white/10 p-3 font-bold"><MonitorPlay /> Abrir proyección</Link>
         <form action={salirAdmin}><button className="flex w-full items-center gap-2 rounded-xl p-3 text-white/75"><DoorOpen /> Cerrar sesión</button></form>
       </aside>
       <nav className="fixed inset-x-0 bottom-0 z-50 flex overflow-x-auto border-t bg-white p-2 shadow-lg lg:hidden" aria-label="Administración móvil">
