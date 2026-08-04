@@ -3,6 +3,7 @@ import { CheckCircle2, Clock3, LockKeyhole } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { esDesafioCosecha, esRespuestasCosecha } from "@/lib/cosecha-config";
+import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function Desafios({
 }) {
   const participante = await requerirParticipante("/desafios");
   const { dia = "1" } = await searchParams;
-  const desafios = await db.desafio.findMany({
+  const desafiosBase = await db.desafio.findMany({
     where: {
       estado: "PUBLICADO",
       dia: dia === "2" ? 2 : 1,
@@ -28,11 +29,15 @@ export default async function Desafios({
       completitudes: { where: { participanteId: participante.id }, take: 1 },
     },
   });
-  const estaCompletado = (desafio: (typeof desafios)[number]) => {
+  const estaCompletado = (desafio: (typeof desafiosBase)[number]) => {
     const completitud = desafio.completitudes[0];
     const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
     return Boolean(completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)));
   };
+  const ahora = new Date();
+  const desafios = desafiosBase.filter((desafio) => (
+    estaCompletado(desafio) || estadoTemporalDesafio(desafio, ahora) === "DISPONIBLE"
+  ));
   const completados = desafios.filter(estaCompletado);
   const pendientes = desafios.filter((desafio) => !estaCompletado(desafio));
   return (

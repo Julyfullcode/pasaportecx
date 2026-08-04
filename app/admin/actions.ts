@@ -27,6 +27,10 @@ import {
   claveRecuerdoEvidencia,
   PREFIJO_EVIDENCIA_RECUERDO,
 } from "@/lib/premio-recuerdos";
+import {
+  DURACION_MAXIMA_MINUTOS,
+  fechaHoraColombiaComoFecha,
+} from "@/lib/duracion-desafio";
 
 export type EstadoLogin = { error?: string };
 
@@ -116,11 +120,27 @@ export async function guardarDesafio(formulario: FormData) {
   const datos = desafioSchema.parse(Object.fromEntries(formulario));
   const id = String(formulario.get("id") ?? "");
   const existente = id
-    ? await db.desafio.findUnique({ where: { id }, select: { codigoQr: true } })
+    ? await db.desafio.findUnique({ where: { id }, select: { codigoQr: true, estado: true, publicadoEn: true } })
     : null;
   const esCierre = existente?.codigoQr === CODIGO_DESAFIO_CIERRE;
   const estado = String(formulario.get("estado") ?? "BORRADOR") as "BORRADOR" | "PUBLICADO" | "CERRADO";
   const tipoPersistido = datos.tipo === "PUNTUALIDAD" ? "CHECK_IN" as const : datos.tipo;
+  const modoDuracion = String(formulario.get("modoDuracion") ?? "MINUTOS");
+  const minutosIngresados = Number(formulario.get("duracionMinutos"));
+  const duracionMinutos = modoDuracion === "MINUTOS"
+    && Number.isInteger(minutosIngresados)
+    && minutosIngresados >= 1
+    && minutosIngresados <= DURACION_MAXIMA_MINUTOS
+    ? minutosIngresados
+    : null;
+  if (modoDuracion === "MINUTOS" && duracionMinutos === null) {
+    throw new Error("Configura una duración válida en minutos.");
+  }
+  const disponibleHasta = modoDuracion === "FECHA_HORA"
+    ? fechaHoraColombiaComoFecha(String(formulario.get("fechaHoraCierre") ?? ""))
+    : null;
+  const iniciaPublicacion = estado === "PUBLICADO"
+    && (existente?.estado !== "PUBLICADO" || !existente.publicadoEn);
   const comun = {
     ...datos,
     tipo: esCierre ? "ENCUESTA" as const : tipoPersistido,
@@ -128,8 +148,12 @@ export async function guardarDesafio(formulario: FormData) {
     esSecreto: formulario.get("esSecreto") === "on",
     estado,
     limiteCompletitudes: formulario.get("limiteCompletitudes") ? Number(formulario.get("limiteCompletitudes")) : null,
-    disponibleDesde: formulario.get("disponibleDesde") ? new Date(String(formulario.get("disponibleDesde"))) : null,
-    disponibleHasta: formulario.get("disponibleHasta") ? new Date(String(formulario.get("disponibleHasta"))) : null,
+    disponibleDesde: null,
+    disponibleHasta,
+    duracionMinutos,
+    publicadoEn: estado === "PUBLICADO"
+      ? iniciaPublicacion ? new Date() : existente?.publicadoEn ?? new Date()
+      : null,
     configuracion: esCierre
       ? { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA }
       : configuracionDesdeFormulario(datos.tipo, formulario),
@@ -211,6 +235,7 @@ export async function crearDesafioCierre() {
         ubicacion: componente ? "" : (ubicacion?.nombre ?? ""),
         estado: "BORRADOR",
         esSecreto: false,
+        duracionMinutos: 60,
         configuracion: { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA },
       },
     });
@@ -222,7 +247,10 @@ export async function cambiarEstadoDesafio(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("id"));
   const estado = String(formulario.get("estado")) as "BORRADOR" | "PUBLICADO" | "CERRADO";
-  await db.desafio.update({ where: { id }, data: { estado } });
+  await db.desafio.update({
+    where: { id },
+    data: { estado, publicadoEn: estado === "PUBLICADO" ? new Date() : null },
+  });
   anunciarCambio("desafio");
   revalidatePath("/admin/desafios");
 }
@@ -240,6 +268,7 @@ export async function duplicarDesafio(formulario: FormData) {
       titulo: `${original.titulo} (copia)`,
       codigoQr: crearCodigoQr(original.titulo),
       estado: "BORRADOR",
+      publicadoEn: null,
     },
   });
   revalidatePath("/admin/desafios");

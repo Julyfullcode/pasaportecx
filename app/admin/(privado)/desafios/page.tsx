@@ -1,9 +1,10 @@
-import { CheckCircle2, Copy, Download, FileDown, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock3, Copy, Download, FileDown, MonitorPlay, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesafio } from "@/app/admin/actions";
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import { descripcionDuracionDesafio, estadoTemporalDesafio } from "@/lib/duracion-desafio";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,12 @@ export default async function AdminDesafios() {
               <a href={`/api/qr/${desafio.id}?formato=pdf`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-3 text-sm"><FileDown size={17} /> Ver PDF</a>
             </div>
             <div className="flex flex-wrap gap-2 border-t bg-slate-50 p-3">
+              {desafio.codigoQr === CODIGO_DESAFIO_CIERRE && (
+                <>
+                  <a href="/admin/proyeccion/cierre" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> Proyectar tarjetas</a>
+                  <span className="text-slate-300">·</span>
+                </>
+              )}
               <form action={cambiarEstadoDesafio}><input type="hidden" name="id" value={desafio.id} /><input type="hidden" name="estado" value={desafio.estado === "PUBLICADO" ? "BORRADOR" : "PUBLICADO"} /><button className="text-sm font-extrabold text-[var(--epm-azul)]">{desafio.estado === "PUBLICADO" ? "Despublicar" : "Publicar"}</button></form>
               <span className="text-slate-300">·</span>
               <form action={cambiarEstadoDesafio}><input type="hidden" name="id" value={desafio.id} /><input type="hidden" name="estado" value="CERRADO" /><button className="text-sm font-extrabold text-slate-600">Cerrar</button></form>
@@ -70,6 +77,11 @@ export default async function AdminDesafios() {
               </details>
               <span className="text-slate-300">·</span>
               <form action={eliminarDesafio}><input type="hidden" name="id" value={desafio.id} /><button className="flex items-center gap-1 text-sm font-extrabold text-red-700"><Trash2 size={15} /> {desafio._count.completitudes ? "Cerrar (tiene datos)" : "Eliminar"}</button></form>
+            </div>
+            <div className="flex items-center gap-2 border-t border-sky-100 bg-sky-50/70 px-4 py-2 text-xs font-bold text-sky-900">
+              <Clock3 size={15} />
+              <span>{descripcionDuracionDesafio(desafio)}</span>
+              {desafio.estado === "PUBLICADO" && estadoTemporalDesafio(desafio) === "FINALIZADO" && <span className="ml-auto rounded-full bg-amber-100 px-2 py-1 text-amber-800">Tiempo finalizado</span>}
             </div>
           </article>
         ))}

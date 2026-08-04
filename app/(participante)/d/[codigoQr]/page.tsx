@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock3, MapPin, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -8,6 +8,7 @@ import { esDesafioCosecha, esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/co
 import { CurvaMarca } from "@/components/marca/CurvaMarca";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 import { LogoBlanco } from "@/components/marca/Logo";
+import { estadoTemporalDesafio, fechaCierreDesafio } from "@/lib/duracion-desafio";
 import {
   esConfiguracionPuntualidad,
   mensajePuntualidad,
@@ -39,6 +40,8 @@ export default async function DetalleDesafio({
   const estaCompletado = Boolean(
     completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
   );
+  const estadoTemporal = estadoTemporalDesafio(desafio);
+  const fechaCierre = fechaCierreDesafio(desafio);
   return (
     <div>
       <header className="marca-gradiente relative overflow-hidden px-4 pb-28 pt-5 text-white md:pb-32">
@@ -66,6 +69,12 @@ export default async function DetalleDesafio({
               puntualidad={resultadoPuntualidadDesdeRespuesta(completitud.respuesta)}
             />
           </div>
+        ) : desafio.estado !== "PUBLICADO" || estadoTemporal !== "DISPONIBLE" ? (
+          <div className="tarjeta p-6 text-center">
+            <Clock3 className="mx-auto text-amber-600" size={38} />
+            <h2 className="mt-3 text-xl font-extrabold">{estadoTemporal === "FINALIZADO" ? "Este desafío ya finalizó" : "Este desafío aún no está disponible"}</h2>
+            <p className="mt-2 text-slate-600">{estadoTemporal === "FINALIZADO" ? "La duración configurada terminó y ya no se reciben respuestas." : "La organización lo publicará cuando sea el momento."}</p>
+          </div>
         ) : (
           <ResolverDesafio
             codigo={desafio.codigoQr}
@@ -73,6 +82,9 @@ export default async function DetalleDesafio({
             puntos={desafio.puntos}
             configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
           />
+        )}
+        {!estaCompletado && fechaCierre && estadoTemporal === "DISPONIBLE" && (
+          <p className="mt-3 text-center text-xs font-bold text-slate-500">Disponible hasta {fechaCierre.toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "medium", timeStyle: "short" })}</p>
         )}
       </section>
     </div>

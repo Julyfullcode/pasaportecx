@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
+import { fechaHoraColombiaComoFecha, fechaParaInputColombia } from "@/lib/duracion-desafio";
 import { autenticarParticipante, contextoApiParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin } from "./ayudas";
 
 test.describe("Administrador", () => {
@@ -9,6 +11,7 @@ test.describe("Administrador", () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
     await expect(page.getByRole("button", { name: "Ingresar" })).toBeVisible();
     expect((await request.get("/api/proyeccion/datos")).status()).toBe(401);
+    expect((await request.get("/api/proyeccion/cierre")).status()).toBe(401);
     const anonimo = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
     expect((await anonimo.get("/api/ranking")).status()).toBe(401);
     await anonimo.dispose();
@@ -83,9 +86,13 @@ test.describe("Administrador", () => {
     await creador.locator('input[name="puntos"]').fill("175");
     await creador.locator('select[name="dia"]').selectOption("1");
     await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
+    await creador.locator('input[name="duracionMinutos"]').fill("20");
     await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
     await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
     await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
+    const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
+    expect(guardado.duracionMinutos).toBe(20);
+    expect(guardado.publicadoEn).not.toBeNull();
 
     const contextoParticipante = await browser.newContext();
     await autenticarParticipante(contextoParticipante, token);
@@ -116,6 +123,83 @@ test.describe("Administrador", () => {
     const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
     expect(guardado.tipo).toBe("CHECK_IN");
     expect(guardado.configuracion).toMatchObject({ tipoEspecial: "PUNTUALIDAD", fechaHoraObjetivo: "2026-08-04T14:00", toleranciaMinutos: 5 });
+  });
+
+  test("administración configura el cierre del desafío con fecha y hora de Colombia", async ({ page }) => {
+    const titulo = `Cierre fijo ${Date.now()}`;
+    const cierreInput = fechaParaInputColombia(new Date(Date.now() + 2 * 60 * 60_000));
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const creador = page.locator("details").first();
+    await creador.locator("summary").click();
+    await creador.locator('input[name="titulo"]').fill(titulo);
+    await creador.locator('textarea[name="descripcion"]').fill("Disponible hasta una fecha y hora exactas.");
+    await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
+    await creador.locator('input[name="puntos"]').fill("40");
+    await creador.locator('select[name="dia"]').selectOption("1");
+    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
+    await creador.locator('select[name="modoDuracion"]').selectOption("FECHA_HORA");
+    await creador.locator('input[name="fechaHoraCierre"]').fill(cierreInput);
+    await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
+    await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
+
+    await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
+    const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
+    expect(guardado.duracionMinutos).toBeNull();
+    expect(guardado.disponibleHasta?.toISOString()).toBe(fechaHoraColombiaComoFecha(cierreInput).toISOString());
+  });
+
+  test("el desafío de cierre ofrece una presentación que rota las tarjetas", async ({ page }) => {
+    const marca = Date.now();
+    const desafio = await db.desafio.upsert({
+      where: { codigoQr: CODIGO_DESAFIO_CIERRE },
+      update: { estado: "PUBLICADO", duracionMinutos: 60, publicadoEn: new Date(), disponibleHasta: null },
+      create: {
+        codigoQr: CODIGO_DESAFIO_CIERRE,
+        titulo: TITULO_DESAFIO_CIERRE,
+        descripcion: "Cosecha del encuentro.",
+        tipo: "ENCUESTA",
+        puntos: 150,
+        dia: 1,
+        ubicacion: "Registro E2E",
+        estado: "PUBLICADO",
+        duracionMinutos: 60,
+        publicadoEn: new Date(),
+        configuracion: { formato: "cosecha" },
+      },
+    });
+    const primera = await crearParticipanteConToken({ nombre: `Cosecha primera ${marca}` });
+    const segunda = await crearParticipanteConToken({ nombre: `Cosecha segunda ${marca}` });
+    await db.completitud.createMany({
+      data: [
+        {
+          participanteId: primera.participante.id,
+          desafioId: desafio.id,
+          puntosOtorgados: 150,
+          estado: "APROBADO",
+          completadoEn: new Date(Date.now() - 60_000),
+          respuesta: { meLlevo: "Aprendizaje uno", agradezco: "Conversación uno", activo: "Acción uno" },
+        },
+        {
+          participanteId: segunda.participante.id,
+          desafioId: desafio.id,
+          puntosOtorgados: 150,
+          estado: "APROBADO",
+          completadoEn: new Date(),
+          respuesta: { meLlevo: "Aprendizaje dos", agradezco: "Conversación dos", activo: "Acción dos" },
+        },
+      ],
+    });
+
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const tarjetaCierre = page.locator("article").filter({ hasText: TITULO_DESAFIO_CIERRE });
+    await expect(tarjetaCierre.getByRole("link", { name: "Proyectar tarjetas" })).toHaveAttribute("href", "/admin/proyeccion/cierre");
+    await page.goto("/admin/proyeccion/cierre");
+    await expect(page.getByText(`Cosecha segunda ${marca}`)).toBeVisible();
+    await expect(page.getByText("Aprendizaje dos", { exact: true })).toBeVisible();
+    await expect(page.getByText(`Cosecha primera ${marca}`)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Aprendizaje uno", { exact: true })).toBeVisible();
   });
 });
 

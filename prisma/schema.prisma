@@ -99,6 +99,8 @@ model Desafio {
   esSecreto           Boolean       @default(false)
   disponibleDesde     DateTime?
   disponibleHasta     DateTime?
+  duracionMinutos     Int?          @default(60)
+  publicadoEn         DateTime?
   limiteCompletitudes Int?
   configuracion       Json
   urlImagen           String?

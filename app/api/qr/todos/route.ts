@@ -1,6 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
 import { qrPdf } from "@/lib/qr";
 
 export async function GET(request: Request) {
@@ -8,7 +9,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const dia = url.searchParams.get("dia");
   const componenteId = url.searchParams.get("componenteId");
-  const desafios = await db.desafio.findMany({
+  const desafiosPublicados = await db.desafio.findMany({
     where: {
       estado: "PUBLICADO",
       ...(dia ? { dia: Number(dia) } : {}),
@@ -16,6 +17,9 @@ export async function GET(request: Request) {
     },
     orderBy: [{ dia: "asc" }, { creadoEn: "asc" }],
   });
+  const desafios = desafiosPublicados.filter(
+    (desafio) => estadoTemporalDesafio(desafio) === "DISPONIBLE",
+  );
   const destino = await PDFDocument.create();
   for (const desafio of desafios) {
     const origen = await PDFDocument.load(await qrPdf(desafio));

@@ -7,6 +7,11 @@ import type { Componente, Desafio, Ubicacion } from "@prisma/client";
 import { guardarDesafio } from "@/app/admin/actions";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import {
+  DURACION_MAXIMA_MINUTOS,
+  DURACION_PREDETERMINADA_MINUTOS,
+  fechaParaInputColombia,
+} from "@/lib/duracion-desafio";
 
 type Config = {
   opciones?: { texto: string; correcta: boolean }[];
@@ -37,6 +42,9 @@ export function FormularioDesafio({
   const [tipo, setTipo] = useState<string>(puntualidad ? "PUNTUALIDAD" : (desafio?.tipo ?? "CHECK_IN"));
   const [dia, setDia] = useState(desafio?.dia ?? 1);
   const [formatoEncuesta, setFormatoEncuesta] = useState(config.formato ?? "texto");
+  const [modoDuracion, setModoDuracion] = useState<"MINUTOS" | "FECHA_HORA">(
+    desafio?.duracionMinutos === null ? "FECHA_HORA" : "MINUTOS",
+  );
   const [qrVistaPrevia, setQrVistaPrevia] = useState<string | null>(null);
 
   async function mostrarVistaPrevia(formulario: HTMLFormElement | null) {
@@ -116,10 +124,29 @@ export function FormularioDesafio({
           )}
         </>
       )}
+      <div className="md:col-span-2 grid gap-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 md:grid-cols-2">
+        <div>
+          <label className="etiqueta">Duración del desafío</label>
+          <select className="campo bg-white" name="modoDuracion" value={modoDuracion} onChange={(evento) => setModoDuracion(evento.target.value as "MINUTOS" | "FECHA_HORA")}>
+            <option value="MINUTOS">Minutos desde su publicación</option>
+            <option value="FECHA_HORA">Hasta una fecha y hora</option>
+          </select>
+        </div>
+        {modoDuracion === "MINUTOS" ? (
+          <div>
+            <label className="etiqueta">Cantidad de minutos</label>
+            <input className="campo bg-white" type="number" min={1} max={DURACION_MAXIMA_MINUTOS} step={1} name="duracionMinutos" required defaultValue={desafio?.duracionMinutos ?? DURACION_PREDETERMINADA_MINUTOS} />
+          </div>
+        ) : (
+          <div>
+            <label className="etiqueta">Fecha y hora de cierre</label>
+            <input className="campo bg-white" type="datetime-local" name="fechaHoraCierre" required defaultValue={fechaParaInputColombia(desafio?.disponibleHasta ?? null)} />
+          </div>
+        )}
+        <p className="text-xs text-sky-900 md:col-span-2">{modoDuracion === "MINUTOS" ? "El conteo empieza cada vez que publiques o vuelvas a publicar el desafío." : "La fecha y hora se interpretan en Colombia. Al llegar ese momento ya no se aceptarán respuestas."}</p>
+      </div>
       <div><label className="etiqueta">Estado inicial</label><select className="campo" name="estado" defaultValue={desafio?.estado ?? "BORRADOR"}><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="CERRADO">Cerrado</option></select></div>
       <div><label className="etiqueta">Límite de completitudes (opcional)</label><input className="campo" type="number" min={1} name="limiteCompletitudes" defaultValue={desafio?.limiteCompletitudes ?? ""} /></div>
-      <div><label className="etiqueta">Disponible desde (opcional)</label><input className="campo" type="datetime-local" name="disponibleDesde" defaultValue={desafio?.disponibleDesde?.toISOString().slice(0, 16)} /></div>
-      <div><label className="etiqueta">Disponible hasta (opcional)</label><input className="campo" type="datetime-local" name="disponibleHasta" defaultValue={desafio?.disponibleHasta?.toISOString().slice(0, 16)} /></div>
       <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="esSecreto" defaultChecked={desafio?.esSecreto} /> Reto secreto: ocultar hasta escanear</label>
       <button className="boton-primario order-2 md:col-span-2">{desafio ? "Guardar cambios" : "Crear desafío y generar QR"}</button>
       <button type="button" className="boton-secundario order-1 md:col-span-2" onClick={(evento) => void mostrarVistaPrevia(evento.currentTarget.form)}><Eye size={19} /> Vista previa del QR sin guardar</button>

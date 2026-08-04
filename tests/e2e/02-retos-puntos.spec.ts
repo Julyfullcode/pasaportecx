@@ -151,4 +151,31 @@ test.describe("Retos y puntos", () => {
     expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: desafio.id } })).toBe(0);
     expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO);
   });
+
+  test("un desafío vencido por minutos rechaza incluso el acceso directo por QR", async ({ playwright }) => {
+    const marca = Date.now();
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Duración vencida ${marca}` });
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `duracion-vencida-${marca}`,
+        titulo: "Desafío con tiempo agotado",
+        descripcion: "Solo estuvo disponible cinco minutos.",
+        tipo: "CHECK_IN",
+        puntos: 70,
+        dia: 1,
+        ubicacion: "Registro E2E",
+        estado: "PUBLICADO",
+        duracionMinutos: 5,
+        publicadoEn: new Date(Date.now() - 6 * 60_000),
+        configuracion: {},
+      },
+    });
+    const api = await contextoApiParticipante(playwright.request, token);
+    const respuesta = await api.post(`/api/desafios/${desafio.codigoQr}/completar`);
+
+    expect(respuesta.status()).toBe(409);
+    expect(await respuesta.json()).toEqual({ error: "El tiempo de este desafío ya finalizó." });
+    expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: desafio.id } })).toBe(0);
+    await api.dispose();
+  });
 });
