@@ -70,16 +70,23 @@ export async function guardarDesafio(formulario: FormData) {
   await requerirAdmin();
   const datos = desafioSchema.parse(Object.fromEntries(formulario));
   const id = String(formulario.get("id") ?? "");
+  const existente = id
+    ? await db.desafio.findUnique({ where: { id }, select: { codigoQr: true } })
+    : null;
+  const esCierre = existente?.codigoQr === CODIGO_DESAFIO_CIERRE;
   const estado = String(formulario.get("estado") ?? "BORRADOR") as "BORRADOR" | "PUBLICADO" | "CERRADO";
   const comun = {
     ...datos,
+    tipo: esCierre ? "ENCUESTA" as const : datos.tipo,
     componenteId: datos.componenteId || null,
     esSecreto: formulario.get("esSecreto") === "on",
     estado,
     limiteCompletitudes: formulario.get("limiteCompletitudes") ? Number(formulario.get("limiteCompletitudes")) : null,
     disponibleDesde: formulario.get("disponibleDesde") ? new Date(String(formulario.get("disponibleDesde"))) : null,
     disponibleHasta: formulario.get("disponibleHasta") ? new Date(String(formulario.get("disponibleHasta"))) : null,
-    configuracion: configuracionDesdeFormulario(datos.tipo, formulario),
+    configuracion: esCierre
+      ? { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA }
+      : configuracionDesdeFormulario(datos.tipo, formulario),
   };
   if (id) {
     await db.desafio.update({ where: { id }, data: comun });
@@ -94,7 +101,15 @@ export async function guardarDesafio(formulario: FormData) {
 export async function crearDesafioCierre() {
   await requerirAdmin();
   const existente = await db.desafio.findUnique({ where: { codigoQr: CODIGO_DESAFIO_CIERRE } });
-  if (!existente) {
+  if (existente) {
+    await db.desafio.update({
+      where: { id: existente.id },
+      data: {
+        tipo: "ENCUESTA",
+        configuracion: { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA },
+      },
+    });
+  } else {
     const [componente, ubicacion] = await Promise.all([
       db.componente.findFirst({ where: { activo: true }, orderBy: { orden: "asc" } }),
       db.ubicacion.findFirst({ where: { activa: true }, orderBy: { orden: "asc" } }),

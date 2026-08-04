@@ -26,6 +26,12 @@ export type RespuestasCosecha = {
   activo: string;
 };
 
+export function esDesafioCosecha(codigo: string, configuracion: unknown) {
+  if (codigo === CODIGO_DESAFIO_CIERRE) return true;
+  if (!configuracion || typeof configuracion !== "object" || Array.isArray(configuracion)) return false;
+  return (configuracion as { formato?: unknown }).formato === FORMATO_COSECHA;
+}
+
 // Una completitud heredada no habilita la tarjeta hasta tener las tres reflexiones.
 export function esRespuestasCosecha(valor: unknown): valor is RespuestasCosecha {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) return false;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ResolverDesafio } from "@/components/participante/ResolverDesafio";
-import { esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/cosecha-config";
+import { esDesafioCosecha, esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/cosecha-config";
 import { CurvaMarca } from "@/components/marca/CurvaMarca";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 import { LogoBlanco } from "@/components/marca/Logo";
@@ -26,7 +26,8 @@ export default async function DetalleDesafio({
     },
   });
   if (!desafio) notFound();
-  const esCosecha = (desafio.configuracion as { formato?: string }).formato === FORMATO_COSECHA;
+  const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
+  const configuracion = desafio.configuracion as Record<string, unknown>;
   const completitud = desafio.completitudes[0];
   const estaCompletado = Boolean(
     completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
@@ -53,7 +54,12 @@ export default async function DetalleDesafio({
             <CheckExistente estado={completitud.estado} puntos={completitud.puntosOtorgados} esCosecha={esCosecha} />
           </div>
         ) : (
-          <ResolverDesafio codigo={desafio.codigoQr} tipo={desafio.tipo} puntos={desafio.puntos} configuracion={desafio.configuracion as never} />
+          <ResolverDesafio
+            codigo={desafio.codigoQr}
+            tipo={esCosecha ? "ENCUESTA" : desafio.tipo}
+            puntos={desafio.puntos}
+            configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
+          />
         )}
       </section>
     </div>

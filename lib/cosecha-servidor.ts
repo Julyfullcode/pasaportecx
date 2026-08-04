@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
-import { CODIGO_DESAFIO_CIERRE, FORMATO_COSECHA, esRespuestasCosecha } from "@/lib/cosecha-config";
+import { esDesafioCosecha, esRespuestasCosecha } from "@/lib/cosecha-config";
 import { db } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { generarTarjetaCosechaPdf } from "@/lib/tarjeta-cosecha";
@@ -20,10 +20,10 @@ export async function crearTarjetaCosechaParticipante(participante: Participante
     orderBy: { completadoEn: "desc" },
     include: { desafio: true },
   });
-  const completitud = completitudes.find((item) => {
-    const configuracion = item.desafio.configuracion as { formato?: string };
-    return item.desafio.codigoQr === CODIGO_DESAFIO_CIERRE || configuracion.formato === FORMATO_COSECHA;
-  });
+  const completitud = completitudes.find((item) => (
+    esDesafioCosecha(item.desafio.codigoQr, item.desafio.configuracion)
+    && esRespuestasCosecha(item.respuesta)
+  ));
   if (!completitud || !esRespuestasCosecha(completitud.respuesta)) return null;
 
   const [config, logo, foto, fuenteRegular, fuenteSemibold] = await Promise.all([

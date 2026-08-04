@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Clock3, LockKeyhole } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/cosecha-config";
+import { esDesafioCosecha, esRespuestasCosecha } from "@/lib/cosecha-config";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ export default async function Desafios({
   });
   const estaCompletado = (desafio: (typeof desafios)[number]) => {
     const completitud = desafio.completitudes[0];
-    const esCosecha = (desafio.configuracion as { formato?: string }).formato === FORMATO_COSECHA;
+    const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
     return Boolean(completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)));
   };
   const completados = desafios.filter(estaCompletado);
