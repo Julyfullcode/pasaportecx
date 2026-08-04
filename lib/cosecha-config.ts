@@ -11,7 +11,7 @@ export const PREGUNTAS_COSECHA = [
   {
     id: "agradezco",
     titulo: "Agradezco",
-    ayuda: "Una persona, equipo, conversación o práctica.",
+    ayuda: "Una persona, conversación o práctica.",
   },
   {
     id: "activo",

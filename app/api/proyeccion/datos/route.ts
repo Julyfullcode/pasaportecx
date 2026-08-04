@@ -1,12 +1,11 @@
 import { adminActual } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { obtenerRankingConConfiguracion } from "@/lib/equipos";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   if (!(await adminActual())) return Response.json({ error: "Sin autorización" }, { status: 401 });
-  const [individual, ranking, recuerdos] = await Promise.all([
+  const [individual, configuracion, recuerdos] = await Promise.all([
     db.participante.findMany({
       where: { activo: true },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "desc" }],
@@ -16,10 +15,9 @@ export async function GET() {
         urlFoto: true,
         puntosTotales: true,
         empresa: { select: { nombre: true, urlLogo: true } },
-        grupo: { select: { nombre: true, colorHex: true } },
       },
     }),
-    obtenerRankingConConfiguracion(),
+    db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.recuerdo.findMany({
       where: { visible: true, pendiente: false, reportado: false },
       orderBy: [{ reacciones: { _count: "desc" } }, { creadoEn: "desc" }],
@@ -34,7 +32,7 @@ export async function GET() {
     }),
   ]);
   return Response.json(
-    { configuracion: ranking.configuracion, individual, equipos: ranking.equipos, recuerdos },
+    { configuracion, individual, recuerdos },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

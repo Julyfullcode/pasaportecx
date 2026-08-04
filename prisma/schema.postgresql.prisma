@@ -30,11 +30,6 @@ enum EstadoCompletitud {
   RECHAZADO
 }
 
-enum MetodoPuntajeEquipo {
-  PROMEDIO
-  SUMA
-}
-
 enum ModoAsistentes {
   MOSAICO
   CARRUSEL
@@ -45,7 +40,6 @@ model Participante {
   id                  String               @id @default(cuid())
   nombre              String
   empresaId           String
-  grupoId             String
   urlFoto             String
   codigoRecuperacion  String               @unique
   puntosRegistro      Int                  @default(0)
@@ -53,7 +47,6 @@ model Participante {
   activo              Boolean              @default(true)
   creadoEn            DateTime             @default(now())
   empresa             Empresa              @relation(fields: [empresaId], references: [id])
-  grupo               Grupo                @relation(fields: [grupoId], references: [id])
   completitudes       Completitud[]
   recuerdos           Recuerdo[]
   reaccionesRecuerdos ReaccionRecuerdo[]
@@ -61,19 +54,7 @@ model Participante {
   sesiones            SesionParticipante[]
 
   @@index([puntosTotales])
-  @@index([grupoId])
   @@index([empresaId])
-}
-
-model Grupo {
-  id            String         @id @default(cuid())
-  nombre        String         @unique
-  colorHex      String
-  orden         Int
-  activo        Boolean        @default(true)
-  participantes Participante[]
-
-  @@index([orden])
 }
 
 model Empresa {
@@ -196,8 +177,8 @@ model AjustePuntos {
 }
 
 model Admin {
-  id                  String         @id @default(cuid())
-  usuario             String         @unique
+  id                   String         @id @default(cuid())
+  usuario              String         @unique
   passwordHash         String
   intentosFallidos     Int            @default(0)
   ultimoIntentoFallido DateTime?
@@ -243,24 +224,21 @@ model SesionAdmin {
 }
 
 model ConfiguracionEvento {
-  id                           String              @id @default("evento")
-  nombreEvento                 String              @default("Pasaporte CX")
-  descripcionAgenda            String              @default("")
-  organizadoresAgenda          String              @default("Vicepresidencia Experiencia Usuario-Cliente")
-  diplomaHabilitado            Boolean             @default(false)
-  tamanoPodioIndividual        Int                 @default(5)
-  tamanoPodioEquipos           Int                 @default(3)
-  metodoPuntajeEquipo          MetodoPuntajeEquipo @default(PROMEDIO)
-  puntosPorRegistro            Int                 @default(0)
-  puntosPorRecuerdo            Int                 @default(0)
-  maxRecuerdosConPuntos        Int                 @default(0)
-  maxRecuerdosPorParticipante  Int                 @default(10)
-  eliminarEvidenciasRechazadas Boolean             @default(true)
-  recuerdosRequierenAprobacion Boolean             @default(false)
-  asignacionAutomatica         Boolean             @default(false)
-  modoAsistentes               ModoAsistentes      @default(MOSAICO)
-  intervaloAsistentesSegundos  Int                 @default(6)
-  cicloMixto                   String              @default("asistentes:60,recuerdos:45,podio:30")
+  id                           String         @id @default("evento")
+  nombreEvento                 String         @default("Pasaporte CX")
+  descripcionAgenda            String         @default("")
+  organizadoresAgenda          String         @default("Vicepresidencia Experiencia Usuario-Cliente")
+  diplomaHabilitado            Boolean        @default(false)
+  tamanoPodioIndividual        Int            @default(5)
+  puntosPorRegistro            Int            @default(0)
+  puntosPorRecuerdo            Int            @default(0)
+  maxRecuerdosConPuntos        Int            @default(0)
+  maxRecuerdosPorParticipante  Int            @default(10)
+  eliminarEvidenciasRechazadas Boolean        @default(true)
+  recuerdosRequierenAprobacion Boolean        @default(false)
+  modoAsistentes               ModoAsistentes @default(MOSAICO)
+  intervaloAsistentesSegundos  Int            @default(6)
+  cicloMixto                   String         @default("asistentes:60,recuerdos:45,podio:30")
 }
 
 model DiaAgenda {

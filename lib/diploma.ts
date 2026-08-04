@@ -21,7 +21,6 @@ import { DIRECTIVA_EXPERIENCIA } from "@/lib/mensajes";
 type DatosDiploma = {
   nombre: string;
   empresa: string;
-  equipo: string;
   evento: string;
   organizadores: string;
   fecha: Date;
@@ -186,7 +185,7 @@ export async function generarDiplomaPdf(datos: DatosDiploma) {
   const tamanoNombre = tamanoQueCabe(datos.nombre, semibold, 39, 680, 20);
   textoCentrado(pagina, datos.nombre, 367, tamanoNombre, semibold, azulProfundo);
 
-  const afiliacion = `${datos.empresa}  ·  ${datos.equipo}`;
+  const afiliacion = datos.empresa;
   const anchoAfiliacion = Math.min(430, normal.widthOfTextAtSize(afiliacion, 11.5) + 44);
   cajaRedondeada(pagina, (anchoPagina - anchoAfiliacion) / 2, 328, anchoAfiliacion, 31, 15.5, rgb(0.925, 0.968, 0.985));
   textoCentrado(pagina, afiliacion, 338, tamanoQueCabe(afiliacion, normal, 11.5, anchoAfiliacion - 24, 8.5), normal, azul);

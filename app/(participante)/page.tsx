@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Sparkles, Sprout, Trophy } from "lucide-react";
+import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Sparkles, Sprout } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { obtenerRankingEquipos } from "@/lib/equipos";
 import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
 import { MarcaHeader } from "@/components/ui/MarcaHeader";
 import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
@@ -11,13 +10,12 @@ export const dynamic = "force-dynamic";
 
 export default async function Inicio() {
   const participante = await requerirParticipante("/");
-  const [ranking, equipos, completados, totalPublicados, configuracion, cosechaCompletada] = await Promise.all([
+  const [ranking, completados, totalPublicados, configuracion, cosechaCompletada] = await Promise.all([
     db.participante.findMany({
       where: { activo: true },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
       select: { id: true },
     }),
-    obtenerRankingEquipos(),
     db.completitud.count({ where: { participanteId: participante.id } }),
     db.desafio.count({ where: { estado: "PUBLICADO", esSecreto: false } }),
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { diplomaHabilitado: true } }),
@@ -29,17 +27,12 @@ export default async function Inicio() {
   const tieneCosecha = esRespuestasCosecha(cosechaCompletada?.respuesta);
   const completadosValidos = completados - (cosechaCompletada && !tieneCosecha ? 1 : 0);
   const posicion = ranking.findIndex((p) => p.id === participante.id) + 1;
-  const posicionEquipo = equipos.findIndex((e) => e.id === participante.grupoId) + 1;
   return (
     <>
       <MarcaHeader tituloVerde="Hola," tituloClaro={participante.nombre.split(" ")[0]} compacto lateral>
         <div className="flex max-w-[60vw] items-center justify-end gap-2 text-right">
           <div className="min-w-0">
             <p className="truncate text-xs font-bold text-white/85 sm:text-sm">{participante.empresa.nombre}</p>
-            <span className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold sm:text-xs">
-              <span className="h-3 w-3 rounded-full" style={{ background: participante.grupo.colorHex }} />
-              <span className="truncate">{participante.grupo.nombre}</span>
-            </span>
           </div>
           <FotoPerfilEditable src={participante.urlFoto} nombre={participante.nombre} />
         </div>
@@ -51,14 +44,10 @@ export default async function Inicio() {
             <p className="font-display text-6xl font-extrabold leading-none text-[var(--epm-azul-profundo)]">{participante.puntosTotales.toLocaleString("es-CO")}</p>
             <Sparkles className="text-[var(--epm-verde)]" size={36} />
           </div>
-          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+          <div className="mt-5 border-t border-slate-100 pt-4">
             <div>
               <p className="text-xs font-bold text-slate-500">Posición individual</p>
               <p className="mt-1 flex items-center gap-1 font-extrabold text-[var(--epm-azul)]"><Medal size={19} /> Puesto {posicion} de {ranking.length}</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500">Posición del equipo</p>
-              <p className="mt-1 flex items-center gap-1 font-extrabold text-[var(--epm-teal)]"><Trophy size={19} /> Equipo {posicionEquipo} de {equipos.length}</p>
             </div>
           </div>
         </section>
@@ -69,8 +58,8 @@ export default async function Inicio() {
             <span className="mt-1 flex items-center text-xs font-extrabold text-[var(--epm-azul)]">Ver desafíos <ChevronRight size={15} /></span>
           </Link>
           <Link href="/ranking" className="tarjeta p-4">
-            <span className="text-sm font-bold text-slate-500">Tu equipo</span>
-            <strong className="mt-2 block truncate text-lg text-[var(--epm-azul-profundo)]">{participante.grupo.nombre}</strong>
+            <span className="text-sm font-bold text-slate-500">Tu posición</span>
+            <strong className="mt-2 block truncate text-lg text-[var(--epm-azul-profundo)]">Puesto {posicion}</strong>
             <span className="mt-1 flex items-center text-xs font-extrabold text-[var(--epm-azul)]">Ver ranking <ChevronRight size={15} /></span>
           </Link>
         </section>

@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const participante = await db.participante.findUnique({
     where: { id },
-    include: { empresa: true, grupo: true },
+    include: { empresa: true },
   });
   if (!participante) return Response.json({ error: "No encontramos al participante." }, { status: 404 });
   const tarjeta = await crearTarjetaCosechaParticipante(participante);

@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Images, Medal, Shuffle, Trophy, Users } from "lucide-react";
+import { Images, Medal, Shuffle, Users } from "lucide-react";
 
 const vistas = [
   { href: "/admin/proyeccion/asistentes", etiqueta: "Personas", Icono: Users },
   { href: "/admin/proyeccion/podio", etiqueta: "Podio individual", Icono: Medal },
-  { href: "/admin/proyeccion/equipos", etiqueta: "Podio de equipos", Icono: Trophy },
   { href: "/admin/proyeccion/recuerdos", etiqueta: "Recuerdos", Icono: Images },
   { href: "/admin/proyeccion/mixto", etiqueta: "Vista automática", Icono: Shuffle },
 ];

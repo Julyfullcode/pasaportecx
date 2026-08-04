@@ -22,7 +22,6 @@ import { PREGUNTAS_COSECHA, TITULO_DESAFIO_CIERRE, type RespuestasCosecha } from
 type DatosTarjetaCosecha = {
   nombre: string;
   empresa: string;
-  equipo: string;
   evento: string;
   respuestas: RespuestasCosecha;
   logo?: Uint8Array;
@@ -214,7 +213,7 @@ export async function generarTarjetaCosechaPdf(datos: DatosTarjetaCosecha) {
   }
   const nombreTamano = tamanoQueCabe(datos.nombre, semibold, 17, 210, 10);
   pagina.drawText(datos.nombre, { x: 146, y: 410, size: nombreTamano, font: semibold, color: azulProfundo });
-  const afiliacion = `${datos.empresa} · ${datos.equipo}`;
+  const afiliacion = datos.empresa;
   pagina.drawText(afiliacion, { x: 146, y: 386, size: tamanoQueCabe(afiliacion, normal, 9.5, 210, 7), font: normal, color: gris });
   pagina.drawText("Mi cosecha personal", { x: 146, y: 366, size: 9.5, font: normal, color: teal });
 

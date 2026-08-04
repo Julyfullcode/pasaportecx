@@ -45,7 +45,7 @@ export async function participanteActual() {
   if (!token) return null;
   const sesion = await db.sesionParticipante.findFirst({
     where: { tokenHash: hashToken(token), expiraEn: { gt: new Date() } },
-    include: { participante: { include: { empresa: true, grupo: true } } },
+    include: { participante: { include: { empresa: true } } },
   });
   return sesion?.participante ?? null;
 }

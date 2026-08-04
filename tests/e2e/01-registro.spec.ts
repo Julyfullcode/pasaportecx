@@ -1,17 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { db } from "@/lib/db";
-import { EMPRESA_ID, fotoPng, GRUPO_ID, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
+import { EMPRESA_ID, fotoPng, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
 
 async function completarCamposBasicos(page: Page, sufijo: string) {
   await page.getByLabel("Apellidos").fill(sufijo);
   await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
-  await page.getByRole("radio", { name: /Equipo Aurora/ }).check({ force: true });
   await page.getByLabel(/Tomar foto|Repetir/).setInputFiles(fotoPng);
   await page.getByRole("checkbox", { name: /Autorización de datos/ }).check();
 }
 
 test.describe("Registro de participante", () => {
-  test("registro exitoso con nombre y foto, asignado al equipo elegido", async ({ page }) => {
+  test("registro exitoso con nombre, empresa y foto", async ({ page }) => {
     const marca = `Registro exitoso ${Date.now()}`;
     await page.goto("/registro");
     await page.getByLabel("Nombre", { exact: true }).fill(marca);
@@ -19,9 +18,7 @@ test.describe("Registro de participante", () => {
     await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
 
     await expect(page.getByText("¡Tu pasaporte está listo!")).toBeVisible();
-    await expect(page.getByText(/Equipo Aurora/).first()).toBeVisible();
     const participante = await db.participante.findFirstOrThrow({ where: { nombre: `${marca} E2E` } });
-    expect(participante.grupoId).toBe(GRUPO_ID);
     expect(participante.puntosTotales).toBe(PUNTOS_REGISTRO);
   });
 
@@ -43,7 +40,6 @@ test.describe("Registro de participante", () => {
     await page.getByLabel("Nombre", { exact: true }).fill("Sin foto");
     await page.getByLabel("Apellidos").fill(`E2E ${Date.now()}`);
     await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
-    await page.getByRole("radio", { name: /Equipo Aurora/ }).check({ force: true });
     await page.getByRole("checkbox", { name: /Autorización de datos/ }).check();
     await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
 
@@ -59,7 +55,6 @@ test.describe("Registro de participante", () => {
         nombres: "Imagen",
         apellidos: `Falsa ${Date.now()}`,
         empresaId: EMPRESA_ID,
-        grupoId: GRUPO_ID,
         aceptaDatos: "on",
         foto: { name: "falsa.png", mimeType: "image/png", buffer: Buffer.from("esto no es una imagen") },
       },

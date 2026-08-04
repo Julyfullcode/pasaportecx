@@ -1,6 +1,6 @@
 # Pasaporte CX · Grupo EPM
 
-Aplicación web mobile-first para gamificar el encuentro presencial de la Vicepresidencia Experiencia Usuario-Cliente. Gestiona registro sin contraseña, desafíos activados por QR, puntuación individual y por equipos, evidencias, recuerdos, proyecciones y reportes.
+Aplicación web mobile-first para gamificar el encuentro presencial de la Vicepresidencia Experiencia Usuario-Cliente. Gestiona registro sin contraseña, desafíos activados por QR, puntuación individual, evidencias, recuerdos, proyecciones y reportes.
 
 ## Puesta en marcha local
 
@@ -16,7 +16,7 @@ npm run dev
 
 Abra `http://localhost:3000`. El administrador queda en `http://localhost:3000/admin/login` con `admin` / `Cambiar123!` si no cambió las variables del seed. Cambie estas credenciales antes de compartir el entorno.
 
-El seed crea 14 empresas, 5 componentes, 6 equipos, 4 ubicaciones, 18 participantes, 10 desafíos que cubren los cinco tipos y 12 recuerdos con ilustraciones generadas localmente. Los nombres `Equipo 1` a `Equipo 6` se renombran en `/admin/configuracion` o `/admin/grupos`.
+El seed crea 14 empresas, 5 componentes, 4 ubicaciones, 18 participantes, 10 desafíos que cubren los cinco tipos y 12 recuerdos con ilustraciones generadas localmente.
 
 ## Comandos
 
@@ -72,10 +72,9 @@ Las fotos de personas usan siempre `FotoCircular`; los recuerdos son la excepci�
 
 ### Antes de abrir puertas
 
-1. Entre a `/admin/configuracion` y ajuste el nombre del evento, el método de puntaje y los tamaños de los podios.
-2. Renombre los seis equipos y confirme sus colores en `/admin/grupos`.
-3. Agregue las empresas, componentes o ubicaciones faltantes desde los catálogos. Nada de esto requiere redesplegar.
-4. Pruebe un registro y un QR desde un celular conectado al wifi del evento.
+1. Entre a `/admin/configuracion` y ajuste el nombre del evento y el tamaño del podio individual.
+2. Agregue las empresas, componentes o ubicaciones faltantes desde los catálogos. Nada de esto requiere redesplegar.
+3. Pruebe un registro y un QR desde un celular conectado al wifi del evento.
 
 ### Crear un desafío en caliente
 
@@ -85,23 +84,21 @@ Las fotos de personas usan siempre `FotoCircular`; los recuerdos son la excepci�
 4. Elija **Publicado** si debe funcionar de inmediato, o **Borrador** para prepararlo.
 5. Guarde. El código y el QR se generan automáticamente. Use **PNG** para piezas digitales o **PDF** para imprimir. El botón superior descarga todos los QR publicados, uno por página.
 
-Para sumar un componente o equipo durante el evento, vaya a `/admin/configuracion`, agréguelo en el catálogo y vuelva al formulario: aparecerá inmediatamente.
+Para sumar un componente durante el evento, vaya a `/admin/configuracion`, agréguelo en el catálogo y vuelva al formulario: aparecerá inmediatamente.
 
 ### Qué pantalla proyectar
 
 - Registro y coffee breaks: `/admin/proyeccion/asistentes`. Presenta personas, integra recién registrados y los marca con **¡Bienvenido!**.
 - Actividad social o salida nocturna: `/admin/proyeccion/recuerdos`.
-- Seguimiento competitivo: `/admin/proyeccion/podio` o `/admin/proyeccion/equipos`.
+- Seguimiento competitivo: `/admin/proyeccion/podio`.
 - Pantalla permanente: `/admin/proyeccion/mixto`; alterna automáticamente según el ciclo definido en Configuración.
 
 Abra cada URL en una pestaña independiente y active pantalla completa del navegador. No tienen menús y se actualizan solas.
 
-### Evidencias, personas y equipos
+### Evidencias y personas
 
 - El contador de `/admin/evidencias` indica fotos pendientes. **Aprobar** suma los puntos dentro de la misma operación; **Rechazar** conserva el registro con cero puntos.
-- En `/admin/participantes` puede buscar, filtrar, cambiar de equipo, desactivar o ajustar puntos. Todo ajuste exige un motivo.
-- `/admin/grupos` muestra composición y una sugerencia de rebalanceo. La sugerencia nunca mueve personas por sí sola.
-- El ranking de equipos siempre muestra si el criterio actual es promedio o suma.
+- En `/admin/participantes` puede buscar, filtrar, desactivar o ajustar puntos. Todo ajuste exige un motivo.
 
 ### Moderar y entregar recuerdos
 

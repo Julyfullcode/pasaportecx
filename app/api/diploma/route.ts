@@ -33,7 +33,6 @@ export async function GET() {
   const pdf = await generarDiplomaPdf({
     nombre: participante.nombre,
     empresa: participante.empresa.nombre,
-    equipo: participante.grupo.nombre,
     evento: config.nombreEvento,
     organizadores: config.organizadoresAgenda,
     fecha: new Date(),

@@ -1,6 +1,5 @@
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { obtenerRankingEquipos } from "@/lib/equipos";
 
 function csv(filas: (string | number | null | undefined)[][]) {
   const contenido = filas
@@ -23,15 +22,12 @@ export async function GET(
   if (tipo === "participantes" || tipo === "ranking-individual") {
     const datos = await db.participante.findMany({
       orderBy: { puntosTotales: "desc" },
-      include: { empresa: true, grupo: true },
+      include: { empresa: true },
     });
     filas = [
-      ["Posición", "Nombre", "Empresa", "Grupo", "Puntos", "Activo", "Registrado"],
-      ...datos.map((p, i) => [i + 1, p.nombre, p.empresa.nombre, p.grupo.nombre, p.puntosTotales, p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
+      ["Posición", "Nombre", "Empresa", "Puntos", "Activo", "Registrado"],
+      ...datos.map((p, i) => [i + 1, p.nombre, p.empresa.nombre, p.puntosTotales, p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
     ];
-  } else if (tipo === "ranking-equipos") {
-    const datos = await obtenerRankingEquipos();
-    filas = [["Posición", "Equipo", "Integrantes activos", "Puntaje"], ...datos.map((e, i) => [i + 1, e.nombre, e.integrantes, e.puntaje])];
   } else if (tipo === "completitudes") {
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: { include: { componente: true } } }, orderBy: { completadoEn: "asc" } });
     filas = [["Participante", "Desafío", "Tipo", "Día", "Componente", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.desafio.titulo, c.desafio.tipo, c.desafio.dia, c.desafio.componente?.nombre, c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];

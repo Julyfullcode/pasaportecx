@@ -15,7 +15,7 @@ describe("respuestas del desafío de cierre", () => {
   it("acepta una cosecha con las tres reflexiones", () => {
     expect(esRespuestasCosecha({
       meLlevo: "Un aprendizaje",
-      agradezco: "Al equipo",
+      agradezco: "A una persona",
       activo: "Una acción concreta",
     })).toBe(true);
   });

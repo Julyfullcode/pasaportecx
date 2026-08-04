@@ -3,23 +3,12 @@ import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
-const grupos = [
-  ["grupo-e2e-1", "Equipo Aurora", "#006CB7"],
-  ["grupo-e2e-2", "Equipo Bosque", "#009B77"],
-  ["grupo-e2e-3", "Equipo Río", "#6F42C1"],
-  ["grupo-e2e-4", "Equipo Sol", "#E67E22"],
-  ["grupo-e2e-5", "Equipo Nube", "#607D8B"],
-  ["grupo-e2e-6", "Equipo Tierra", "#795548"],
-] as const;
-
 async function sembrar() {
   await db.configuracionEvento.create({
     data: {
       id: "evento",
       nombreEvento: "Pasaporte CX E2E",
       tamanoPodioIndividual: 5,
-      tamanoPodioEquipos: 3,
-      metodoPuntajeEquipo: "SUMA",
       puntosPorRegistro: 25,
       modoAsistentes: "CARRUSEL",
       intervaloAsistentesSegundos: 1,
@@ -34,9 +23,6 @@ async function sembrar() {
   });
   await db.ubicacion.create({
     data: { id: "ubicacion-e2e", nombre: "Registro E2E", orden: 1, activa: true },
-  });
-  await db.grupo.createMany({
-    data: grupos.map(([id, nombre, colorHex], indice) => ({ id, nombre, colorHex, orden: indice + 1 })),
   });
   await db.admin.create({
     data: {
@@ -58,7 +44,6 @@ async function sembrar() {
       id: `podio-${indice + 1}`,
       nombre: `Podio ${indice + 1}`,
       empresaId: "empresa-e2e",
-      grupoId: grupos[indice][0],
       urlFoto: "/marca/logo-grupo-epm-oficial.png",
       codigoRecuperacion: `PODIO${indice + 1}`,
       puntosRegistro: 5_000 - indice * 100,
@@ -71,7 +56,6 @@ async function sembrar() {
       id: `carrusel-${indice + 1}`,
       nombre: `Carrusel ${String(indice + 1).padStart(2, "0")}`,
       empresaId: "empresa-e2e",
-      grupoId: grupos[indice % grupos.length][0],
       urlFoto: "/marca/logo-grupo-epm-oficial.png",
       codigoRecuperacion: `CAR${String(indice + 1).padStart(3, "0")}`,
       creadoEn: new Date(Date.UTC(2026, 0, 2, 0, indice)),

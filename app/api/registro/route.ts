@@ -44,19 +44,6 @@ export async function POST(request: Request) {
     });
     urlFoto = await storage.guardar(imagen.datos, imagen.extension, "perfiles");
     const participante = await db.$transaction(async (tx) => {
-      let grupoId = datos.grupoId;
-      if (configuracion.asignacionAutomatica) {
-        await tx.$queryRaw`WITH bloqueo AS MATERIALIZED (SELECT pg_advisory_xact_lock(1302026)) SELECT 1 AS "adquirido" FROM bloqueo`;
-        const grupos = await tx.grupo.findMany({
-          where: { activo: true },
-          include: { _count: { select: { participantes: { where: { activo: true } } } } },
-          orderBy: { orden: "asc" },
-        });
-        grupoId = grupos.sort(
-          (a, b) => a._count.participantes - b._count.participantes || a.orden - b.orden,
-        )[0]?.id;
-      }
-      if (!grupoId) throw new Error("No hay un equipo disponible");
       let codigo = codigoRecuperacion();
       while (await tx.participante.findUnique({ where: { codigoRecuperacion: codigo } })) {
         codigo = codigoRecuperacion();
@@ -65,13 +52,11 @@ export async function POST(request: Request) {
         data: {
           nombre: nombreCompleto,
           empresaId: datos.empresaId,
-          grupoId,
           urlFoto: urlFoto!,
           codigoRecuperacion: codigo,
           puntosRegistro: configuracion.puntosPorRegistro,
           puntosTotales: configuracion.puntosPorRegistro,
         },
-        include: { grupo: true },
       });
     }, { maxWait: 10_000, timeout: 15_000 });
     participantePersistido = true;
@@ -81,7 +66,6 @@ export async function POST(request: Request) {
       participante: {
         nombre: participante.nombre,
         codigoRecuperacion: participante.codigoRecuperacion,
-        grupo: participante.grupo.nombre,
       },
     });
   } catch (error) {

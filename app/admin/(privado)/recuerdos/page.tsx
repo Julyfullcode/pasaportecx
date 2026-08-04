@@ -13,7 +13,7 @@ export default async function AdminRecuerdos({
   const recuerdos = await db.recuerdo.findMany({
     where: filtro === "reportados" ? { reportado: true } : filtro === "pendientes" ? { pendiente: true } : {},
     orderBy: { creadoEn: "desc" },
-    include: { participante: { include: { grupo: true } } },
+    include: { participante: true },
   });
   return (
     <div className="p-4 md:p-7">

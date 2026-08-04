@@ -13,7 +13,7 @@ export default async function Recuerdos({ searchParams }: { searchParams: Promis
       orderBy: { creadoEn: "desc" },
       take: 18,
       include: {
-        participante: { include: { grupo: true, empresa: true } },
+        participante: { include: { empresa: true } },
         reacciones: { select: { participanteId: true, tipo: true } },
       },
     }),

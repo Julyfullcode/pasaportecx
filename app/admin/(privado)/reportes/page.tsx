@@ -1,9 +1,8 @@
 import { Download, FileSpreadsheet, Images } from "lucide-react";
 
 const reportes = [
-  ["participantes", "Participantes con puntajes", "Listado completo, empresa, grupo y estado."],
+  ["participantes", "Participantes con puntajes", "Listado completo, empresa y estado."],
   ["ranking-individual", "Ranking individual final", "Posiciones ordenadas por puntaje."],
-  ["ranking-equipos", "Ranking de equipos final", "Puntaje e integrantes por equipo."],
   ["completitudes", "Completitudes por desafío", "Detalle de estado, puntos y hora."],
   ["encuestas", "Respuestas de encuestas", "Respuestas libres y escalas exportables."],
   ["empresas", "Participación por empresa", "Totales agregados por filial."],

@@ -11,7 +11,6 @@ export type PersonaPodio = {
   urlFoto: string;
   puntosTotales: number;
   empresa: { nombre: string; urlLogo?: string | null };
-  grupo: { nombre: string; colorHex: string };
 };
 
 const nombresPuesto = ["Primer lugar", "Segundo lugar", "Tercer lugar"];
@@ -55,7 +54,6 @@ export function Podio({ inicial, tamano }: { inicial: PersonaPodio[]; tamano: nu
                   {persona.empresa.urlLogo && <span className="grid h-10 w-20 shrink-0 place-items-center rounded-lg bg-white/95 p-1"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
                   <p className="min-w-0 truncate text-[clamp(12px,1.1vw,18px)] text-white/75">{persona.empresa.nombre}</p>
                 </div>
-                <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[clamp(10px,.9vw,14px)] font-bold"><span className="h-3 w-3 rounded-full" style={{ background: persona.grupo.colorHex }} />{persona.grupo.nombre}</span>
                 <strong className={`mt-4 block font-display leading-none ${primero ? "text-[clamp(40px,5vw,80px)] text-amber-300 drop-shadow" : "text-[clamp(28px,3.5vw,56px)] text-[var(--epm-verde)]"}`}>{persona.puntosTotales.toLocaleString("es-CO")} <small className="text-[.34em] text-white/70">pts</small></strong>
               </div>
             </article>

@@ -10,7 +10,6 @@ type Persona = {
   urlFoto: string;
   creadoEn?: string | Date;
   empresa: { nombre: string; urlLogo?: string | null };
-  grupo: { nombre: string; colorHex: string };
 };
 
 function barajar<T>(datos: T[]) {
@@ -74,7 +73,6 @@ export function RotadorAsistentes({ inicial, modo, intervalo }: { inicial: Perso
                 {persona.empresa.urlLogo && <span className="grid h-[clamp(34px,3vw,50px)] w-[clamp(65px,6vw,105px)] shrink-0 place-items-center rounded-lg bg-white/90 p-1.5"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
                 <p className={`truncate font-bold text-white/80 ${modo === "DESTACADO" ? "text-[clamp(20px,2vw,34px)]" : "text-[clamp(12px,1.05vw,17px)]"}`}>{persona.empresa.nombre}</p>
               </div>
-              <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[clamp(10px,.95vw,15px)] font-bold"><span className="h-3 w-3 rounded-full" style={{ background: persona.grupo.colorHex }} />{persona.grupo.nombre}</span>
             </div>
           </article>
         ))}

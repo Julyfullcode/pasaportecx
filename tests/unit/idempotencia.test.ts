@@ -14,12 +14,11 @@ describe("idempotencia de completitudes", () => {
   });
 
   it("la restricción compuesta impide sumar dos veces con requests concurrentes", async () => {
-    const [empresa, grupo] = await Promise.all([db.empresa.findFirstOrThrow(), db.grupo.findFirstOrThrow()]);
+    const empresa = await db.empresa.findFirstOrThrow();
     const participante = await db.participante.create({
       data: {
         nombre: "Prueba idempotencia",
         empresaId: empresa.id,
-        grupoId: grupo.id,
         urlFoto: "/marca/icono.svg",
         codigoRecuperacion: `I${Date.now().toString(36).slice(-5)}`.toUpperCase(),
       },

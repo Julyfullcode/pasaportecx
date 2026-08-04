@@ -9,13 +9,8 @@ export const dynamic = "force-dynamic";
 
 export default async function Registro() {
   if (await participanteActual()) redirect("/");
-  const [empresas, grupos, configuracion] = await Promise.all([
+  const [empresas, configuracion] = await Promise.all([
     db.empresa.findMany({ where: { activa: true }, orderBy: { orden: "asc" } }),
-    db.grupo.findMany({
-      where: { activo: true },
-      orderBy: { orden: "asc" },
-      include: { _count: { select: { participantes: { where: { activo: true } } } } },
-    }),
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
   ]);
   return (
@@ -27,8 +22,6 @@ export default async function Registro() {
         <div className="mx-auto max-w-2xl">
           <RegistroForm
             empresas={empresas}
-            grupos={grupos.map((g) => ({ ...g, integrantes: g._count.participantes }))}
-            automatico={configuracion.asignacionAutomatica}
             nombreEvento={configuracion.nombreEvento}
           />
           <RecuperarSesion />

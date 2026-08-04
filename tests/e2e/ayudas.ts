@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 
 export const BASE_URL = "http://127.0.0.1:3000";
 export const EMPRESA_ID = "empresa-e2e";
-export const GRUPO_ID = "grupo-e2e-1";
 export const PUNTOS_REGISTRO = 25;
 
 export const fotoPng = {
@@ -31,11 +30,9 @@ export async function iniciarAdmin(page: Page) {
 
 export async function crearParticipanteConToken({
   nombre,
-  grupoId = GRUPO_ID,
   puntos = PUNTOS_REGISTRO,
 }: {
   nombre: string;
-  grupoId?: string;
   puntos?: number;
 }) {
   const sufijo = randomBytes(6).toString("hex");
@@ -44,7 +41,6 @@ export async function crearParticipanteConToken({
     data: {
       nombre,
       empresaId: EMPRESA_ID,
-      grupoId,
       urlFoto: "/marca/logo-grupo-epm-oficial.png",
       codigoRecuperacion: sufijo.toUpperCase(),
       puntosRegistro: puntos,
@@ -75,14 +71,12 @@ export async function registrarPorApi(
   api: APIRequestContext,
   nombre: string,
   apellidos = "Prueba",
-  grupoId = GRUPO_ID,
 ) {
   return api.post("/api/registro", {
     multipart: {
       nombres: nombre,
       apellidos,
       empresaId: EMPRESA_ID,
-      grupoId,
       aceptaDatos: "on",
       foto: fotoPng,
     },

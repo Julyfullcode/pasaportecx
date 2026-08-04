@@ -30,7 +30,7 @@ const componentes = [
   ["Cultura y gobernanza", "#2E9E5B"],
 ] as const;
 
-const coloresGrupos = [
+const coloresAvatares = [
   "#0079C2",
   "#E57A24",
   "#0E7C6E",
@@ -79,7 +79,7 @@ async function crearImagenes() {
   await mkdir(raiz, { recursive: true });
   for (let i = 0; i < nombres.length; i++) {
     const iniciales = nombres[i].split(" ").slice(0, 2).map((p) => p[0]).join("");
-    await writeFile(path.join(raiz, `avatar-${i + 1}.svg`), avatarSvg(iniciales, coloresGrupos[i % 6]));
+    await writeFile(path.join(raiz, `avatar-${i + 1}.svg`), avatarSvg(iniciales, coloresAvatares[i % 6]));
   }
   for (let i = 0; i < 12; i++) {
     await writeFile(path.join(raiz, `recuerdo-${i + 1}.svg`), recuerdoSvg(i));
@@ -98,7 +98,6 @@ async function main() {
   await prisma.componente.deleteMany();
   await prisma.ubicacion.deleteMany();
   await prisma.empresa.deleteMany();
-  await prisma.grupo.deleteMany();
   await prisma.configuracionEvento.deleteMany();
 
   await crearImagenes();
@@ -113,13 +112,6 @@ async function main() {
       prisma.componente.create({ data: { nombre, colorHex, orden: indice + 1 } }),
     ),
   );
-  const grupos = await Promise.all(
-    coloresGrupos.map((colorHex, indice) =>
-      prisma.grupo.create({
-        data: { nombre: `Equipo ${indice + 1}`, colorHex, orden: indice + 1 },
-      }),
-    ),
-  );
   await Promise.all(
     ["Auditorio", "Registro", "Coffee break", "Salida nocturna centro de Medellín"].map(
       (nombre, indice) => prisma.ubicacion.create({ data: { nombre, orden: indice + 1 } }),
@@ -130,8 +122,6 @@ async function main() {
       id: "evento",
       nombreEvento: "Pasaporte CX · Encuentro Grupo EPM",
       tamanoPodioIndividual: 5,
-      tamanoPodioEquipos: 3,
-      metodoPuntajeEquipo: "PROMEDIO",
     },
   });
   const adminPassword = process.env.ADMIN_PASSWORD ?? "Cambiar123!";
@@ -190,7 +180,7 @@ async function main() {
     {
       codigoQr: "medellin-nocturna",
       titulo: "Medellín se ilumina",
-      descripcion: "Comparte una foto creativa de tu equipo en la salida nocturna.",
+      descripcion: "Comparte una foto creativa durante la salida nocturna.",
       tipo: "EVIDENCIA_FOTO" as const,
       puntos: 250,
       dia: 1,
@@ -299,7 +289,7 @@ async function main() {
         formato: "cosecha",
         preguntas: [
           { id: "meLlevo", titulo: "Me llevo", ayuda: "Una idea o aprendizaje." },
-          { id: "agradezco", titulo: "Agradezco", ayuda: "Una persona, equipo, conversación o práctica." },
+          { id: "agradezco", titulo: "Agradezco", ayuda: "Una persona, conversación o práctica." },
           { id: "activo", titulo: "Activo", ayuda: "Una acción que quisiera impulsar al regresar." },
         ],
       },
@@ -317,7 +307,6 @@ async function main() {
         data: {
           nombre: nombres[i],
           empresaId: empresasCreadas[i % empresasCreadas.length].id,
-          grupoId: grupos[i % grupos.length].id,
           urlFoto: `/uploads/seed/avatar-${i + 1}.svg`,
           codigoRecuperacion: `CX${String(i + 1).padStart(4, "0")}`,
         },
@@ -354,7 +343,7 @@ async function main() {
         participanteId: participantes[i].id,
         urlFoto: `/uploads/seed/recuerdo-${i + 1}.svg`,
         urlMiniatura: `/uploads/seed/recuerdo-${i + 1}.svg`,
-        descripcion: ["Conectando ideas", "Un equipo, muchas miradas", "Experiencias que dejan huella"][i % 3],
+        descripcion: ["Conectando ideas", "Muchas miradas", "Experiencias que dejan huella"][i % 3],
       },
     });
   }

@@ -24,7 +24,6 @@ import { DIRECTIVA_EXPERIENCIA } from "@/lib/mensajes";
 type DatosPasaporte = {
   nombre: string;
   empresa: string;
-  equipo: string;
   evento: string;
   codigo: string;
   urlRecuperacion: string;
@@ -232,7 +231,7 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
 
   const tamanoNombre = tamanoQueCabe(datos.nombre, normal, 20, 330, 12);
   pagina.drawText(datos.nombre, { x: textoCentrado(datos.nombre, normal, tamanoNombre), y: 279, size: tamanoNombre, font: normal, color: azul });
-  const afiliacion = `${datos.empresa}  ·  ${datos.equipo}`;
+  const afiliacion = datos.empresa;
   const tamanoAfiliacion = tamanoQueCabe(afiliacion, normal, 10.5, 322, 8.5);
   pagina.drawText(afiliacion, { x: textoCentrado(afiliacion, normal, tamanoAfiliacion), y: 256, size: tamanoAfiliacion, font: normal, color: gris });
 

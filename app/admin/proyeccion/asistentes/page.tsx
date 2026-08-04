@@ -17,7 +17,6 @@ export default async function ProyeccionAsistentes() {
         nombre: true,
         urlFoto: true,
         empresa: { select: { nombre: true, urlLogo: true } },
-        grupo: { select: { nombre: true, colorHex: true } },
       },
     }),
   ]);

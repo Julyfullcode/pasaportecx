@@ -24,7 +24,6 @@ type Recuerdo = {
   participante: {
     nombre: string;
     urlFoto: string;
-    grupo: { nombre: string; colorHex: string };
     empresa: { nombre: string };
   };
 };
@@ -296,7 +295,7 @@ export function MuroRecuerdos({
           <div className="w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-white shadow-2xl">
             <div className="flex items-center gap-3 p-4">
               <FotoCircular src={seleccionado.participante.urlFoto} alt={`Foto de ${seleccionado.participante.nombre}`} className="h-12 w-12" />
-              <div className="min-w-0 flex-1"><strong id="autor-recuerdo">{seleccionado.participante.nombre}</strong><p className="text-xs text-slate-500">{seleccionado.participante.empresa.nombre} · {seleccionado.participante.grupo.nombre}</p></div>
+              <div className="min-w-0 flex-1"><strong id="autor-recuerdo">{seleccionado.participante.nombre}</strong><p className="text-xs text-slate-500">{seleccionado.participante.empresa.nombre}</p></div>
               <button onClick={() => setSeleccionado(undefined)} aria-label="Cerrar foto ampliada" className="grid h-11 w-11 place-items-center rounded-full bg-slate-100"><X /></button>
             </div>
             <img src={seleccionado.urlFoto} alt={seleccionado.descripcion || "Recuerdo ampliado"} className="max-h-[68vh] w-full bg-slate-950 object-contain" />

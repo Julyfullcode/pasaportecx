@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       skip: (pagina - 1) * 18,
       take: 18,
       include: {
-        participante: { include: { grupo: true, empresa: true } },
+        participante: { include: { empresa: true } },
         reacciones: { select: { participanteId: true, tipo: true } },
       },
     }),

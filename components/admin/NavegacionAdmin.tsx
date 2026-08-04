@@ -12,7 +12,6 @@ import {
   Settings,
   Target,
   Users,
-  UsersRound,
 } from "lucide-react";
 import { salirAdmin } from "@/app/admin/actions";
 import { Logo } from "@/components/marca/Logo";
@@ -21,7 +20,6 @@ const enlaces = [
   ["/admin", "Resumen", LayoutDashboard],
   ["/admin/desafios", "Desafíos", Target],
   ["/admin/participantes", "Participantes", Users],
-  ["/admin/grupos", "Equipos", UsersRound],
   ["/admin/evidencias", "Evidencias", Camera],
   ["/admin/recuerdos", "Recuerdos", Image],
   ["/admin/configuracion", "Configuración", Settings],

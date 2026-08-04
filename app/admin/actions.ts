@@ -201,17 +201,6 @@ export async function eliminarDesafio(formulario: FormData) {
   revalidatePath("/admin/desafios");
 }
 
-export async function cambiarGrupoParticipante(formulario: FormData) {
-  await requerirAdmin();
-  await db.participante.update({
-    where: { id: String(formulario.get("participanteId")) },
-    data: { grupoId: String(formulario.get("grupoId")) },
-  });
-  anunciarCambio("grupo");
-  revalidatePath("/admin/participantes");
-  revalidatePath("/admin/grupos");
-}
-
 export async function ajustarPuntos(formulario: FormData) {
   const admin = await requerirAdmin();
   const participanteId = String(formulario.get("participanteId"));
@@ -340,8 +329,6 @@ export async function guardarConfiguracion(formulario: FormData) {
       organizadoresAgenda: String(formulario.get("organizadoresAgenda") ?? "").trim().slice(0, 300),
       diplomaHabilitado: formulario.get("diplomaHabilitado") === "on",
       tamanoPodioIndividual: Number(formulario.get("tamanoPodioIndividual")),
-      tamanoPodioEquipos: Number(formulario.get("tamanoPodioEquipos")),
-      metodoPuntajeEquipo: String(formulario.get("metodoPuntajeEquipo")) as "PROMEDIO" | "SUMA",
       puntosPorRegistro: Math.max(0, Math.min(10_000, Number(formulario.get("puntosPorRegistro")) || 0)),
       modoAsistentes: String(formulario.get("modoAsistentes")) as "MOSAICO" | "CARRUSEL" | "DESTACADO",
       intervaloAsistentesSegundos: Number(formulario.get("intervaloAsistentesSegundos")),
@@ -351,7 +338,6 @@ export async function guardarConfiguracion(formulario: FormData) {
       maxRecuerdosPorParticipante: Math.max(1, Math.min(50, Number(formulario.get("maxRecuerdosPorParticipante")) || 10)),
       eliminarEvidenciasRechazadas,
       recuerdosRequierenAprobacion: formulario.get("recuerdosRequierenAprobacion") === "on",
-      asignacionAutomatica: formulario.get("asignacionAutomatica") === "on",
     },
   });
   if (eliminarEvidenciasRechazadas) {
@@ -543,17 +529,12 @@ export async function guardarCatalogo(formulario: FormData) {
     const colorHex = String(formulario.get("colorHex") ?? "#0079C2");
     if (id) await db.componente.update({ where: { id }, data: { nombre, orden, colorHex } });
     else await db.componente.create({ data: { nombre, orden, colorHex } });
-  } else if (tipo === "grupo") {
-    const colorHex = String(formulario.get("colorHex") ?? "#0079C2");
-    if (id) await db.grupo.update({ where: { id }, data: { nombre, orden, colorHex } });
-    else await db.grupo.create({ data: { nombre, orden, colorHex } });
   } else if (tipo === "ubicacion") {
     if (id) await db.ubicacion.update({ where: { id }, data: { nombre, orden } });
     else await db.ubicacion.create({ data: { nombre, orden } });
   }
   anunciarCambio("catalogo");
   revalidatePath("/admin/configuracion");
-  revalidatePath("/admin/grupos");
 }
 
 export async function actualizarLogoEmpresa(formulario: FormData) {
@@ -594,9 +575,6 @@ export async function alternarCatalogo(formulario: FormData) {
   } else if (tipo === "componente") {
     const actual = await db.componente.findUniqueOrThrow({ where: { id } });
     await db.componente.update({ where: { id }, data: { activo: !actual.activo } });
-  } else if (tipo === "grupo") {
-    const actual = await db.grupo.findUniqueOrThrow({ where: { id } });
-    await db.grupo.update({ where: { id }, data: { activo: !actual.activo } });
   } else if (tipo === "ubicacion") {
     const actual = await db.ubicacion.findUniqueOrThrow({ where: { id } });
     await db.ubicacion.update({ where: { id }, data: { activa: !actual.activa } });

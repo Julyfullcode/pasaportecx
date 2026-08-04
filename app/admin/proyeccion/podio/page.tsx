@@ -18,7 +18,6 @@ export default async function ProyeccionPodio() {
         urlFoto: true,
         puntosTotales: true,
         empresa: { select: { nombre: true, urlLogo: true } },
-        grupo: { select: { nombre: true, colorHex: true } },
       },
     }),
   ]);

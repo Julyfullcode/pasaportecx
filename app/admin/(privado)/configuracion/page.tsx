@@ -9,11 +9,10 @@ import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, componentes, grupos, ubicaciones, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
+  const [config, empresas, componentes, ubicaciones, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.componente.findMany({ orderBy: { orden: "asc" } }),
-    db.grupo.findMany({ orderBy: { orden: "asc" } }),
     db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
     db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
     obtenerReporteAlmacenamiento(),
@@ -41,9 +40,6 @@ export default async function Configuracion() {
           <span><strong className="block">Habilitar certificado para los participantes</strong><small className="mt-1 block font-medium text-amber-800">Actívalo únicamente al finalizar el encuentro. Mientras esté desactivado, el certificado no podrá abrirse.</small></span>
         </label>
         <div><label className="etiqueta">Podio individual</label><input className="campo" type="number" min={3} max={20} name="tamanoPodioIndividual" defaultValue={config.tamanoPodioIndividual} /></div>
-        <div><label className="etiqueta">Podio de equipos</label><input className="campo" type="number" min={1} max={10} name="tamanoPodioEquipos" defaultValue={config.tamanoPodioEquipos} /></div>
-        <div><label className="etiqueta">Método de puntaje de equipo</label><select className="campo" name="metodoPuntajeEquipo" defaultValue={config.metodoPuntajeEquipo}><option value="PROMEDIO">Promedio por integrante activo</option><option value="SUMA">Suma total</option></select></div>
-        <label className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="asignacionAutomatica" defaultChecked={config.asignacionAutomatica} /> Asignación automática balanceada</label>
         <div className="md:col-span-2"><label className="etiqueta">Puntos por registrarse</label><input className="campo" type="number" min={0} max={10000} name="puntosPorRegistro" defaultValue={config.puntosPorRegistro} required /><p className="mt-1 text-xs text-slate-500">Se otorgan una sola vez al crear el pasaporte. Los cambios aplicarán únicamente a participantes nuevos.</p></div>
         <h2 className="mt-3 text-xl font-extrabold md:col-span-2">Pantallas de proyección</h2>
         <div><label className="etiqueta">Modo asistentes</label><select className="campo" name="modoAsistentes" defaultValue={config.modoAsistentes}><option value="MOSAICO">Mosaico</option><option value="CARRUSEL">Carrusel</option><option value="DESTACADO">Destacado</option></select></div>
@@ -63,7 +59,6 @@ export default async function Configuracion() {
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />
           <Catalogo titulo="Componentes" tipo="componente" items={componentes} color />
-          <Catalogo titulo="Equipos (nombres editables)" tipo="grupo" items={grupos} color />
           <Catalogo titulo="Ubicaciones del Día 1" tipo="ubicacion" items={ubicaciones} />
         </div>
       </section>

@@ -19,22 +19,6 @@ test.describe.serial("Podio en tiempo real", () => {
     await expect(page.getByText("Podio 5", { exact: true })).toBeVisible();
   });
 
-  test("el podio de equipos muestra el top 3 ordenado por suma acumulada", async ({ page }) => {
-    await iniciarAdmin(page);
-    const ranking = await page.evaluate(async () => {
-      const respuesta = await fetch("/api/ranking");
-      if (!respuesta.ok) throw new Error(`Ranking respondió ${respuesta.status}`);
-      return respuesta.json();
-    });
-    expect(ranking.equipos.slice(0, 3).map((equipo: { nombre: string }) => equipo.nombre)).toEqual([
-      "Equipo Aurora", "Equipo Bosque", "Equipo Río",
-    ]);
-    await page.goto("/admin/proyeccion/equipos");
-    await expect(page.locator("article").filter({ hasText: "Primer lugar" })).toContainText("Equipo Aurora");
-    await expect(page.locator("article").filter({ hasText: "Segundo lugar" })).toContainText("Equipo Bosque");
-    await expect(page.locator("article").filter({ hasText: "Tercer lugar" })).toContainText("Equipo Río");
-  });
-
   test("el podio se actualiza tras 10 participantes sumando puntos en paralelo", async ({ page, playwright }) => {
     const principal = await crearParticipanteConToken({ nombre: `Concurrente líder ${Date.now()}`, puntos: 4_990 });
     const participantes = [principal];

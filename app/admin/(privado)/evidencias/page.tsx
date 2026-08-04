@@ -8,7 +8,7 @@ export default async function AdminEvidencias() {
   const evidencias = await db.completitud.findMany({
     where: { estado: "PENDIENTE", desafio: { tipo: "EVIDENCIA_FOTO" } },
     orderBy: { completadoEn: "asc" },
-    include: { participante: { include: { empresa: true, grupo: true } }, desafio: true },
+    include: { participante: { include: { empresa: true } }, desafio: true },
   });
   return (
     <div className="p-4 md:p-7">
@@ -17,7 +17,7 @@ export default async function AdminEvidencias() {
         {evidencias.map((evidencia) => (
           <article key={evidencia.id} className="tarjeta overflow-hidden">
             <img src={evidencia.urlEvidencia ?? ""} alt={`Evidencia de ${evidencia.participante.nombre}`} className="aspect-[4/3] w-full object-cover" />
-            <div className="p-4"><h2 className="font-extrabold">{evidencia.desafio.titulo}</h2><p className="text-sm text-slate-600">{evidencia.participante.nombre} · {evidencia.participante.grupo.nombre}</p><p className="mt-1 text-xs text-slate-500">{evidencia.completadoEn.toLocaleString("es-CO")} · {evidencia.desafio.puntos} puntos</p>
+            <div className="p-4"><h2 className="font-extrabold">{evidencia.desafio.titulo}</h2><p className="text-sm text-slate-600">{evidencia.participante.nombre} · {evidencia.participante.empresa.nombre}</p><p className="mt-1 text-xs text-slate-500">{evidencia.completadoEn.toLocaleString("es-CO")} · {evidencia.desafio.puntos} puntos</p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <form action={revisarEvidencia}><input type="hidden" name="id" value={evidencia.id} /><input type="hidden" name="decision" value="rechazar" /><button className="boton-secundario w-full !border-red-300 !text-red-700"><X /> Rechazar</button></form>
                 <form action={revisarEvidencia}><input type="hidden" name="id" value={evidencia.id} /><input type="hidden" name="decision" value="aprobar" /><button className="boton-primario w-full !bg-[var(--epm-verde-medio)]"><Check /> Aprobar</button></form>

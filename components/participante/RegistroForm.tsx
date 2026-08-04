@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { Camera, Check, Download, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Sparkles, Trophy } from "lucide-react";
@@ -9,17 +9,12 @@ import { Logo } from "@/components/marca/Logo";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 
 type Empresa = { id: string; nombre: string };
-type Grupo = { id: string; nombre: string; colorHex: string; integrantes: number };
 
 export function RegistroForm({
   empresas,
-  grupos,
-  automatico,
   nombreEvento,
 }: {
   empresas: Empresa[];
-  grupos: Grupo[];
-  automatico: boolean;
   nombreEvento: string;
 }) {
   const router = useRouter();
@@ -28,12 +23,7 @@ export function RegistroForm({
   const [procesandoFoto, setProcesandoFoto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
-  const [registro, setRegistro] = useState<{ nombre: string; codigoRecuperacion: string; grupo: string; qr: string }>();
-
-  const menorCantidad = useMemo(
-    () => Math.min(...grupos.map((grupo) => grupo.integrantes)),
-    [grupos],
-  );
+  const [registro, setRegistro] = useState<{ nombre: string; codigoRecuperacion: string; qr: string }>();
 
   async function cambiarFoto(archivo?: File) {
     if (!archivo) return;
@@ -107,7 +97,7 @@ export function RegistroForm({
         </div>
         <div className="p-5 md:p-6">
           <h3 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">¡Tu pasaporte está listo!</h3>
-          <p className="mt-1 text-slate-600">{registro.nombre} · {registro.grupo}</p>
+          <p className="mt-1 text-slate-600">{registro.nombre}</p>
           <div className="my-5 rounded-2xl bg-[var(--epm-gris-fondo)] p-4">
             <p className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Código de recuperación</p>
             <p className="mt-1 font-display text-4xl font-extrabold tracking-[.16em] text-[var(--epm-azul-profundo)]">{registro.codigoRecuperacion}</p>
@@ -140,20 +130,6 @@ export function RegistroForm({
           {empresas.map((empresa) => <option value={empresa.id} key={empresa.id}>{empresa.nombre}</option>)}
         </select>
       </div>
-      {!automatico && (
-        <fieldset>
-          <legend className="etiqueta">Tu equipo</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {grupos.map((grupo) => (
-              <label key={grupo.id} className="flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 has-[:checked]:border-[var(--epm-azul)] has-[:checked]:ring-2 has-[:checked]:ring-sky-100">
-                <input type="radio" name="grupoId" value={grupo.id} required className="sr-only" />
-                <span className="h-4 w-4 rounded-full" style={{ background: grupo.colorHex }} />
-                <span className="text-sm font-extrabold">{grupo.nombre}<small className="block font-normal text-slate-500">{grupo.integrantes} integrantes{grupo.integrantes === menorCantidad ? " · recomendado" : ""}</small></span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
       <div>
         <span className="etiqueta">Foto de perfil</span>
         <div className="flex items-center gap-4">

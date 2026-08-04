@@ -11,7 +11,6 @@ type ParticipanteCosecha = {
   nombre: string;
   urlFoto: string;
   empresa: { nombre: string };
-  grupo: { nombre: string };
 };
 
 export async function crearTarjetaCosechaParticipante(participante: ParticipanteCosecha) {
@@ -40,7 +39,6 @@ export async function crearTarjetaCosechaParticipante(participante: Participante
   const pdf = await generarTarjetaCosechaPdf({
     nombre: participante.nombre,
     empresa: participante.empresa.nombre,
-    equipo: participante.grupo.nombre,
     evento: config.nombreEvento,
     respuestas: completitud.respuesta,
     logo,

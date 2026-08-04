@@ -14,6 +14,17 @@ test.describe("Administrador", () => {
     await anonimo.dispose();
   });
 
+  test("la aplicación no expone selección, navegación ni ranking de equipos", async ({ page }) => {
+    await page.goto("/registro");
+    await expect(page.getByText("Tu equipo", { exact: true })).toHaveCount(0);
+    await iniciarAdmin(page);
+    await expect(page.getByRole("link", { name: "Equipos", exact: true })).toHaveCount(0);
+    const ranking = await page.evaluate(async () => (await fetch("/api/ranking")).json());
+    expect(ranking).not.toHaveProperty("equipos");
+    const retirada = await page.goto("/admin/proyeccion/equipos");
+    expect(retirada?.status()).toBe(404);
+  });
+
   test("el acceso administrativo se bloquea temporalmente tras cinco intentos fallidos", async ({ page }) => {
     const usuario = `admin-bloqueo-${Date.now()}`;
     const password = "Clave-correcta-123!";

@@ -6,7 +6,6 @@ const rutas: Record<string, string> = {
   asistentes: "/admin/proyeccion/asistentes",
   recuerdos: "/admin/proyeccion/recuerdos",
   podio: "/admin/proyeccion/podio",
-  equipos: "/admin/proyeccion/equipos",
 };
 
 export function Mixto({ ciclo }: { ciclo: string }) {

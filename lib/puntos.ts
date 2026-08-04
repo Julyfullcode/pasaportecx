@@ -1,6 +1,4 @@
-import type { MetodoPuntajeEquipo, Prisma } from "@prisma/client";
-
-export type IntegrantePuntos = { puntosTotales: number; activo: boolean };
+import type { Prisma } from "@prisma/client";
 
 export function calcularTotalIndividual(
   completitudes: { puntosOtorgados: number; estado: string }[],
@@ -14,16 +12,6 @@ export function calcularTotalIndividual(
       .reduce((total, completitud) => total + completitud.puntosOtorgados, 0) +
     ajustes.reduce((total, ajuste) => total + ajuste.puntos, 0)
   );
-}
-
-export function calcularPuntajeEquipo(
-  integrantes: IntegrantePuntos[],
-  metodo: MetodoPuntajeEquipo | "PROMEDIO" | "SUMA",
-): number {
-  const activos = integrantes.filter((integrante) => integrante.activo);
-  const total = activos.reduce((suma, integrante) => suma + integrante.puntosTotales, 0);
-  if (metodo === "SUMA") return total;
-  return activos.length ? Math.round((total / activos.length) * 100) / 100 : 0;
 }
 
 type ClienteTransaccion = Prisma.TransactionClient;
