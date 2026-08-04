@@ -14,6 +14,7 @@ test.describe("Registro de participante", () => {
     for (const viewport of [{ width: 390, height: 844 }, { width: 1365, height: 768 }]) {
       await page.setViewportSize(viewport);
       await page.goto("/registro");
+      await expect(page.getByRole("img", { name: "Grupo EPM" })).toHaveAttribute("src", /logo-grupo-epm-blanco/);
       const cabecera = await page.locator("header").boundingBox();
       const nombre = await page.getByText("Nombre", { exact: true }).boundingBox();
       expect(cabecera).not.toBeNull();

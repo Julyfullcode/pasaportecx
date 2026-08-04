@@ -27,11 +27,13 @@ test.describe("Administrador", () => {
 
   test("la barra lateral abre la invitación de registro en modo presentación", async ({ page }) => {
     await iniciarAdmin(page);
+    await expect(page.getByRole("img", { name: "Grupo EPM" })).toHaveAttribute("src", /logo-grupo-epm-blanco/);
     const invitacion = page.getByRole("link", { name: "Invitar a registrarse" });
     await expect(invitacion).toHaveAttribute("href", "/admin/proyeccion/registro");
     await expect(invitacion).toHaveAttribute("target", "_blank");
 
     await page.goto("/admin/proyeccion/registro");
+    await expect(page.getByRole("img", { name: "Grupo EPM" })).toHaveAttribute("src", /logo-grupo-epm-blanco/);
     await expect(page.getByRole("heading", { name: "Vive la experiencia" })).toBeVisible();
     await expect(page.getByText("Escanea para registrarte", { exact: true })).toBeVisible();
     await expect(page.getByRole("img", { name: "Código QR para registrarse en Pasaporte CX" })).toHaveAttribute("src", /^data:image\/png;base64,/);
