@@ -52,6 +52,7 @@ export const desafioSchema = z
     descripcion: z.string().trim().min(3).max(600),
     tipo: z.enum([
       "CHECK_IN",
+      "PUNTUALIDAD",
       "OPCION_MULTIPLE",
       "RESPUESTA_ABIERTA",
       "EVIDENCIA_FOTO",

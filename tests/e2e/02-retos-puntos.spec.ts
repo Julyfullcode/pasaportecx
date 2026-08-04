@@ -2,6 +2,19 @@ import { expect, test } from "@playwright/test";
 import { db } from "@/lib/db";
 import { autenticarParticipante, crearParticipanteConToken, contextoApiParticipante, PUNTOS_REGISTRO } from "./ayudas";
 
+function fechaHoraColombia(fecha: Date) {
+  const partes = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(fecha).map((parte) => [parte.type, parte.value]));
+  return `${partes.year}-${partes.month}-${partes.day}T${partes.hour}:${partes.minute}`;
+}
+
 test.describe("Retos y puntos", () => {
   test("un QR válido suma los puntos correctos", async ({ context, page }) => {
     const { participante, token } = await crearParticipanteConToken({ nombre: `QR válido ${Date.now()}` });
@@ -47,5 +60,65 @@ test.describe("Retos y puntos", () => {
 
     const tarjeta = page.locator("section").filter({ hasText: "Tu puntaje total" }).first();
     await expect(tarjeta.getByText("125", { exact: true })).toBeVisible();
+  });
+
+  test("el desafío de puntualidad otorga puntos dentro de la tolerancia", async ({ context, page }) => {
+    const marca = Date.now();
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Puntual ${marca}` });
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `puntualidad-a-tiempo-${marca}`,
+        titulo: "Llegada puntual",
+        descripcion: "Registra tu hora de llegada.",
+        tipo: "CHECK_IN",
+        puntos: 80,
+        dia: 1,
+        ubicacion: "Entrada",
+        estado: "PUBLICADO",
+        configuracion: {
+          tipoEspecial: "PUNTUALIDAD",
+          fechaHoraObjetivo: fechaHoraColombia(new Date(Date.now() - 2 * 60_000)),
+          toleranciaMinutos: 5,
+        },
+      },
+    });
+    await autenticarParticipante(context, token);
+    await page.goto(`/d/${desafio.codigoQr}`);
+    await expect(page.getByRole("button", { name: "Registrar mi puntualidad" })).toBeVisible();
+    await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
+
+    await expect(page.getByRole("heading", { name: "¡Puntualidad registrada!" })).toBeVisible();
+    await expect(page.getByText("+80", { exact: true })).toBeVisible();
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO + 80);
+  });
+
+  test("el desafío de puntualidad registra la llegada tarde sin otorgar puntos", async ({ context, page }) => {
+    const marca = Date.now();
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Tarde ${marca}` });
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `puntualidad-tarde-${marca}`,
+        titulo: "Llegada puntual",
+        descripcion: "Registra tu hora de llegada.",
+        tipo: "CHECK_IN",
+        puntos: 80,
+        dia: 1,
+        ubicacion: "Entrada",
+        estado: "PUBLICADO",
+        configuracion: {
+          tipoEspecial: "PUNTUALIDAD",
+          fechaHoraObjetivo: fechaHoraColombia(new Date(Date.now() - 7 * 60_000)),
+          toleranciaMinutos: 5,
+        },
+      },
+    });
+    await autenticarParticipante(context, token);
+    await page.goto(`/d/${desafio.codigoQr}`);
+    await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
+
+    await expect(page.getByRole("heading", { name: "Llegaste después del tiempo límite" })).toBeVisible();
+    await expect(page.getByText(/Desafortunadamente, llegaste \d+ minutos tarde y ya no aplican los 80 puntos/)).toBeVisible();
+    expect((await db.completitud.findUniqueOrThrow({ where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } } })).puntosOtorgados).toBe(0);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO);
   });
 });

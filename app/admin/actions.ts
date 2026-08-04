@@ -21,6 +21,7 @@ import {
   PREGUNTAS_COSECHA,
   TITULO_DESAFIO_CIERRE,
 } from "@/lib/cosecha-config";
+import { crearConfiguracionPuntualidad } from "@/lib/puntualidad";
 
 export type EstadoLogin = { error?: string };
 
@@ -70,6 +71,12 @@ export async function salirAdmin() {
 }
 
 function configuracionDesdeFormulario(tipo: string, formulario: FormData) {
+  if (tipo === "PUNTUALIDAD") {
+    return crearConfiguracionPuntualidad(
+      String(formulario.get("fechaHoraObjetivo") ?? ""),
+      Number(String(formulario.get("toleranciaMinutos") ?? "NaN")),
+    );
+  }
   if (tipo === "OPCION_MULTIPLE") {
     const lineas = String(formulario.get("opciones") ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     return {
@@ -103,9 +110,10 @@ export async function guardarDesafio(formulario: FormData) {
     : null;
   const esCierre = existente?.codigoQr === CODIGO_DESAFIO_CIERRE;
   const estado = String(formulario.get("estado") ?? "BORRADOR") as "BORRADOR" | "PUBLICADO" | "CERRADO";
+  const tipoPersistido = datos.tipo === "PUNTUALIDAD" ? "CHECK_IN" as const : datos.tipo;
   const comun = {
     ...datos,
-    tipo: esCierre ? "ENCUESTA" as const : datos.tipo,
+    tipo: esCierre ? "ENCUESTA" as const : tipoPersistido,
     componenteId: datos.componenteId || null,
     esSecreto: formulario.get("esSecreto") === "on",
     estado,

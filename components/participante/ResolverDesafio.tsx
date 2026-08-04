@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { comprimirImagen } from "@/lib/imagen";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
+import {
+  esConfiguracionPuntualidad,
+  fechaHoraPuntualidadLegible,
+  type ResultadoPuntualidad,
+} from "@/lib/puntualidad";
 
 type Configuracion = {
   opciones?: { id: string; texto: string; correcta: boolean }[];
@@ -11,6 +16,9 @@ type Configuracion = {
   instruccion?: string;
   pregunta?: string;
   formato?: "texto" | "escala" | "cosecha";
+  tipoEspecial?: string;
+  fechaHoraObjetivo?: string;
+  toleranciaMinutos?: number;
 };
 
 export function ResolverDesafio({
@@ -26,8 +34,9 @@ export function ResolverDesafio({
 }) {
   const [cargando, setCargando] = useState(tipo === "CHECK_IN");
   const [error, setError] = useState("");
-  const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; yaCompletado?: boolean }>();
+  const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; yaCompletado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
+  const puntualidad = esConfiguracionPuntualidad(configuracion) ? configuracion : null;
 
   async function completar(formulario = new FormData()) {
     if (enviado.current) return;
@@ -70,19 +79,26 @@ export function ResolverDesafio({
 
   if (resultado) {
     const pendiente = resultado.estado === "PENDIENTE";
+    const llegadaTarde = Boolean(resultado.puntualidad && !resultado.puntualidad.obtuvoPuntos);
     return (
       <div className="tarjeta entrada-suave p-6 text-center">
-        <span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${pendiente ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>
-          {pendiente ? <Clock3 size={34} /> : <CheckCircle2 size={34} />}
+        <span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${pendiente || llegadaTarde ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>
+          {pendiente || llegadaTarde ? <Clock3 size={34} /> : <CheckCircle2 size={34} />}
         </span>
         <h2 className="mt-4 text-2xl font-extrabold text-[var(--epm-azul-profundo)]">
-          {resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : "¡Desafío completado!"}
+          {resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : llegadaTarde ? "Llegaste después del tiempo límite" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
         </h2>
         {pendiente ? (
           <p className="mt-2 text-slate-600">La organización revisará tu foto. Los {puntos} puntos se sumarán al aprobarla.</p>
+        ) : llegadaTarde ? (
+          <>
+            <p className="mt-3 text-slate-600">{resultado.mensaje}</p>
+            <p className="mt-3 text-slate-600">Tu total permanece en <strong>{resultado.nuevoTotal} puntos</strong>.</p>
+          </>
         ) : (
           <>
             <p className="puntos-animados mt-4 font-display text-5xl font-extrabold text-[var(--epm-verde-medio)]">+{resultado.puntosGanados}</p>
+            {resultado.mensaje && <p className="mt-2 font-bold text-[var(--epm-teal)]">{resultado.mensaje}</p>}
             <p className="mt-2 text-slate-600">Nuevo total: <strong>{resultado.nuevoTotal} puntos</strong></p>
             <div aria-hidden="true" className="mt-3 flex justify-center gap-2 text-[var(--epm-verde)]"><Sparkles /><Sparkles /><Sparkles /></div>
           </>
@@ -101,6 +117,14 @@ export function ResolverDesafio({
       }}
     >
       {tipo === "CHECK_IN" && <p className="text-center font-bold text-slate-600">Registrando tu check-in…</p>}
+      {tipo === "PUNTUALIDAD" && puntualidad && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
+          <Clock3 className="mx-auto text-amber-600" size={34} />
+          <p className="mt-3 text-sm font-bold uppercase tracking-wider text-amber-800">Hora de llegada</p>
+          <p className="mt-1 text-lg font-extrabold text-[var(--epm-azul-profundo)]">{fechaHoraPuntualidadLegible(puntualidad)}</p>
+          <p className="mt-2 text-sm text-slate-600">Tienes hasta {puntualidad.toleranciaMinutos} minutos de tolerancia. La hora se validará en el servidor al tocar el botón.</p>
+        </div>
+      )}
       {tipo === "OPCION_MULTIPLE" && (
         <fieldset className="space-y-2">
           <legend className="etiqueta">Selecciona {configuracion.multiple ? "una o varias respuestas" : "una respuesta"}</legend>
@@ -148,7 +172,7 @@ export function ResolverDesafio({
           <button type="submit" className="mt-2 flex items-center gap-1 underline"><RefreshCw size={16} /> Reintentar</button>
         </div>
       )}
-      {tipo !== "CHECK_IN" && <button disabled={cargando} className="boton-primario w-full">{cargando && <LoaderCircle className="animate-spin" />} {cargando ? "Guardando…" : "Enviar respuesta"}</button>}
+      {tipo !== "CHECK_IN" && <button disabled={cargando} className="boton-primario w-full">{cargando && <LoaderCircle className="animate-spin" />} {cargando ? "Registrando…" : tipo === "PUNTUALIDAD" ? "Registrar mi puntualidad" : "Enviar respuesta"}</button>}
     </form>
   );
 }

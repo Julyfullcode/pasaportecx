@@ -8,6 +8,13 @@ import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { extensionImagen } from "@/lib/archivos";
 import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { esDesafioCosecha, esRespuestasCosecha, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
+import {
+  esConfiguracionPuntualidad,
+  evaluarPuntualidad,
+  mensajePuntualidad,
+  resultadoPuntualidadDesdeRespuesta,
+  type ResultadoPuntualidad,
+} from "@/lib/puntualidad";
 
 type Configuracion = {
   opciones?: Opcion[];
@@ -33,6 +40,7 @@ export async function POST(
   if (!desafio) return Response.json({ error: "Este código no corresponde a un desafío." }, { status: 404 });
   const configuracion = desafio.configuracion as Configuracion;
   const esCosecha = esDesafioCosecha(desafio.codigoQr, configuracion);
+  const esPuntualidad = esConfiguracionPuntualidad(configuracion);
   const existente = desafio.completitudes[0];
   const cosechaIncompleta = Boolean(existente && esCosecha && !esRespuestasCosecha(existente.respuesta));
   const ahora = new Date();
@@ -40,11 +48,14 @@ export async function POST(
   if (desafio.disponibleDesde && desafio.disponibleDesde > ahora) return Response.json({ error: "Este desafío aún no comienza." }, { status: 409 });
   if (desafio.disponibleHasta && desafio.disponibleHasta < ahora) return Response.json({ error: "Este desafío ya finalizó." }, { status: 409 });
   if (existente && !cosechaIncompleta) {
+    const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
     return Response.json({
       yaCompletado: true,
       estado: existente.estado,
       puntosGanados: existente.puntosOtorgados,
       nuevoTotal: participante.puntosTotales,
+      puntualidad,
+      mensaje: puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
     });
   }
   if (!existente && desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
@@ -58,8 +69,13 @@ export async function POST(
   let estado: EstadoCompletitud = "APROBADO";
   let urlEvidencia: string | undefined;
   let respuesta: Prisma.InputJsonValue = {};
+  let resultadoPuntualidad: ResultadoPuntualidad | null = null;
 
-  if (esCosecha) {
+  if (esPuntualidad) {
+    resultadoPuntualidad = evaluarPuntualidad(configuracion, ahora);
+    puntos = resultadoPuntualidad.obtuvoPuntos ? desafio.puntos : 0;
+    respuesta = { ...resultadoPuntualidad, evaluadoEn: ahora.toISOString() };
+  } else if (esCosecha) {
     const respuestas = Object.fromEntries(
       PREGUNTAS_COSECHA.map(({ id }) => [id, String(formulario.get(id) ?? "").trim()]),
     );
@@ -143,6 +159,8 @@ export async function POST(
       estado: resultado.completitud.estado,
       puntosGanados: puntos,
       nuevoTotal: resultado.nuevoTotal,
+      puntualidad: resultadoPuntualidad,
+      mensaje: resultadoPuntualidad ? mensajePuntualidad(resultadoPuntualidad, desafio.puntos) : undefined,
     });
   } catch (error) {
     if (urlEvidencia) await storage.eliminar(urlEvidencia).catch(() => undefined);
@@ -150,11 +168,14 @@ export async function POST(
       const existente = await db.completitud.findUniqueOrThrow({
         where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
       });
+      const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
       return Response.json({
         yaCompletado: true,
         estado: existente.estado,
         puntosGanados: existente.puntosOtorgados,
         nuevoTotal: participante.puntosTotales,
+        puntualidad,
+        mensaje: puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
       });
     }
     console.error(error);

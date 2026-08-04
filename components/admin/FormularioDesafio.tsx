@@ -6,6 +6,7 @@ import { Eye } from "lucide-react";
 import type { Componente, Desafio, Ubicacion } from "@prisma/client";
 import { guardarDesafio } from "@/app/admin/actions";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
+import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
 
 type Config = {
   opciones?: { texto: string; correcta: boolean }[];
@@ -16,6 +17,9 @@ type Config = {
   pregunta?: string;
   formato?: string;
   preguntas?: typeof PREGUNTAS_COSECHA;
+  tipoEspecial?: string;
+  fechaHoraObjetivo?: string;
+  toleranciaMinutos?: number;
 };
 
 export function FormularioDesafio({
@@ -28,7 +32,8 @@ export function FormularioDesafio({
   desafio?: Desafio;
 }) {
   const config = (desafio?.configuracion ?? {}) as Config;
-  const [tipo, setTipo] = useState(desafio?.tipo ?? "CHECK_IN");
+  const puntualidad = esConfiguracionPuntualidad(config) ? config : null;
+  const [tipo, setTipo] = useState<string>(puntualidad ? "PUNTUALIDAD" : (desafio?.tipo ?? "CHECK_IN"));
   const [dia, setDia] = useState(desafio?.dia ?? 1);
   const [formatoEncuesta, setFormatoEncuesta] = useState(config.formato ?? "texto");
   const [qrVistaPrevia, setQrVistaPrevia] = useState<string | null>(null);
@@ -51,7 +56,7 @@ export function FormularioDesafio({
       {desafio && <input type="hidden" name="id" value={desafio.id} />}
       <div className="md:col-span-2"><label className="etiqueta">Título</label><input className="campo" name="titulo" required minLength={3} maxLength={100} defaultValue={desafio?.titulo} /></div>
       <div className="md:col-span-2"><label className="etiqueta">Descripción</label><textarea className="campo min-h-24" name="descripcion" required maxLength={600} defaultValue={desafio?.descripcion} /></div>
-      <div><label className="etiqueta">Tipo</label><select className="campo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}><option value="CHECK_IN">Check-in</option><option value="OPCION_MULTIPLE">Opción múltiple</option><option value="RESPUESTA_ABIERTA">Respuesta abierta</option><option value="EVIDENCIA_FOTO">Evidencia en foto</option><option value="ENCUESTA">Encuesta</option></select></div>
+      <div><label className="etiqueta">Tipo</label><select className="campo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="CHECK_IN">Check-in</option><option value="PUNTUALIDAD">Puntualidad</option><option value="OPCION_MULTIPLE">Opción múltiple</option><option value="RESPUESTA_ABIERTA">Respuesta abierta</option><option value="EVIDENCIA_FOTO">Evidencia en foto</option><option value="ENCUESTA">Encuesta</option></select></div>
       <div><label className="etiqueta">Puntos</label><input className="campo" name="puntos" type="number" min={0} max={10000} required defaultValue={desafio?.puntos ?? 100} /></div>
       <div><label className="etiqueta">Día</label><select className="campo" name="dia" value={dia} onChange={(e) => setDia(Number(e.target.value))}><option value={1}>Día 1</option><option value={2}>Día 2</option></select></div>
       {dia === 2 ? (
@@ -68,6 +73,19 @@ export function FormularioDesafio({
         </div>
       )}
       {tipo === "RESPUESTA_ABIERTA" && <div className="md:col-span-2"><label className="etiqueta">Respuestas aceptadas, separadas por coma</label><input className="campo" name="respuestasAceptadas" required defaultValue={config.respuestasAceptadas?.join(", ")} /></div>}
+      {tipo === "PUNTUALIDAD" && (
+        <div className="md:col-span-2 grid gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 md:grid-cols-2">
+          <div>
+            <label className="etiqueta">Fecha y hora de llegada</label>
+            <input className="campo bg-white" type="datetime-local" name="fechaHoraObjetivo" required defaultValue={puntualidad?.fechaHoraObjetivo ?? ""} />
+          </div>
+          <div>
+            <label className="etiqueta">Tolerancia máxima (minutos)</label>
+            <input className="campo bg-white" type="number" name="toleranciaMinutos" min={0} max={1440} step={1} required defaultValue={puntualidad?.toleranciaMinutos ?? 5} />
+          </div>
+          <p className="text-sm text-amber-900 md:col-span-2">La hora se interpreta en Colombia. Por ejemplo, con llegada a las 2:00 p. m. y 5 minutos de tolerancia, la persona obtiene puntos durante el minuto de las 2:05 p. m. Después podrá registrar su llegada, pero recibirá 0 puntos y verá cuántos minutos tarde llegó. Deja “Disponible hasta” vacío para conservar este mensaje después del límite.</p>
+        </div>
+      )}
       {tipo === "EVIDENCIA_FOTO" && <div className="md:col-span-2"><label className="etiqueta">Instrucción para la foto</label><input className="campo" name="instruccion" required defaultValue={config.instruccion} /></div>}
       {tipo === "ENCUESTA" && (
         <>

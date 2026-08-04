@@ -8,6 +8,12 @@ import { esDesafioCosecha, esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/co
 import { CurvaMarca } from "@/components/marca/CurvaMarca";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 import { LogoBlanco } from "@/components/marca/Logo";
+import {
+  esConfiguracionPuntualidad,
+  mensajePuntualidad,
+  resultadoPuntualidadDesdeRespuesta,
+  type ResultadoPuntualidad,
+} from "@/lib/puntualidad";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +34,7 @@ export default async function DetalleDesafio({
   if (!desafio) notFound();
   const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
   const configuracion = desafio.configuracion as Record<string, unknown>;
+  const esPuntualidad = esConfiguracionPuntualidad(configuracion);
   const completitud = desafio.completitudes[0];
   const estaCompletado = Boolean(
     completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
@@ -51,12 +58,18 @@ export default async function DetalleDesafio({
       <section className="relative z-20 mx-auto -mt-4 max-w-2xl px-4">
         {estaCompletado && completitud ? (
           <div className="tarjeta p-6 text-center">
-            <CheckExistente estado={completitud.estado} puntos={completitud.puntosOtorgados} esCosecha={esCosecha} />
+            <CheckExistente
+              estado={completitud.estado}
+              puntos={completitud.puntosOtorgados}
+              puntosDesafio={desafio.puntos}
+              esCosecha={esCosecha}
+              puntualidad={resultadoPuntualidadDesdeRespuesta(completitud.respuesta)}
+            />
           </div>
         ) : (
           <ResolverDesafio
             codigo={desafio.codigoQr}
-            tipo={esCosecha ? "ENCUESTA" : desafio.tipo}
+            tipo={esCosecha ? "ENCUESTA" : esPuntualidad ? "PUNTUALIDAD" : desafio.tipo}
             puntos={desafio.puntos}
             configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
           />
@@ -66,12 +79,25 @@ export default async function DetalleDesafio({
   );
 }
 
-function CheckExistente({ estado, puntos, esCosecha }: { estado: string; puntos: number; esCosecha: boolean }) {
+function CheckExistente({
+  estado,
+  puntos,
+  puntosDesafio,
+  esCosecha,
+  puntualidad,
+}: {
+  estado: string;
+  puntos: number;
+  puntosDesafio: number;
+  esCosecha: boolean;
+  puntualidad: ResultadoPuntualidad | null;
+}) {
+  const llegadaTarde = Boolean(puntualidad && !puntualidad.obtuvoPuntos);
   return (
     <>
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-[var(--epm-verde-medio)]">✓</div>
-      <h2 className="mt-3 text-xl font-extrabold">Ya completaste este desafío</h2>
-      <p className="mt-2 text-slate-600">{estado === "PENDIENTE" ? "Tu evidencia sigue pendiente de revisión." : `Ganaste ${puntos} puntos.`}</p>
+      <div className={`mx-auto grid h-14 w-14 place-items-center rounded-full ${llegadaTarde ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>{llegadaTarde ? "!" : "✓"}</div>
+      <h2 className="mt-3 text-xl font-extrabold">{llegadaTarde ? "Llegaste después del tiempo límite" : "Ya completaste este desafío"}</h2>
+      <p className="mt-2 text-slate-600">{puntualidad ? mensajePuntualidad(puntualidad, puntosDesafio) : estado === "PENDIENTE" ? "Tu evidencia sigue pendiente de revisión." : `Ganaste ${puntos} puntos.`}</p>
       {esCosecha && <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
     </>
   );

@@ -92,6 +92,29 @@ test.describe("Administrador", () => {
     await expect(participante.getByRole("heading", { name: titulo })).toBeVisible();
     await contextoParticipante.close();
   });
+
+  test("administración crea un desafío de puntualidad con hora y tolerancia", async ({ page }) => {
+    const titulo = `Puntualidad ${Date.now()}`;
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const creador = page.locator("details").first();
+    await creador.locator("summary").click();
+    await creador.locator('input[name="titulo"]').fill(titulo);
+    await creador.locator('textarea[name="descripcion"]').fill("Reconoce a quienes llegan dentro del tiempo acordado.");
+    await creador.locator('select[name="tipo"]').selectOption("PUNTUALIDAD");
+    await creador.locator('input[name="puntos"]').fill("90");
+    await creador.locator('select[name="dia"]').selectOption("1");
+    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
+    await creador.locator('input[name="fechaHoraObjetivo"]').fill("2026-08-04T14:00");
+    await creador.locator('input[name="toleranciaMinutos"]').fill("5");
+    await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
+    await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
+
+    await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
+    const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
+    expect(guardado.tipo).toBe("CHECK_IN");
+    expect(guardado.configuracion).toMatchObject({ tipoEspecial: "PUNTUALIDAD", fechaHoraObjetivo: "2026-08-04T14:00", toleranciaMinutos: 5 });
+  });
 });
 
 test.describe("Fotos y carrusel", () => {

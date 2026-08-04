@@ -1,5 +1,6 @@
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
 
 function csv(filas: (string | number | null | undefined)[][]) {
   const contenido = filas
@@ -30,7 +31,7 @@ export async function GET(
     ];
   } else if (tipo === "completitudes") {
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: { include: { componente: true } } }, orderBy: { completadoEn: "asc" } });
-    filas = [["Participante", "Desafío", "Tipo", "Día", "Componente", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.desafio.titulo, c.desafio.tipo, c.desafio.dia, c.desafio.componente?.nombre, c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];
+    filas = [["Participante", "Desafío", "Tipo", "Día", "Componente", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.desafio.titulo, esConfiguracionPuntualidad(c.desafio.configuracion) ? "PUNTUALIDAD" : c.desafio.tipo, c.desafio.dia, c.desafio.componente?.nombre, c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];
   } else if (tipo === "encuestas") {
     const datos = await db.completitud.findMany({ where: { desafio: { tipo: "ENCUESTA" } }, include: { participante: true, desafio: true } });
     filas = [["Participante", "Encuesta", "Respuesta", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.desafio.titulo, JSON.stringify(c.respuesta), c.completadoEn.toISOString()])];
