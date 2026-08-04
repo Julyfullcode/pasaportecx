@@ -16,9 +16,9 @@ export default async function Registro() {
   return (
     <main className="min-h-screen">
       <MarcaHeader tituloVerde="Vive la" tituloClaro="experiencia">
-        <p className="mt-4 max-w-xl text-base text-white/85">Tu pasaporte para conectar, descubrir y sumar durante el encuentro del Grupo EPM.</p>
+        <p className="mt-4 max-w-xl text-base text-white/85">Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.</p>
       </MarcaHeader>
-      <section className="contenedor -mt-8 pb-10">
+      <section className="contenedor relative z-10 mt-6 pb-10 md:mt-8">
         <div className="mx-auto max-w-2xl">
           <RegistroForm
             empresas={empresas}
