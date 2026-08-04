@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { actualizarLogoEmpresa, alternarCatalogo, guardarCatalogo, guardarConfiguracion } from "@/app/admin/actions";
-import { PurgaDatos } from "@/components/admin/PurgaDatos";
+import { PrepararPublico } from "@/components/admin/PrepararPublico";
 import { AgendaConfig } from "@/components/admin/AgendaConfig";
 import { InputImagenOptimizada } from "@/components/admin/InputImagenOptimizada";
 import { EstadoAlmacenamiento } from "@/components/admin/EstadoAlmacenamiento";
@@ -9,7 +9,7 @@ import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, componentes, grupos, ubicaciones, diasAgenda, reporteAlmacenamiento] = await Promise.all([
+  const [config, empresas, componentes, grupos, ubicaciones, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.componente.findMany({ orderBy: { orden: "asc" } }),
@@ -17,6 +17,16 @@ export default async function Configuracion() {
     db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
     db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
     obtenerReporteAlmacenamiento(),
+    Promise.all([
+      db.participante.aggregate({ _count: { id: true }, _sum: { puntosTotales: true } }),
+      db.completitud.count(),
+      db.recuerdo.count(),
+    ]).then(([participantes, completitudes, recuerdos]) => ({
+      participantes: participantes._count.id,
+      puntos: participantes._sum.puntosTotales ?? 0,
+      completitudes,
+      recuerdos,
+    })),
   ]);
   return (
     <div className="p-4 md:p-7">
@@ -56,7 +66,11 @@ export default async function Configuracion() {
           <Catalogo titulo="Ubicaciones del Día 1" tipo="ubicacion" items={ubicaciones} />
         </div>
       </section>
-      <section className="mt-6 rounded-2xl border-2 border-red-200 bg-red-50 p-5"><h2 className="text-xl font-extrabold text-red-900">Purga al finalizar el evento</h2><PurgaDatos /></section>
+      <section className="mt-6 rounded-2xl border-2 border-red-300 bg-red-50 p-5">
+        <h2 className="text-xl font-extrabold text-red-900">Preparar aplicación para público real</h2>
+        <p className="mt-1 text-sm text-red-800">Puedes usarla al terminar cada ciclo de pruebas. Antes de abrir el registro al público, ejecútala una última vez.</p>
+        <PrepararPublico resumen={resumenDatos} />
+      </section>
     </div>
   );
 }

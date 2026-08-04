@@ -550,25 +550,83 @@ export async function alternarCatalogo(formulario: FormData) {
   revalidatePath("/admin/configuracion");
 }
 
-export async function purgarDatos(formulario: FormData) {
+export type EstadoPreparacionPublico = {
+  tipo: "inicial" | "error" | "exito";
+  mensaje: string;
+  eliminados?: {
+    participantes: number;
+    sesiones: number;
+    completitudes: number;
+    ajustes: number;
+    recuerdos: number;
+    reacciones: number;
+    archivos: number;
+    archivosConError: number;
+  };
+};
+
+export async function prepararAplicacionPublico(
+  _estado: EstadoPreparacionPublico,
+  formulario: FormData,
+): Promise<EstadoPreparacionPublico> {
   await requerirAdmin();
-  if (String(formulario.get("confirmacion")) !== "ELIMINAR DATOS PERSONALES") return;
-  const participantes = await db.participante.findMany({ select: { id: true, urlFoto: true } });
-  const recuerdos = await db.recuerdo.findMany({ select: { urlFoto: true, urlMiniatura: true } });
-  await Promise.allSettled([
-    ...participantes.map((p) => storage.eliminar(p.urlFoto)),
-    ...recuerdos.flatMap((r) => [storage.eliminar(r.urlFoto), storage.eliminar(r.urlMiniatura)]),
+  const frase = "PREPARAR PARA PUBLICO REAL";
+  if (
+    String(formulario.get("confirmacionUno") ?? "").trim() !== frase
+    || String(formulario.get("confirmacionDos") ?? "").trim() !== frase
+  ) {
+    return { tipo: "error", mensaje: "Las dos confirmaciones deben coincidir con la frase indicada." };
+  }
+
+  const [participantes, recuerdos, evidencias] = await Promise.all([
+    db.participante.findMany({ select: { urlFoto: true } }),
+    db.recuerdo.findMany({ select: { urlFoto: true, urlMiniatura: true } }),
+    db.completitud.findMany({ where: { urlEvidencia: { not: null } }, select: { urlEvidencia: true } }),
   ]);
-  await db.$transaction(async (tx) => {
-    await tx.recuerdo.deleteMany();
-    await tx.sesionParticipante.deleteMany();
-    for (const persona of participantes) {
-      await tx.participante.update({
-        where: { id: persona.id },
-        data: { nombre: `Participante ${persona.id.slice(-6)}`, urlFoto: "/marca/icono.svg", activo: false },
-      });
-    }
+  const archivos = [...new Set([
+    ...participantes.map(({ urlFoto }) => urlFoto),
+    ...recuerdos.flatMap(({ urlFoto, urlMiniatura }) => [urlFoto, urlMiniatura]),
+    ...evidencias.map(({ urlEvidencia }) => urlEvidencia!),
+  ].filter((url) => url.startsWith("/uploads/")))];
+
+  const eliminados = await db.$transaction(async (tx) => {
+    const reacciones = await tx.reaccionRecuerdo.deleteMany();
+    const recuerdosEliminados = await tx.recuerdo.deleteMany();
+    const completitudes = await tx.completitud.deleteMany();
+    const ajustes = await tx.ajustePuntos.deleteMany();
+    const sesiones = await tx.sesionParticipante.deleteMany();
+    const participantesEliminados = await tx.participante.deleteMany();
+    return {
+      participantes: participantesEliminados.count,
+      sesiones: sesiones.count,
+      completitudes: completitudes.count,
+      ajustes: ajustes.count,
+      recuerdos: recuerdosEliminados.count,
+      reacciones: reacciones.count,
+    };
   });
+
+  let archivosEliminados = 0;
+  let archivosConError = 0;
+  for (let indice = 0; indice < archivos.length; indice += 10) {
+    const lote = await Promise.allSettled(
+      archivos.slice(indice, indice + 10).map((url) => storage.eliminar(url)),
+    );
+    archivosEliminados += lote.filter(({ status }) => status === "fulfilled").length;
+    archivosConError += lote.filter(({ status }) => status === "rejected").length;
+  }
+
   anunciarCambio("purga");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
+  return {
+    tipo: "exito",
+    mensaje: archivosConError
+      ? `Los datos de prueba fueron eliminados. ${archivosConError} archivo(s) no pudieron borrarse del almacenamiento; puedes usar la limpieza de archivos huérfanos.`
+      : "La aplicación quedó lista para registrar al público real.",
+    eliminados: {
+      ...eliminados,
+      archivos: archivosEliminados,
+      archivosConError,
+    },
+  };
 }

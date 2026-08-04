@@ -110,7 +110,7 @@ En `/admin/recuerdos` filtre reportados o pendientes. Puede mostrar, ocultar, el
 
 `/admin/reportes` exporta CSV de participantes, rankings, completitudes, encuestas, empresas y componentes. Descárguelos antes de la purga.
 
-Al terminar, la sección roja de `/admin/configuracion` exige escribir dos veces `ELIMINAR DATOS PERSONALES`. La purga borra archivos de perfiles y recuerdos, elimina sesiones, anonimiza nombres y desactiva perfiles.
+Al terminar cada ciclo de pruebas, la sección roja de `/admin/configuracion` permite preparar nuevamente la aplicación y exige escribir dos veces `PREPARAR PARA PUBLICO REAL`. El proceso elimina participantes y todos sus datos asociados (sesiones, respuestas, puntos, ajustes, recuerdos, reacciones, fotos y evidencias), pero conserva desafíos, agenda, catálogos, configuración del evento y administradores. Ejecútelo una última vez antes de abrir el registro al público real.
 
 ### Si algo falla
 
