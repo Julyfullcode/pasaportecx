@@ -3,6 +3,7 @@ import { CheckCircle2, Clock3, LockKeyhole } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { esDesafioCosecha, esRespuestasCosecha } from "@/lib/cosecha-config";
+import { diasVisiblesEn, etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
 
 export const dynamic = "force-dynamic";
@@ -14,10 +15,11 @@ export default async function Desafios({
 }) {
   const participante = await requerirParticipante("/desafios");
   const { dia = "1" } = await searchParams;
+  const diaSeleccionado = dia === "2" ? 2 : 1;
   const desafiosBase = await db.desafio.findMany({
     where: {
       estado: "PUBLICADO",
-      dia: dia === "2" ? 2 : 1,
+      dia: { in: diasVisiblesEn(diaSeleccionado) },
       OR: [
         { esSecreto: false },
         { completitudes: { some: { participanteId: participante.id } } },
@@ -93,7 +95,7 @@ function Seccion({ titulo, desafios, completado }: { titulo: string; desafios: T
                   </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{desafio.descripcion}</p>
-                <p className="mt-2 text-xs font-bold text-slate-500">Día {desafio.dia} · {desafio.componente?.nombre || desafio.ubicacion}</p>
+                <p className="mt-2 text-xs font-bold text-slate-500">{etiquetaDiaDesafio(desafio.dia)} · {desafio.componente?.nombre || desafio.ubicacion}</p>
               </div>
             </div>
           </Link>

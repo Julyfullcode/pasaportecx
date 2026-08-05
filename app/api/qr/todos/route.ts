@@ -1,6 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { diasVisiblesEn } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
 import { qrPdf } from "@/lib/qr";
 
@@ -8,11 +9,16 @@ export async function GET(request: Request) {
   await requerirAdmin();
   const url = new URL(request.url);
   const dia = url.searchParams.get("dia");
+  const filtroDia = dia === "0"
+    ? { dia: 0 }
+    : dia === "1" || dia === "2"
+      ? { dia: { in: diasVisiblesEn(Number(dia) as 1 | 2) } }
+      : {};
   const componenteId = url.searchParams.get("componenteId");
   const desafiosPublicados = await db.desafio.findMany({
     where: {
       estado: "PUBLICADO",
-      ...(dia ? { dia: Number(dia) } : {}),
+      ...filtroDia,
       ...(componenteId ? { componenteId } : {}),
     },
     orderBy: [{ dia: "asc" }, { creadoEn: "asc" }],

@@ -76,7 +76,7 @@ test.describe("Administrador", () => {
     await db.admin.delete({ where: { id: admin.id } });
   });
 
-  test("un reto creado durante el evento se refleja para participantes al refrescar", async ({ page, browser }) => {
+  test("un reto de todo el tiempo aparece para participantes en ambos días", async ({ page, browser }) => {
     const titulo = `Reto en caliente ${Date.now()}`;
     const { token } = await crearParticipanteConToken({ nombre: `Participante reto caliente ${Date.now()}` });
     await iniciarAdmin(page);
@@ -87,13 +87,14 @@ test.describe("Administrador", () => {
     await creador.locator('textarea[name="descripcion"]').fill("Creado mientras el evento está activo.");
     await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
     await creador.locator('input[name="puntos"]').fill("175");
-    await creador.locator('select[name="dia"]').selectOption("1");
+    await creador.locator('select[name="dia"]').selectOption("0");
     await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
     await creador.locator('input[name="duracionMinutos"]').fill("20");
     await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
     await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
     await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
     const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
+    expect(guardado.dia).toBe(0);
     expect(guardado.duracionMinutos).toBe(20);
     expect(guardado.publicadoEn).not.toBeNull();
 
@@ -101,6 +102,9 @@ test.describe("Administrador", () => {
     await autenticarParticipante(contextoParticipante, token);
     const participante = await contextoParticipante.newPage();
     await participante.goto("/desafios");
+    await expect(participante.getByRole("heading", { name: titulo })).toBeVisible();
+    await expect(participante.getByText("Todo el tiempo", { exact: false }).first()).toBeVisible();
+    await participante.goto("/desafios?dia=2");
     await expect(participante.getByRole("heading", { name: titulo })).toBeVisible();
     await contextoParticipante.close();
   });

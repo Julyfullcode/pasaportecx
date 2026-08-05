@@ -59,7 +59,7 @@ export const desafioSchema = z
       "ENCUESTA",
     ]),
     puntos: z.coerce.number().int().min(0).max(10000),
-    dia: z.coerce.number().int().min(1).max(2),
+    dia: z.coerce.number().int().min(0).max(2),
     componenteId: z.string().optional(),
     ubicacion: z.string().trim().max(100),
   })

@@ -67,7 +67,7 @@ export function FormularioDesafio({
       <div className="md:col-span-2"><label className="etiqueta">Descripción</label><textarea className="campo min-h-24" name="descripcion" required maxLength={600} defaultValue={desafio?.descripcion} /></div>
       <div><label className="etiqueta">Tipo</label><select className="campo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="CHECK_IN">Check-in</option><option value="PUNTUALIDAD">Puntualidad</option><option value="OPCION_MULTIPLE">Opción múltiple</option><option value="RESPUESTA_ABIERTA">Respuesta abierta</option><option value="EVIDENCIA_FOTO">Evidencia en foto</option><option value="ENCUESTA">Encuesta</option></select></div>
       <div><label className="etiqueta">Puntos</label><input className="campo" name="puntos" type="number" min={0} max={10000} required defaultValue={desafio?.puntos ?? 100} /></div>
-      <div><label className="etiqueta">Día</label><select className="campo" name="dia" value={dia} onChange={(e) => setDia(Number(e.target.value))}><option value={1}>Día 1</option><option value={2}>Día 2</option></select></div>
+      <div><label className="etiqueta">Día</label><select className="campo" name="dia" value={dia} onChange={(e) => setDia(Number(e.target.value))}><option value={1}>Día 1</option><option value={2}>Día 2</option><option value={0}>Todo el tiempo</option></select></div>
       {dia === 2 ? (
         <div><label className="etiqueta">Componente</label><select className="campo" name="componenteId" required defaultValue={desafio?.componenteId ?? ""}><option value="" disabled>Selecciona</option>{componentes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select><input type="hidden" name="ubicacion" value="" /></div>
       ) : (

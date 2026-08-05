@@ -8,6 +8,7 @@ import { esDesafioCosecha, esRespuestasCosecha, FORMATO_COSECHA } from "@/lib/co
 import { CurvaMarca } from "@/components/marca/CurvaMarca";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 import { LogoBlanco } from "@/components/marca/Logo";
+import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio, fechaCierreDesafio } from "@/lib/duracion-desafio";
 import {
   esConfiguracionPuntualidad,
@@ -51,7 +52,7 @@ export default async function DetalleDesafio({
             <Link href="/desafios" className="inline-flex items-center gap-2 font-extrabold"><ArrowLeft size={20} /> Desafíos</Link>
             <LogoBlanco className="h-7 w-auto shrink-0 md:h-8" />
           </div>
-          <div className="mt-8 flex items-center gap-2 text-sm font-extrabold text-white/85"><MapPin size={17} /> Día {desafio.dia} · {desafio.componente?.nombre || desafio.ubicacion}</div>
+          <div className="mt-8 flex items-center gap-2 text-sm font-extrabold text-white/85"><MapPin size={17} /> {etiquetaDiaDesafio(desafio.dia)} · {desafio.componente?.nombre || desafio.ubicacion}</div>
           <h1 className="mt-2 text-3xl font-extrabold">{desafio.titulo}</h1>
           <p className="mt-3 max-w-xl text-white/85">{desafio.descripcion}</p>
           <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 font-extrabold"><Sparkles className="text-[var(--epm-verde)]" /> {desafio.puntos} puntos</span>
