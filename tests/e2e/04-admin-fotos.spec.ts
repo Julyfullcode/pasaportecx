@@ -5,6 +5,7 @@ import sharp from "sharp";
 import { db } from "@/lib/db";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { fechaHoraColombiaComoFecha, fechaParaInputColombia } from "@/lib/duracion-desafio";
+import { esConfiguracionEncuestaMixta } from "@/lib/encuesta-mixta";
 import { autenticarParticipante, contextoApiParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin, registrarPorApi } from "./ayudas";
 
 test.describe("Administrador", () => {
@@ -317,6 +318,75 @@ test.describe("Administrador", () => {
     expect(guardado.duracionMinutos).toBeNull();
     expect(guardado.disponibleHasta?.toISOString()).toBe(cierre.toISOString());
     expect(guardado.configuracion).toMatchObject({ instruccion: "Conserva esta instrucción", publicarEnRecuerdos: true });
+  });
+
+  test("crea, responde y edita una encuesta de satisfacción mixta", async ({ page }) => {
+    const marca = Date.now();
+    const titulo = `Encuesta mixta ${marca}`;
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const creador = page.locator("details").first();
+    await creador.locator("summary").click();
+    await creador.locator('input[name="titulo"]').fill(titulo);
+    await creador.locator('textarea[name="descripcion"]').fill("Tu opinión nos ayudará a mejorar los próximos encuentros.");
+    await creador.locator('select[name="tipo"]').selectOption("ENCUESTA_MIXTA");
+    await expect(creador.getByText("Preguntas de la encuesta mixta", { exact: true })).toBeVisible();
+    await expect(creador.getByRole("button", { name: "Agregar escala 0–10" })).toBeVisible();
+    await expect(creador.getByRole("button", { name: "Agregar matriz 0–10" })).toBeVisible();
+    await expect(creador.getByRole("button", { name: "Agregar respuesta abierta" })).toBeVisible();
+    await creador.locator('input[name="puntos"]').fill("55");
+    await creador.locator('select[name="dia"]').selectOption("0");
+    await creador.locator('input[name="duracionMinutos"]').fill("45");
+    await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
+    await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
+    await expect(page.getByRole("heading", { name: titulo })).toBeVisible();
+
+    const desafio = await db.desafio.findFirstOrThrow({ where: { titulo } });
+    expect(desafio.tipo).toBe("ENCUESTA");
+    expect(desafio.puntos).toBe(55);
+    expect(desafio.dia).toBe(0);
+    expect(desafio.duracionMinutos).toBe(45);
+    expect(esConfiguracionEncuestaMixta(desafio.configuracion)).toBe(true);
+    if (!esConfiguracionEncuestaMixta(desafio.configuracion)) throw new Error("Configuración mixta inválida");
+    const preguntas = desafio.configuracion.preguntas;
+    expect(preguntas.map((pregunta) => pregunta.tipo)).toEqual(["ESCALA_0_10", "MATRIZ_0_10", "ABIERTA", "ABIERTA"]);
+
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Encuestado ${marca}` });
+    await autenticarParticipante(page.context(), token);
+    await page.goto(`/d/${desafio.codigoQr}`);
+    await page.getByLabel(`${preguntas[0].titulo}: 9`).evaluate((campo: HTMLInputElement) => campo.click());
+    for (const elemento of preguntas[1].elementos) {
+      await page.getByLabel(`${preguntas[1].titulo}: ${elemento.texto}: 8`).evaluate((campo: HTMLInputElement) => campo.click());
+    }
+    await page.getByLabel(preguntas[2].titulo).fill("Las conversaciones y aprendizajes compartidos.");
+    await page.getByLabel(preguntas[3].titulo).fill("Dejar más tiempo para la conversación final.");
+    await page.getByRole("button", { name: "Enviar respuesta" }).click();
+    await expect(page.getByText("¡Desafío completado!")).toBeVisible();
+    const completitud = await db.completitud.findUniqueOrThrow({
+      where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
+    });
+    expect(completitud.puntosOtorgados).toBe(55);
+    expect(completitud.respuesta).toMatchObject({
+      formato: "mixta",
+      respuestas: {
+        [preguntas[0].id]: 9,
+        [preguntas[2].id]: "Las conversaciones y aprendizajes compartidos.",
+      },
+    });
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(65);
+
+    await page.goto("/admin/desafios");
+    const tarjeta = page.locator("article").filter({ hasText: titulo });
+    await tarjeta.getByText("Editar", { exact: true }).click();
+    const formulario = tarjeta.locator("details form").last();
+    await formulario.locator('textarea[name="descripcion"]').fill("Solo se modificó esta introducción.");
+    await formulario.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect.poll(async () => (await db.desafio.findUniqueOrThrow({ where: { id: desafio.id } })).descripcion).toBe("Solo se modificó esta introducción.");
+    const editado = await db.desafio.findUniqueOrThrow({ where: { id: desafio.id } });
+    expect(editado.tipo).toBe("ENCUESTA");
+    expect(editado.duracionMinutos).toBe(45);
+    expect(editado.puntos).toBe(55);
+    expect(editado.configuracion).toEqual(desafio.configuracion);
   });
 
   test("el desafío de cierre ofrece una presentación que rota las tarjetas", async ({ page }) => {

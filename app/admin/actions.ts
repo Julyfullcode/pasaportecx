@@ -33,6 +33,10 @@ import {
 } from "@/lib/duracion-desafio";
 import { clasificarCorreos } from "@/lib/correos-autorizados";
 import { comentarioEvidencia } from "@/lib/evidencias";
+import {
+  configuracionEncuestaMixtaDesdeJson,
+  EncuestaMixtaInvalidaError,
+} from "@/lib/encuesta-mixta";
 
 export type EstadoLogin = { error?: string };
 export type EstadoGuardarDesafio = {
@@ -117,6 +121,9 @@ function configuracionDesdeFormulario(tipo: string, formulario: FormData) {
       publicarEnRecuerdos: formulario.get("publicarEnRecuerdos") === "on",
     };
   }
+  if (tipo === "ENCUESTA_MIXTA") {
+    return configuracionEncuestaMixtaDesdeJson(String(formulario.get("preguntasMixtas") ?? ""));
+  }
   if (tipo === "ENCUESTA") {
     const formato = String(formulario.get("formato") ?? "texto");
     if (formato === FORMATO_COSECHA) return { formato, preguntas: PREGUNTAS_COSECHA };
@@ -138,7 +145,9 @@ export async function guardarDesafio(
     };
   } catch (error) {
     console.error("[admin/desafios] No fue posible guardar el desafío", error);
-    const mensaje = error instanceof Error && (
+    const mensaje = error instanceof EncuestaMixtaInvalidaError
+      ? error.message
+      : error instanceof Error && (
       error.message === "Configura una duración válida en minutos."
       || error.message === "Configura una fecha y hora de cierre válidas."
     )
@@ -156,7 +165,9 @@ async function guardarDesafioEnBase(formulario: FormData) {
     : null;
   const esCierre = existente?.codigoQr === CODIGO_DESAFIO_CIERRE;
   const estado = String(formulario.get("estado") ?? "BORRADOR") as "BORRADOR" | "PUBLICADO" | "CERRADO";
-  const tipoPersistido = datos.tipo === "PUNTUALIDAD" ? "CHECK_IN" as const : datos.tipo;
+  const tipoPersistido = datos.tipo === "PUNTUALIDAD"
+    ? "CHECK_IN" as const
+    : datos.tipo === "ENCUESTA_MIXTA" ? "ENCUESTA" as const : datos.tipo;
   const modoDuracion = String(formulario.get("modoDuracion") ?? "MINUTOS");
   const minutosIngresados = Number(formulario.get("duracionMinutos"));
   const duracionMinutos = modoDuracion === "MINUTOS"
@@ -207,6 +218,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
   if ([
     "opciones", "multiple", "puntajeParcial", "respuestasAceptadas", "instruccion",
     "publicarEnRecuerdos", "pregunta", "formato", "fechaHoraObjetivo", "toleranciaMinutos",
+    "preguntasMixtasEditor", "preguntasMixtas",
   ].some((campo) => modificados.has(campo))) incluir("configuracion");
   if (["modoDuracion", "duracionMinutos", "fechaHoraCierre"].some((campo) => modificados.has(campo))) {
     incluir("duracionMinutos", "disponibleHasta");

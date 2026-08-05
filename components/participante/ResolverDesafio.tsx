@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { comprimirImagenHasta } from "@/lib/imagen";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
+import { EncuestaMixta } from "@/components/participante/EncuestaMixta";
+import { esConfiguracionEncuestaMixta, type PreguntaEncuestaMixta } from "@/lib/encuesta-mixta";
 import {
   esConfiguracionPuntualidad,
   fechaHoraPuntualidadLegible,
@@ -15,7 +17,8 @@ type Configuracion = {
   multiple?: boolean;
   instruccion?: string;
   pregunta?: string;
-  formato?: "texto" | "escala" | "cosecha";
+  formato?: "texto" | "escala" | "cosecha" | "mixta";
+  preguntas?: PreguntaEncuestaMixta[];
   tipoEspecial?: string;
   fechaHoraObjetivo?: string;
   toleranciaMinutos?: number;
@@ -166,7 +169,9 @@ export function ResolverDesafio({
       )}
       {tipo === "ENCUESTA" && (
         <div>
-          {configuracion.formato === FORMATO_COSECHA ? (
+          {esConfiguracionEncuestaMixta(configuracion) ? (
+            <EncuestaMixta preguntas={configuracion.preguntas} />
+          ) : configuracion.formato === FORMATO_COSECHA ? (
             <div className="space-y-4">
               {PREGUNTAS_COSECHA.map((pregunta) => (
                 <label key={pregunta.id} className="block rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 p-4">

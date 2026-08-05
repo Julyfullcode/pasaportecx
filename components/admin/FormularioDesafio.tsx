@@ -7,6 +7,12 @@ import type { Componente, Desafio } from "@prisma/client";
 import { guardarDesafio, type EstadoGuardarDesafio } from "@/app/admin/actions";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import { EditorEncuestaMixta } from "@/components/admin/EditorEncuestaMixta";
+import {
+  esConfiguracionEncuestaMixta,
+  PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO,
+  type PreguntaEncuestaMixta,
+} from "@/lib/encuesta-mixta";
 import {
   DURACION_MAXIMA_MINUTOS,
   DURACION_PREDETERMINADA_MINUTOS,
@@ -21,7 +27,7 @@ type Config = {
   instruccion?: string;
   pregunta?: string;
   formato?: string;
-  preguntas?: typeof PREGUNTAS_COSECHA;
+  preguntas?: typeof PREGUNTAS_COSECHA | PreguntaEncuestaMixta[];
   tipoEspecial?: string;
   fechaHoraObjetivo?: string;
   toleranciaMinutos?: number;
@@ -39,15 +45,27 @@ export function FormularioDesafio({
 }) {
   const config = (desafio?.configuracion ?? {}) as Config;
   const puntualidad = esConfiguracionPuntualidad(config) ? config : null;
-  const [tipo, setTipo] = useState<string>(puntualidad ? "PUNTUALIDAD" : (desafio?.tipo ?? "CHECK_IN"));
+  const encuestaMixta = esConfiguracionEncuestaMixta(config) ? config : null;
+  const [tipo, setTipo] = useState<string>(puntualidad ? "PUNTUALIDAD" : encuestaMixta ? "ENCUESTA_MIXTA" : (desafio?.tipo ?? "CHECK_IN"));
   const [dia, setDia] = useState(desafio?.dia ?? 1);
   const [formatoEncuesta, setFormatoEncuesta] = useState(config.formato ?? "texto");
   const [modoDuracion, setModoDuracion] = useState<"MINUTOS" | "FECHA_HORA">(
     desafio?.duracionMinutos === null ? "FECHA_HORA" : "MINUTOS",
   );
   const [camposModificados, setCamposModificados] = useState<string[]>([]);
+  const [preguntasMixtas, setPreguntasMixtas] = useState<PreguntaEncuestaMixta[]>(
+    () => (encuestaMixta?.preguntas ?? PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO).map((pregunta) => ({
+      ...pregunta,
+      elementos: pregunta.elementos.map((elemento) => ({ ...elemento })),
+    })),
+  );
   const [qrVistaPrevia, setQrVistaPrevia] = useState<string | null>(null);
   const [resultadoGuardado, accionGuardar, guardando] = useActionState(guardarDesafio, ESTADO_INICIAL_GUARDADO);
+
+  function marcarCampoModificado(nombre: string) {
+    if (!desafio) return;
+    setCamposModificados((actuales) => actuales.includes(nombre) ? actuales : [...actuales, nombre]);
+  }
 
   async function mostrarVistaPrevia(formulario: HTMLFormElement | null) {
     if (!formulario) return;
@@ -67,16 +85,15 @@ export function FormularioDesafio({
       action={accionGuardar}
       className="grid gap-4 md:grid-cols-2"
       onChange={(evento) => {
-        if (!desafio) return;
         const nombre = (evento.target as HTMLInputElement).name;
-        if (nombre) setCamposModificados((actuales) => actuales.includes(nombre) ? actuales : [...actuales, nombre]);
+        if (nombre) marcarCampoModificado(nombre);
       }}
     >
       {desafio && <input type="hidden" name="id" value={desafio.id} />}
       {desafio && <input type="hidden" name="camposModificados" value={camposModificados.join(",")} />}
       <div className="md:col-span-2"><label className="etiqueta">Título</label><input className="campo" name="titulo" required minLength={3} maxLength={100} defaultValue={desafio?.titulo} /></div>
       <div className="md:col-span-2"><label className="etiqueta">Descripción</label><textarea className="campo min-h-24" name="descripcion" required maxLength={600} defaultValue={desafio?.descripcion} /></div>
-      <div><label className="etiqueta">Tipo</label><select className="campo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="CHECK_IN">Check-in</option><option value="PUNTUALIDAD">Puntualidad</option><option value="OPCION_MULTIPLE">Opción múltiple</option><option value="RESPUESTA_ABIERTA">Respuesta abierta</option><option value="EVIDENCIA_FOTO">Evidencia en foto</option><option value="ENCUESTA">Encuesta</option></select></div>
+      <div><label className="etiqueta">Tipo</label><select className="campo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="CHECK_IN">Check-in</option><option value="PUNTUALIDAD">Puntualidad</option><option value="OPCION_MULTIPLE">Opción múltiple</option><option value="RESPUESTA_ABIERTA">Respuesta abierta</option><option value="EVIDENCIA_FOTO">Evidencia en foto</option><option value="ENCUESTA">Encuesta sencilla</option><option value="ENCUESTA_MIXTA">Encuesta de satisfacción mixta</option></select></div>
       <div><label className="etiqueta">Puntos</label><input className="campo" name="puntos" type="number" min={0} max={10000} required defaultValue={desafio?.puntos ?? 100} /></div>
       <div><label className="etiqueta">Categoría del desafío</label><select className="campo" name="dia" value={dia} onChange={(e) => setDia(Number(e.target.value))}><option value={1}>Día 1</option><option value={2}>Día 2</option><option value={0}>Permanentes</option></select></div>
       {dia === 2 ? (
@@ -118,6 +135,15 @@ export function FormularioDesafio({
             </span>
           </label>
         </div>
+      )}
+      {tipo === "ENCUESTA_MIXTA" && (
+        <EditorEncuestaMixta
+          preguntas={preguntasMixtas}
+          alCambiar={(preguntas) => {
+            setPreguntasMixtas(preguntas);
+            marcarCampoModificado("preguntasMixtasEditor");
+          }}
+        />
       )}
       {tipo === "ENCUESTA" && (
         <>

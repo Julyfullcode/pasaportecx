@@ -15,12 +15,17 @@ import {
   type ResultadoPuntualidad,
 } from "@/lib/puntualidad";
 import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
+import {
+  EncuestaMixtaInvalidaError,
+  esConfiguracionEncuestaMixta,
+  respuestasEncuestaMixtaDesdeFormulario,
+} from "@/lib/encuesta-mixta";
 
 type Configuracion = {
   opciones?: Opcion[];
   puntajeParcial?: boolean;
   respuestasAceptadas?: string[];
-  formato?: "texto" | "escala" | "cosecha";
+  formato?: "texto" | "escala" | "cosecha" | "mixta";
 };
 
 export async function POST(
@@ -141,9 +146,23 @@ export async function POST(
     estado = "PENDIENTE";
     respuesta = { comentario: String(formulario.get("comentario") ?? "").trim().slice(0, 140) };
   } else if (desafio.tipo === "ENCUESTA") {
-    const valor = String(formulario.get("respuesta") ?? "");
-    if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });
-    respuesta = { valor };
+    if (esConfiguracionEncuestaMixta(configuracion)) {
+      try {
+        respuesta = {
+          formato: configuracion.formato,
+          respuestas: respuestasEncuestaMixtaDesdeFormulario(configuracion, formulario),
+        };
+      } catch (error) {
+        if (error instanceof EncuestaMixtaInvalidaError) {
+          return Response.json({ error: error.message }, { status: 400 });
+        }
+        throw error;
+      }
+    } else {
+      const valor = String(formulario.get("respuesta") ?? "");
+      if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });
+      respuesta = { valor };
+    }
   }
   const puntosOtorgados = participante.esStaff ? 0 : puntos;
 
