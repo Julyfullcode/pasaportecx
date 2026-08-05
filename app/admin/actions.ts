@@ -33,6 +33,10 @@ import {
 } from "@/lib/duracion-desafio";
 
 export type EstadoLogin = { error?: string };
+export type EstadoGuardarDesafio = {
+  tipo: "inicial" | "error" | "exito";
+  mensaje: string;
+};
 
 export async function iniciarSesionAdmin(
   _estado: EstadoLogin,
@@ -115,8 +119,30 @@ function configuracionDesdeFormulario(tipo: string, formulario: FormData) {
   return {};
 }
 
-export async function guardarDesafio(formulario: FormData) {
+export async function guardarDesafio(
+  _estado: EstadoGuardarDesafio,
+  formulario: FormData,
+): Promise<EstadoGuardarDesafio> {
   await requerirAdmin();
+  try {
+    await guardarDesafioEnBase(formulario);
+    return {
+      tipo: "exito",
+      mensaje: formulario.get("id") ? "Los cambios quedaron guardados." : "El desafío quedó creado correctamente.",
+    };
+  } catch (error) {
+    console.error("[admin/desafios] No fue posible guardar el desafío", error);
+    const mensaje = error instanceof Error && (
+      error.message === "Configura una duración válida en minutos."
+      || error.message === "Configura una fecha y hora de cierre válidas."
+    )
+      ? error.message
+      : "No pudimos guardar el desafío. Tus demás datos siguen intactos; revisa los campos e intenta nuevamente.";
+    return { tipo: "error", mensaje };
+  }
+}
+
+async function guardarDesafioEnBase(formulario: FormData) {
   const datos = desafioSchema.parse(Object.fromEntries(formulario));
   const id = String(formulario.get("id") ?? "");
   const existente = id

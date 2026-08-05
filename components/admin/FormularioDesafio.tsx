@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import QRCode from "qrcode";
 import { Eye } from "lucide-react";
 import type { Componente, Desafio, Ubicacion } from "@prisma/client";
-import { guardarDesafio } from "@/app/admin/actions";
+import { guardarDesafio, type EstadoGuardarDesafio } from "@/app/admin/actions";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
 import {
@@ -28,6 +28,8 @@ type Config = {
   publicarEnRecuerdos?: boolean;
 };
 
+const ESTADO_INICIAL_GUARDADO: EstadoGuardarDesafio = { tipo: "inicial", mensaje: "" };
+
 export function FormularioDesafio({
   componentes,
   ubicaciones,
@@ -46,6 +48,7 @@ export function FormularioDesafio({
     desafio?.duracionMinutos === null ? "FECHA_HORA" : "MINUTOS",
   );
   const [qrVistaPrevia, setQrVistaPrevia] = useState<string | null>(null);
+  const [resultadoGuardado, accionGuardar, guardando] = useActionState(guardarDesafio, ESTADO_INICIAL_GUARDADO);
 
   async function mostrarVistaPrevia(formulario: HTMLFormElement | null) {
     if (!formulario) return;
@@ -61,7 +64,7 @@ export function FormularioDesafio({
     setQrVistaPrevia(imagen);
   }
   return (
-    <form action={guardarDesafio} className="grid gap-4 md:grid-cols-2">
+    <form action={accionGuardar} className="grid gap-4 md:grid-cols-2">
       {desafio && <input type="hidden" name="id" value={desafio.id} />}
       <div className="md:col-span-2"><label className="etiqueta">Título</label><input className="campo" name="titulo" required minLength={3} maxLength={100} defaultValue={desafio?.titulo} /></div>
       <div className="md:col-span-2"><label className="etiqueta">Descripción</label><textarea className="campo min-h-24" name="descripcion" required maxLength={600} defaultValue={desafio?.descripcion} /></div>
@@ -148,7 +151,12 @@ export function FormularioDesafio({
       <div><label className="etiqueta">Estado inicial</label><select className="campo" name="estado" defaultValue={desafio?.estado ?? "BORRADOR"}><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="CERRADO">Cerrado</option></select></div>
       <div><label className="etiqueta">Límite de completitudes (opcional)</label><input className="campo" type="number" min={1} name="limiteCompletitudes" defaultValue={desafio?.limiteCompletitudes ?? ""} /></div>
       <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="esSecreto" defaultChecked={desafio?.esSecreto} /> Reto secreto: ocultar hasta escanear</label>
-      <button className="boton-primario order-2 md:col-span-2">{desafio ? "Guardar cambios" : "Crear desafío y generar QR"}</button>
+      {resultadoGuardado.tipo !== "inicial" && (
+        <div role="status" className={`order-2 rounded-xl border p-3 text-sm font-bold md:col-span-2 ${resultadoGuardado.tipo === "error" ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+          {resultadoGuardado.mensaje}
+        </div>
+      )}
+      <button disabled={guardando} className="boton-primario order-2 disabled:cursor-wait disabled:opacity-70 md:col-span-2">{guardando ? "Guardando…" : desafio ? "Guardar cambios" : "Crear desafío y generar QR"}</button>
       <button type="button" className="boton-secundario order-1 md:col-span-2" onClick={(evento) => void mostrarVistaPrevia(evento.currentTarget.form)}><Eye size={19} /> Vista previa del QR sin guardar</button>
       {qrVistaPrevia && <div className="order-3 md:col-span-2 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-center"><img src={qrVistaPrevia} alt="Vista previa del código QR" className="mx-auto h-56 w-56 rounded-xl bg-white p-2" /><p className="mt-2 text-xs font-bold text-slate-600">Vista previa visual. En un reto nuevo, el QR quedará activo únicamente después de guardarlo.</p></div>}
     </form>

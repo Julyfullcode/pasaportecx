@@ -109,6 +109,26 @@ test.describe("Administrador", () => {
     await contextoParticipante.close();
   });
 
+  test("un error al guardar un desafío se muestra en el formulario sin tumbar la página", async ({ page }) => {
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const creador = page.locator("details").first();
+    await creador.locator("summary").click();
+    await creador.locator('input[name="titulo"]').fill("Duración inválida controlada");
+    await creador.locator('textarea[name="descripcion"]').fill("Comprueba la recuperación del formulario.");
+    await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
+    await creador.locator('select[name="dia"]').selectOption("0");
+    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
+    const minutos = creador.locator('input[name="duracionMinutos"]');
+    await minutos.evaluate((campo) => campo.removeAttribute("min"));
+    await minutos.fill("0");
+    await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
+
+    await expect(creador.getByRole("status")).toHaveText("Configura una duración válida en minutos.");
+    await expect(page.getByRole("heading", { name: "Desafíos", level: 1 })).toBeVisible();
+    await expect(page.getByText(/Application error/i)).toHaveCount(0);
+  });
+
   test("administración crea un desafío de puntualidad con hora y tolerancia", async ({ page }) => {
     const titulo = `Puntualidad ${Date.now()}`;
     await iniciarAdmin(page);

@@ -10,11 +10,28 @@ import { descripcionDuracionDesafio, estadoTemporalDesafio } from "@/lib/duracio
 export const dynamic = "force-dynamic";
 
 export default async function AdminDesafios() {
-  const [desafios, componentes, ubicaciones] = await Promise.all([
-    db.desafio.findMany({ orderBy: [{ dia: "asc" }, { creadoEn: "desc" }], include: { componente: true, _count: { select: { completitudes: true } } } }),
-    db.componente.findMany({ where: { activo: true }, orderBy: { orden: "asc" } }),
-    db.ubicacion.findMany({ where: { activa: true }, orderBy: { orden: "asc" } }),
-  ]);
+  let datos;
+  try {
+    datos = await cargarDatosDesafios();
+  } catch (primerError) {
+    console.error("[admin/desafios] Primer intento de carga fallido", primerError);
+    await new Promise((resolver) => setTimeout(resolver, 250));
+    try {
+      datos = await cargarDatosDesafios();
+    } catch (error) {
+      console.error("[admin/desafios] La carga falló después del reintento", error);
+      return (
+        <div className="p-4 md:p-7">
+          <div className="tarjeta mx-auto max-w-2xl p-7 text-center">
+            <h1 className="text-2xl font-extrabold text-[var(--epm-azul-profundo)]">No pudimos cargar los desafíos</h1>
+            <p className="mt-3 text-slate-600">No se modificó ni se eliminó ningún dato. Intenta cargar nuevamente.</p>
+            <a href="/admin/desafios" className="boton-primario mt-5">Reintentar</a>
+          </div>
+        </div>
+      );
+    }
+  }
+  const [desafios, componentes, ubicaciones] = datos;
   const desafioCierre = desafios.find((desafio) => desafio.codigoQr === CODIGO_DESAFIO_CIERRE);
   return (
     <div className="p-4 md:p-7">
@@ -89,4 +106,12 @@ export default async function AdminDesafios() {
       </div>
     </div>
   );
+}
+
+function cargarDatosDesafios() {
+  return Promise.all([
+    db.desafio.findMany({ orderBy: [{ dia: "asc" }, { creadoEn: "desc" }], include: { componente: true, _count: { select: { completitudes: true } } } }),
+    db.componente.findMany({ where: { activo: true }, orderBy: { orden: "asc" } }),
+    db.ubicacion.findMany({ where: { activa: true }, orderBy: { orden: "asc" } }),
+  ]);
 }
