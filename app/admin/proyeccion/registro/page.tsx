@@ -1,7 +1,6 @@
 import QRCode from "qrcode";
 import { ScanLine, Sparkles, UserRoundPlus } from "lucide-react";
 import { requerirAdmin } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { LogoBlanco } from "@/components/marca/Logo";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
 
@@ -9,7 +8,6 @@ export const dynamic = "force-dynamic";
 
 export default async function InvitacionRegistro() {
   await requerirAdmin();
-  const configuracion = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
   const baseAplicacion = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const urlRegistro = `${baseAplicacion}/registro`;
   const qr = await QRCode.toDataURL(urlRegistro, {
@@ -25,19 +23,18 @@ export default async function InvitacionRegistro() {
     <main className="marca-gradiente relative min-h-screen overflow-hidden p-[clamp(20px,3vw,52px)] text-white lg:h-screen">
       <TexturaArcos />
       <div className="relative z-10 flex min-h-[calc(100vh-clamp(40px,6vw,104px))] flex-col lg:h-full lg:min-h-0">
-        <header className="flex shrink-0 items-center justify-between gap-6">
-          <LogoBlanco className="h-[clamp(34px,4vw,58px)] w-auto" />
-          <span className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-extrabold uppercase tracking-[.18em] backdrop-blur">Pasaporte CX</span>
+        <header className="flex shrink-0 items-center">
+          <LogoBlanco className="h-[clamp(46px,5vw,76px)] w-auto" />
         </header>
 
-        <section className="grid min-h-0 flex-1 items-center gap-[clamp(24px,5vw,80px)] py-[clamp(24px,4vh,46px)] lg:grid-cols-[minmax(0,1fr)_minmax(360px,.82fr)]">
-          <div className="max-w-3xl">
+        <section className="grid min-h-0 flex-1 items-center gap-[clamp(24px,3vw,52px)] py-[clamp(24px,4vh,46px)] lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
+          <div className="max-w-5xl">
             <p className="text-[clamp(14px,1.4vw,21px)] font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">Únete al encuentro</p>
             <h1 className="mt-4 font-display text-[clamp(44px,6.4vw,92px)] font-extrabold leading-[.96]">
               Vive la <span className="block text-[var(--epm-verde)]">experiencia</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-[clamp(17px,1.7vw,26px)] leading-relaxed text-white/85">
-              Escanea el código QR y crea tu Pasaporte CX para conectar, descubrir y sumar en <strong className="text-white">{configuracion.nombreEvento}</strong>.
+            <p className="mt-6 max-w-4xl text-[clamp(17px,1.7vw,26px)] leading-relaxed text-white/85">
+              Escanea el código QR y comienza tu recorrido para conectar, descubrir y sumar en el Encuentro de experiencia y comunicaciones.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 text-[clamp(13px,1.1vw,17px)] font-extrabold">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3"><ScanLine size={21} /> Escanea</span>
@@ -57,7 +54,6 @@ export default async function InvitacionRegistro() {
           </div>
         </section>
 
-        <footer className="shrink-0 text-[clamp(10px,.9vw,14px)] text-white/60">Vicepresidencia Experiencia Usuario-Cliente</footer>
       </div>
     </main>
   );

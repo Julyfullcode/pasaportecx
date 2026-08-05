@@ -38,6 +38,9 @@ test.describe("Administrador", () => {
     await page.goto("/admin/proyeccion/registro");
     await expect(page.getByRole("img", { name: "Grupo EPM" })).toHaveAttribute("src", /logo-grupo-epm-blanco/);
     await expect(page.getByRole("heading", { name: "Vive la experiencia" })).toBeVisible();
+    await expect(page.getByText("Escanea el código QR y comienza tu recorrido para conectar, descubrir y sumar en el Encuentro de experiencia y comunicaciones.")).toBeVisible();
+    await expect(page.getByText("Pasaporte CX", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Vicepresidencia Experiencia Usuario-Cliente", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Escanea para registrarte", { exact: true })).toBeVisible();
     await expect(page.getByRole("img", { name: "Código QR para registrarse en Pasaporte CX" })).toHaveAttribute("src", /^data:image\/png;base64,/);
     await expect(page.getByRole("link", { name: "Abrir registro de Pasaporte CX" })).toHaveAttribute("href", /^http:\/\/(?:127\.0\.0\.1|localhost):3000\/registro$/);
