@@ -52,9 +52,20 @@ model Participante {
   reaccionesRecuerdos ReaccionRecuerdo[]
   ajustes             AjustePuntos[]
   sesiones            SesionParticipante[]
+  correoAutorizado    CorreoAutorizado?
 
   @@index([puntosTotales])
   @@index([empresaId])
+}
+
+model CorreoAutorizado {
+  id             String        @id @default(cuid())
+  correo         String        @unique
+  participanteId String?       @unique
+  creadoEn       DateTime      @default(now())
+  participante   Participante? @relation(fields: [participanteId], references: [id], onDelete: SetNull)
+
+  @@index([creadoEn])
 }
 
 model Empresa {

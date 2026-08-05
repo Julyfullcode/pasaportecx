@@ -18,6 +18,28 @@ try {
     + 'ADD COLUMN IF NOT EXISTS "publicadoEn" TIMESTAMP',
   );
   await db.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS "CorreoAutorizado" ('
+    + '"id" TEXT NOT NULL PRIMARY KEY, '
+    + '"correo" TEXT NOT NULL, '
+    + '"participanteId" TEXT, '
+    + '"creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, '
+    + 'CONSTRAINT "CorreoAutorizado_participanteId_fkey" '
+    + 'FOREIGN KEY ("participanteId") REFERENCES "Participante"("id") '
+    + 'ON DELETE SET NULL ON UPDATE CASCADE)'
+  );
+  await db.$executeRawUnsafe(
+    'CREATE UNIQUE INDEX IF NOT EXISTS "CorreoAutorizado_correo_key" '
+    + 'ON "CorreoAutorizado"("correo")',
+  );
+  await db.$executeRawUnsafe(
+    'CREATE UNIQUE INDEX IF NOT EXISTS "CorreoAutorizado_participanteId_key" '
+    + 'ON "CorreoAutorizado"("participanteId")',
+  );
+  await db.$executeRawUnsafe(
+    'CREATE INDEX IF NOT EXISTS "CorreoAutorizado_creadoEn_idx" '
+    + 'ON "CorreoAutorizado"("creadoEn")',
+  );
+  await db.$executeRawUnsafe(
     'UPDATE "Desafio" SET "duracionMinutos" = NULL '
     + 'WHERE "disponibleHasta" IS NOT NULL',
   );

@@ -89,6 +89,7 @@ async function crearImagenes() {
 async function main() {
   await prisma.sesionParticipante.deleteMany();
   await prisma.sesionAdmin.deleteMany();
+  await prisma.correoAutorizado.deleteMany();
   await prisma.completitud.deleteMany();
   await prisma.recuerdo.deleteMany();
   await prisma.ajustePuntos.deleteMany();

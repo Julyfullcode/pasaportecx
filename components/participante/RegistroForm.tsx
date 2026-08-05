@@ -110,6 +110,10 @@ export function RegistroForm({
 
   return (
     <form onSubmit={enviar} className="tarjeta space-y-5 p-5 md:p-7">
+      <div>
+        <label className="etiqueta" htmlFor="correo">Correo electrónico</label>
+        <input className="campo" id="correo" name="correo" type="email" autoComplete="email" maxLength={254} required placeholder="tu.correo@empresa.com" />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="etiqueta" htmlFor="nombres">Nombre</label>

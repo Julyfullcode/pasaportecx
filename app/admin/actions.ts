@@ -31,9 +31,14 @@ import {
   DURACION_MAXIMA_MINUTOS,
   fechaHoraColombiaComoFecha,
 } from "@/lib/duracion-desafio";
+import { clasificarCorreos } from "@/lib/correos-autorizados";
 
 export type EstadoLogin = { error?: string };
 export type EstadoGuardarDesafio = {
+  tipo: "inicial" | "error" | "exito";
+  mensaje: string;
+};
+export type EstadoCorreosAutorizados = {
   tipo: "inicial" | "error" | "exito";
   mensaje: string;
 };
@@ -359,6 +364,56 @@ export async function eliminarParticipante(formulario: FormData) {
   ]);
   anunciarCambio("participante");
   revalidatePath("/admin/participantes");
+}
+
+export async function agregarCorreosAutorizados(
+  _estado: EstadoCorreosAutorizados,
+  formulario: FormData,
+): Promise<EstadoCorreosAutorizados> {
+  await requerirAdmin();
+  const { validos, invalidos } = clasificarCorreos(String(formulario.get("correos") ?? ""));
+  if (invalidos.length > 0) {
+    return {
+      tipo: "error",
+      mensaje: `Revisa estos correos: ${invalidos.slice(0, 5).join(", ")}${invalidos.length > 5 ? "…" : ""}`,
+    };
+  }
+  if (validos.length === 0) {
+    return { tipo: "error", mensaje: "Ingresa al menos un correo electrónico válido." };
+  }
+  try {
+    const existentes = await db.correoAutorizado.findMany({
+      where: { correo: { in: validos } },
+      select: { correo: true },
+    });
+    const yaAutorizados = new Set(existentes.map(({ correo }) => correo));
+    const nuevos = validos.filter((correo) => !yaAutorizados.has(correo));
+    if (nuevos.length > 0) {
+      await db.correoAutorizado.createMany({ data: nuevos.map((correo) => ({ correo })) });
+    }
+    revalidatePath("/admin/participantes");
+    return {
+      tipo: "exito",
+      mensaje: nuevos.length === 0
+        ? "Todos los correos ingresados ya estaban autorizados."
+        : `${nuevos.length} correo${nuevos.length === 1 ? " quedó autorizado" : "s quedaron autorizados"}.`,
+    };
+  } catch (error) {
+    console.error("[admin/participantes] No fue posible autorizar correos", error);
+    return { tipo: "error", mensaje: "No pudimos guardar los correos. Intenta nuevamente." };
+  }
+}
+
+export async function eliminarCorreoAutorizado(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  if (!id) return;
+  try {
+    await db.correoAutorizado.deleteMany({ where: { id, participanteId: null } });
+    revalidatePath("/admin/participantes");
+  } catch (error) {
+    console.error("[admin/participantes] No fue posible retirar el correo", error);
+  }
 }
 
 export async function revisarEvidencia(formulario: FormData) {

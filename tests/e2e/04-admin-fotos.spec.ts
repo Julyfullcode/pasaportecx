@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { fechaHoraColombiaComoFecha, fechaParaInputColombia } from "@/lib/duracion-desafio";
-import { autenticarParticipante, contextoApiParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin } from "./ayudas";
+import { autenticarParticipante, contextoApiParticipante, crearParticipanteConToken, fotoPng, iniciarAdmin, registrarPorApi } from "./ayudas";
 
 test.describe("Administrador", () => {
   test("las vistas y APIs administrativas están protegidas sin autenticación", async ({ page, request, playwright }) => {
@@ -74,6 +74,25 @@ test.describe("Administrador", () => {
     await page.getByRole("button", { name: "Ingresar" }).click();
     await expect(page.getByText("Demasiados intentos. Intenta nuevamente en unos minutos.")).toBeVisible();
     await db.admin.delete({ where: { id: admin.id } });
+  });
+
+  test("Participantes administra correos pendientes y registrados", async ({ page, playwright }) => {
+    const correo = `autorizado-${Date.now()}@example.com`;
+    await iniciarAdmin(page);
+    await page.goto("/admin/participantes");
+    await page.locator('textarea[name="correos"]').fill(correo);
+    await page.getByRole("button", { name: "Autorizar correos" }).click();
+    await expect(page.getByRole("status")).toContainText("1 correo quedó autorizado");
+    const pendiente = page.locator("article").filter({ hasText: correo });
+    await expect(pendiente.getByText("Pendiente de registro", { exact: true })).toBeVisible();
+
+    const api = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
+    expect((await registrarPorApi(api, "Persona autorizada", "E2E", correo)).status()).toBe(200);
+    await page.reload();
+    const registrado = page.locator("article").filter({ hasText: correo });
+    await expect(registrado.getByText("Registrado", { exact: true })).toBeVisible();
+    await expect(registrado.getByText("Persona autorizada E2E", { exact: true })).toBeVisible();
+    await api.dispose();
   });
 
   test("un reto de todo el tiempo aparece para participantes en ambos días", async ({ page, browser }) => {

@@ -3,10 +3,14 @@ import { db } from "@/lib/db";
 import { BASE_URL, EMPRESA_ID, fotoPng, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
 
 async function completarCamposBasicos(page: Page, sufijo: string) {
+  const correo = `ui-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+  await db.correoAutorizado.create({ data: { correo } });
+  await page.getByLabel("Correo electrónico").fill(correo);
   await page.getByLabel("Apellidos").fill(sufijo);
   await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
   await page.getByLabel(/Tomar foto|Repetir/).setInputFiles(fotoPng);
   await page.getByRole("checkbox", { name: /Autorización de tratamiento de datos personales/ }).check();
+  return correo;
 }
 
 test.describe("Registro de participante", () => {
@@ -30,7 +34,7 @@ test.describe("Registro de participante", () => {
     const marca = `Registro exitoso ${Date.now()}`;
     await page.goto("/registro");
     await page.getByLabel("Nombre", { exact: true }).fill(marca);
-    await completarCamposBasicos(page, "E2E");
+    const correo = await completarCamposBasicos(page, "E2E");
     const registroCompletado = page.waitForResponse((respuesta) =>
       respuesta.url().endsWith("/api/registro") && respuesta.request().method() === "POST",
     );
@@ -50,8 +54,9 @@ test.describe("Registro de participante", () => {
     expect(pasaporte.status()).toBe(200);
     expect(pasaporte.headers()["content-type"]).toContain("application/pdf");
     expect((await pasaporte.body()).subarray(0, 4).toString()).toBe("%PDF");
-    const participante = await db.participante.findFirstOrThrow({ where: { nombre: `${marca} E2E` } });
+    const participante = await db.participante.findFirstOrThrow({ where: { nombre: `${marca} E2E` }, include: { correoAutorizado: true } });
     expect(participante.puntosTotales).toBe(PUNTOS_REGISTRO);
+    expect(participante.correoAutorizado?.correo).toBe(correo);
   });
 
   test("registro con nombre vacío es rechazado por validación", async ({ page }) => {
@@ -68,7 +73,10 @@ test.describe("Registro de participante", () => {
 
   test("registro sin foto es rechazado con un mensaje claro", async ({ page }) => {
     const antes = await db.participante.count();
+    const correo = `sin-foto-${Date.now()}@example.com`;
+    await db.correoAutorizado.create({ data: { correo } });
     await page.goto("/registro");
+    await page.getByLabel("Correo electrónico").fill(correo);
     await page.getByLabel("Nombre", { exact: true }).fill("Sin foto");
     await page.getByLabel("Apellidos").fill(`E2E ${Date.now()}`);
     await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
@@ -82,8 +90,11 @@ test.describe("Registro de participante", () => {
   test("un archivo falso declarado como imagen es rechazado por el servidor", async ({ playwright }) => {
     const antes = await db.participante.count();
     const api = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
+    const correo = `imagen-${Date.now()}@example.com`;
+    await db.correoAutorizado.create({ data: { correo } });
     const respuesta = await api.post("/api/registro", {
       multipart: {
+        correo,
         nombres: "Imagen",
         apellidos: `Falsa ${Date.now()}`,
         empresaId: EMPRESA_ID,
@@ -94,6 +105,34 @@ test.describe("Registro de participante", () => {
     expect(respuesta.status()).toBe(400);
     expect((await respuesta.json()).error).toContain("imagen válida");
     expect(await db.participante.count()).toBe(antes);
+    await api.dispose();
+  });
+
+  test("un correo no autorizado no puede registrarse", async ({ page }) => {
+    const antes = await db.participante.count();
+    await page.goto("/registro");
+    await page.getByLabel("Correo electrónico").fill(`no-autorizado-${Date.now()}@example.com`);
+    await page.getByLabel("Nombre", { exact: true }).fill("Persona");
+    await page.getByLabel("Apellidos").fill("No autorizada");
+    await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
+    await page.getByLabel(/Tomar foto|Repetir/).setInputFiles(fotoPng);
+    await page.getByRole("checkbox", { name: /Autorización de tratamiento de datos personales/ }).check();
+    await page.getByRole("button", { name: "Crear mi pasaporte CX" }).click();
+
+    await expect(page.getByText("Este correo no está autorizado. Conversa con alguien de la Vicepresidencia Experiencia Usuario-Cliente para solicitar autorización.", { exact: true })).toBeVisible();
+    expect(await db.participante.count()).toBe(antes);
+  });
+
+  test("un correo autorizado solo puede utilizarse una vez", async ({ playwright }) => {
+    const correo = `unico-${Date.now()}@example.com`;
+    const api = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
+    const primera = await registrarPorApi(api, "Primer registro", "E2E", correo);
+    const segunda = await registrarPorApi(api, "Segundo registro", "E2E", correo);
+
+    expect(primera.status()).toBe(200);
+    expect(segunda.status()).toBe(409);
+    expect((await segunda.json()).error).toBe("Este correo ya fue registrado en Pasaporte CX.");
+    expect(await db.correoAutorizado.count({ where: { correo, participanteId: { not: null } } })).toBe(1);
     await api.dispose();
   });
 

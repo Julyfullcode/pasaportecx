@@ -24,11 +24,11 @@ export async function GET(
   if (tipo === "participantes" || tipo === "ranking-individual") {
     const datos = await db.participante.findMany({
       orderBy: { puntosTotales: "desc" },
-      include: { empresa: true },
+      include: { empresa: true, correoAutorizado: true },
     });
     filas = [
-      ["Posición", "Nombre", "Empresa", "Puntos", "Activo", "Registrado"],
-      ...datos.map((p, i) => [i + 1, p.nombre, p.empresa.nombre, p.puntosTotales, p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
+      ["Posición", "Nombre", "Correo", "Empresa", "Puntos", "Activo", "Registrado"],
+      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.puntosTotales, p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
     ];
   } else if (tipo === "completitudes") {
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: { include: { componente: true } } }, orderBy: { completadoEn: "asc" } });

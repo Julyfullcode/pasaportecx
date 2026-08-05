@@ -9,13 +9,14 @@ export async function GET() {
     const consultaStorage = bucket && process.env.STORAGE_DRIVER?.toLowerCase() === "supabase"
       ? db.$queryRaw<{ total: number }[]>`SELECT COUNT(*)::int AS "total" FROM storage.objects WHERE bucket_id = ${bucket}`
       : Promise.resolve([{ total: 0 }]);
-    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos, objetosStorage] = await Promise.all([
+    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos, correosAutorizados, objetosStorage] = await Promise.all([
       db.$queryRaw`SELECT 1 AS "ok"`,
       db.diaAgenda.count(),
       db.momentoAgenda.findFirst({ select: { destacado: true, urlFotoExpositor: true } }),
       db.fotoDiaAgenda.count(),
       db.configuracionEvento.findUnique({ where: { id: "evento" }, select: { maxRecuerdosPorParticipante: true, eliminarEvidenciasRechazadas: true, diplomaHabilitado: true } }),
       db.reaccionRecuerdo.count(),
+      db.correoAutorizado.count(),
       consultaStorage,
     ]);
     return Response.json(
@@ -27,6 +28,7 @@ export async function GET() {
         momentosDestacados: true,
         fotosDias,
         reaccionesRecuerdos,
+        correosAutorizados,
         maxRecuerdosPorParticipante: configuracion?.maxRecuerdosPorParticipante,
         limpiezaEvidenciasRechazadas: configuracion?.eliminarEvidenciasRechazadas,
         diplomaHabilitado: configuracion?.diplomaHabilitado,

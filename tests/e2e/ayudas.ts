@@ -71,9 +71,16 @@ export async function registrarPorApi(
   api: APIRequestContext,
   nombre: string,
   apellidos = "Prueba",
+  correo = `registro-${randomBytes(10).toString("hex")}@example.com`,
 ) {
+  await db.correoAutorizado.upsert({
+    where: { correo },
+    update: {},
+    create: { correo },
+  });
   return api.post("/api/registro", {
     multipart: {
+      correo,
       nombres: nombre,
       apellidos,
       empresaId: EMPRESA_ID,

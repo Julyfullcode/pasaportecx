@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { correoElectronicoSchema } from "@/lib/correos-autorizados";
 
 export function normalizarRespuesta(valor: string): string {
   return valor
@@ -38,6 +39,7 @@ export function puntuarOpcionMultiple(
 }
 
 export const registroSchema = z.object({
+  correo: correoElectronicoSchema,
   nombres: z.string().trim().min(2, "Escribe tu nombre").max(60),
   apellidos: z.string().trim().min(2, "Escribe tus apellidos").max(60),
   empresaId: z.string().min(1, "Selecciona una empresa"),
