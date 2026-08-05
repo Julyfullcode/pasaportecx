@@ -10,7 +10,7 @@ export default async function ProyeccionPodio() {
   const [configuracion, personas] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.participante.findMany({
-      where: { activo: true },
+      where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
       select: {
         id: true,

@@ -54,10 +54,12 @@ export async function POST(
     return Response.json({
       yaCompletado: true,
       estado: existente.estado,
-      puntosGanados: existente.puntosOtorgados,
+      puntosGanados: participante.esStaff ? 0 : existente.puntosOtorgados,
       nuevoTotal: participante.puntosTotales,
       puntualidad,
-      mensaje: puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
+      mensaje: participante.esStaff
+        ? "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos."
+        : puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
     });
   }
   const evaluacionPuntualidad = esPuntualidad ? evaluarPuntualidad(configuracion, ahora) : null;
@@ -147,19 +149,20 @@ export async function POST(
     if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });
     respuesta = { valor };
   }
+  const puntosOtorgados = participante.esStaff ? 0 : puntos;
 
   try {
     const resultado = await db.$transaction(async (tx) => {
       const completitud = existente && esCosecha && !esRespuestasCosecha(existente.respuesta)
         ? await tx.completitud.update({
           where: { id: existente.id },
-          data: { puntosOtorgados: puntos, respuesta, estado },
+          data: { puntosOtorgados, respuesta, estado },
         })
         : await tx.completitud.create({
           data: {
             participanteId: participante.id,
             desafioId: desafio.id,
-            puntosOtorgados: puntos,
+            puntosOtorgados,
             respuesta,
             urlEvidencia,
             estado,
@@ -171,10 +174,12 @@ export async function POST(
     anunciarCambio("puntos");
     return Response.json({
       estado: resultado.completitud.estado,
-      puntosGanados: puntos,
+      puntosGanados: puntosOtorgados,
       nuevoTotal: resultado.nuevoTotal,
       puntualidad: resultadoPuntualidad,
-      mensaje: resultadoPuntualidad ? mensajePuntualidad(resultadoPuntualidad, desafio.puntos) : undefined,
+      mensaje: participante.esStaff
+        ? "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos."
+        : resultadoPuntualidad ? mensajePuntualidad(resultadoPuntualidad, desafio.puntos) : undefined,
     });
   } catch (error) {
     if (urlEvidencia) await storage.eliminar(urlEvidencia).catch(() => undefined);
@@ -186,10 +191,12 @@ export async function POST(
       return Response.json({
         yaCompletado: true,
         estado: existente.estado,
-        puntosGanados: existente.puntosOtorgados,
+        puntosGanados: participante.esStaff ? 0 : existente.puntosOtorgados,
         nuevoTotal: participante.puntosTotales,
         puntualidad,
-        mensaje: puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
+        mensaje: participante.esStaff
+          ? "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos."
+          : puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
       });
     }
     console.error(error);

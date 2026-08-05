@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Sparkles, Sprout } from "lucide-react";
+import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, ShieldCheck, Sparkles, Sprout } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
@@ -12,7 +12,7 @@ export default async function Inicio() {
   const participante = await requerirParticipante("/");
   const [ranking, completados, totalPublicados, configuracion, cosechaCompletada] = await Promise.all([
     db.participante.findMany({
-      where: { activo: true },
+      where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
       select: { id: true },
     }),
@@ -26,7 +26,7 @@ export default async function Inicio() {
   ]);
   const tieneCosecha = esRespuestasCosecha(cosechaCompletada?.respuesta);
   const completadosValidos = completados - (cosechaCompletada && !tieneCosecha ? 1 : 0);
-  const posicion = ranking.findIndex((p) => p.id === participante.id) + 1;
+  const posicion = participante.esStaff ? null : ranking.findIndex((p) => p.id === participante.id) + 1;
   return (
     <>
       <MarcaHeader tituloVerde="Hola," tituloClaro={participante.nombre.split(" ")[0]} compacto lateral>
@@ -39,15 +39,17 @@ export default async function Inicio() {
       </MarcaHeader>
       <div className="contenedor relative z-20 -mt-3 space-y-4">
         <section className="tarjeta overflow-hidden p-5">
-          <p className="text-sm font-extrabold uppercase tracking-wider text-slate-500">Tu puntaje total</p>
+          <p className="text-sm font-extrabold uppercase tracking-wider text-slate-500">{participante.esStaff ? "Perfil Staff" : "Tu puntaje total"}</p>
           <div className="mt-1 flex items-end justify-between">
-            <p className="font-display text-6xl font-extrabold leading-none text-[var(--epm-azul-profundo)]">{participante.puntosTotales.toLocaleString("es-CO")}</p>
-            <Sparkles className="text-[var(--epm-verde)]" size={36} />
+            {participante.esStaff
+              ? <p className="max-w-sm text-lg font-extrabold text-[var(--epm-azul-profundo)]">Participas en todas las actividades sin competir por puntos ni premios.</p>
+              : <p className="font-display text-6xl font-extrabold leading-none text-[var(--epm-azul-profundo)]">{participante.puntosTotales.toLocaleString("es-CO")}</p>}
+            {participante.esStaff ? <ShieldCheck className="text-[var(--epm-teal)]" size={40} /> : <Sparkles className="text-[var(--epm-verde)]" size={36} />}
           </div>
           <div className="mt-5 border-t border-slate-100 pt-4">
             <div>
-              <p className="text-xs font-bold text-slate-500">Posición individual</p>
-              <p className="mt-1 flex items-center gap-1 font-extrabold text-[var(--epm-azul)]"><Medal size={19} /> Puesto {posicion} de {ranking.length}</p>
+              <p className="text-xs font-bold text-slate-500">{participante.esStaff ? "Esquema de puntos" : "Posición individual"}</p>
+              <p className="mt-1 flex items-center gap-1 font-extrabold text-[var(--epm-azul)]">{participante.esStaff ? <><ShieldCheck size={19} /> Sin participación en ranking</> : <><Medal size={19} /> Puesto {posicion} de {ranking.length}</>}</p>
             </div>
           </div>
         </section>
@@ -59,7 +61,7 @@ export default async function Inicio() {
           </Link>
           <Link href="/ranking" className="tarjeta p-4">
             <span className="text-sm font-bold text-slate-500">Tu posición</span>
-            <strong className="mt-2 block truncate text-lg text-[var(--epm-azul-profundo)]">Puesto {posicion}</strong>
+            <strong className="mt-2 block truncate text-lg text-[var(--epm-azul-profundo)]">{participante.esStaff ? "Perfil Staff" : `Puesto ${posicion}`}</strong>
             <span className="mt-1 flex items-center text-xs font-extrabold text-[var(--epm-azul)]">Ver ranking <ChevronRight size={15} /></span>
           </Link>
         </section>

@@ -31,9 +31,11 @@ export async function iniciarAdmin(page: Page) {
 export async function crearParticipanteConToken({
   nombre,
   puntos = PUNTOS_REGISTRO,
+  esStaff = false,
 }: {
   nombre: string;
   puntos?: number;
+  esStaff?: boolean;
 }) {
   const sufijo = randomBytes(6).toString("hex");
   const token = randomBytes(32).toString("base64url");
@@ -44,7 +46,8 @@ export async function crearParticipanteConToken({
       urlFoto: "/marca/logo-grupo-epm-oficial.png",
       codigoRecuperacion: sufijo.toUpperCase(),
       puntosRegistro: puntos,
-      puntosTotales: puntos,
+      puntosTotales: esStaff ? 0 : puntos,
+      esStaff,
       sesiones: {
         create: {
           tokenHash: hashToken(token),

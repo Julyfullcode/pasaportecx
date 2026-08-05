@@ -8,6 +8,14 @@ if (!url || !url.startsWith("postgres")) {
 const db = new PrismaClient({ datasources: { db: { url } } });
 try {
   await db.$executeRawUnsafe(
+    'ALTER TABLE "Participante" '
+    + 'ADD COLUMN IF NOT EXISTS "esStaff" BOOLEAN NOT NULL DEFAULT false',
+  );
+  await db.$executeRawUnsafe(
+    'CREATE INDEX IF NOT EXISTS "Participante_activo_esStaff_puntosTotales_idx" '
+    + 'ON "Participante"("activo", "esStaff", "puntosTotales")',
+  );
+  await db.$executeRawUnsafe(
     'ALTER TABLE "ConfiguracionEvento" '
     + 'ADD COLUMN IF NOT EXISTS "puntosFotoMasReaccionada" INTEGER NOT NULL DEFAULT 0, '
     + 'ADD COLUMN IF NOT EXISTS "revisionPremioReacciones" INTEGER NOT NULL DEFAULT 0',

@@ -58,8 +58,8 @@ export default async function Desafios({
           </Link>
         ))}
       </div>
-      <Seccion titulo="Pendientes" desafios={pendientes} completado={false} />
-      <Seccion titulo="Completados" desafios={completados} completado />
+      <Seccion titulo="Pendientes" desafios={pendientes} completado={false} esStaff={participante.esStaff} />
+      <Seccion titulo="Completados" desafios={completados} completado esStaff={participante.esStaff} />
       {!desafios.length && (
         <div className="tarjeta mt-6 p-8 text-center">
           <LockKeyhole className="mx-auto text-[var(--epm-azul)]" />
@@ -76,7 +76,7 @@ type TarjetaDesafio = Awaited<ReturnType<typeof db.desafio.findMany>>[number] & 
   completitudes: { puntosOtorgados: number; estado: string; respuesta: unknown }[];
 };
 
-function Seccion({ titulo, desafios, completado }: { titulo: string; desafios: TarjetaDesafio[]; completado: boolean }) {
+function Seccion({ titulo, desafios, completado, esStaff }: { titulo: string; desafios: TarjetaDesafio[]; completado: boolean; esStaff: boolean }) {
   if (!desafios.length) return null;
   return (
     <section className="mt-7">
@@ -91,7 +91,7 @@ function Seccion({ titulo, desafios, completado }: { titulo: string; desafios: T
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h3>
                   <span className="whitespace-nowrap rounded-full bg-sky-50 px-2 py-1 text-xs font-extrabold text-[var(--epm-azul)]">
-                    {completado ? `+${desafio.completitudes[0].puntosOtorgados}` : desafio.puntos} pts
+                    {esStaff ? "Staff" : <>{completado ? `+${desafio.completitudes[0].puntosOtorgados}` : desafio.puntos} pts</>}
                   </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{desafio.descripcion}</p>

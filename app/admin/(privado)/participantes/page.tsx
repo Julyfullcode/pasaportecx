@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Clock3, FileText, Mail, Search, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
+import { Clock3, FileText, Mail, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
 import { db } from "@/lib/db";
-import { ajustarPuntos, alternarParticipante, eliminarCorreoAutorizado, eliminarParticipante } from "@/app/admin/actions";
+import { ajustarPuntos, alternarParticipante, alternarStaff, eliminarCorreoAutorizado, eliminarParticipante } from "@/app/admin/actions";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
 import { GestionCorreosAutorizados } from "@/components/admin/GestionCorreosAutorizados";
@@ -65,22 +65,23 @@ export default async function AdminParticipantes({
             <div className="flex flex-wrap items-center gap-3">
               <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-14 w-14" />
               <Link href={`/admin/participantes/${persona.id}`} className="min-w-[180px] flex-1">
-                <div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{persona.nombre}</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">Registrado</span></div>
+                <div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{persona.nombre}</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">Registrado</span>{persona.esStaff && <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-violet-700"><ShieldCheck size={12} /> Staff</span>}</div>
                 <p className="mt-0.5 text-xs font-bold text-[var(--epm-azul)]">{persona.correoAutorizado?.correo ?? "Correo no asociado"}</p>
                 <p className="text-xs text-slate-500">{persona.empresa.nombre} · {persona._count.completitudes} retos · {persona._count.recuerdos} recuerdos</p>
               </Link>
-              <Link href={`/admin/participantes/${persona.id}#detalle-puntos`} className="rounded-xl px-3 py-2 text-right font-display text-2xl text-[var(--epm-azul-profundo)] transition hover:bg-sky-50 hover:text-[var(--epm-azul)]" title="Ver detalle de puntos">{persona.puntosTotales} pts<span className="block font-sans text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ver detalle</span></Link>
+              <Link href={`/admin/participantes/${persona.id}#detalle-puntos`} className="rounded-xl px-3 py-2 text-right font-display text-2xl text-[var(--epm-azul-profundo)] transition hover:bg-sky-50 hover:text-[var(--epm-azul)]" title="Ver detalle de puntos">{persona.esStaff ? "Staff" : `${persona.puntosTotales} pts`}<span className="block font-sans text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{persona.esStaff ? "Fuera de ranking" : "Ver detalle"}</span></Link>
             </div>
             <div className="mt-3 grid gap-2 border-t pt-3 md:grid-cols-2">
-              <form action={ajustarPuntos} className="flex gap-2">
+              {persona.esStaff ? <p className="flex items-center gap-2 text-sm font-bold text-violet-700"><ShieldCheck size={17} /> No recibe puntos ni premios.</p> : <form action={ajustarPuntos} className="flex gap-2">
                 <input type="hidden" name="participanteId" value={persona.id} />
                 <input className="campo !min-h-10 !w-24 !py-1 text-sm" name="puntos" type="number" placeholder="+/− pts" required />
                 <input className="campo !min-h-10 !py-1 text-sm" name="motivo" placeholder="Motivo obligatorio" required />
                 <button className="text-sm font-extrabold text-[var(--epm-azul)]">Aplicar</button>
-              </form>
+              </form>}
               <div className="flex flex-wrap items-center justify-end gap-3">
                 <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-azul)] transition hover:bg-sky-100"><FileText size={17} /> Ver pasaporte</a>
                 {esRespuestasCosecha(persona.completitudes[0]?.respuesta) && <a href={`/api/admin/participantes/${persona.id}/cosecha#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-teal)] transition hover:bg-emerald-100"><Sprout size={17} /> Tarjeta de cierre</a>}
+                <form action={alternarStaff}><input type="hidden" name="participanteId" value={persona.id} /><button className="inline-flex items-center gap-1 text-sm font-extrabold text-violet-700"><ShieldCheck size={16} /> {persona.esStaff ? "Quitar Staff" : "Marcar Staff"}</button></form>
                 <form action={alternarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-amber-700">{persona.activo ? "Desactivar" : "Reactivar"}</button></form>
                 <form action={eliminarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-red-700">Eliminar</button></form>
               </div>

@@ -55,7 +55,7 @@ export default async function DetalleDesafio({
           <div className="mt-8 flex items-center gap-2 text-sm font-extrabold text-white/85"><MapPin size={17} /> {etiquetaDiaDesafio(desafio.dia)} · {desafio.componente?.nombre || desafio.ubicacion}</div>
           <h1 className="mt-2 text-3xl font-extrabold">{desafio.titulo}</h1>
           <p className="mt-3 max-w-xl text-white/85">{desafio.descripcion}</p>
-          <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 font-extrabold"><Sparkles className="text-[var(--epm-verde)]" /> {desafio.puntos} puntos</span>
+          <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 font-extrabold"><Sparkles className="text-[var(--epm-verde)]" /> {participante.esStaff ? "Participación Staff" : `${desafio.puntos} puntos`}</span>
         </div>
         <CurvaMarca />
       </header>
@@ -67,6 +67,7 @@ export default async function DetalleDesafio({
               puntos={completitud.puntosOtorgados}
               puntosDesafio={desafio.puntos}
               esCosecha={esCosecha}
+              esStaff={participante.esStaff}
               puntualidad={resultadoPuntualidadDesdeRespuesta(completitud.respuesta)}
             />
           </div>
@@ -80,7 +81,7 @@ export default async function DetalleDesafio({
           <ResolverDesafio
             codigo={desafio.codigoQr}
             tipo={esCosecha ? "ENCUESTA" : esPuntualidad ? "PUNTUALIDAD" : desafio.tipo}
-            puntos={desafio.puntos}
+            puntos={participante.esStaff ? 0 : desafio.puntos}
             configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
           />
         )}
@@ -97,12 +98,14 @@ function CheckExistente({
   puntos,
   puntosDesafio,
   esCosecha,
+  esStaff,
   puntualidad,
 }: {
   estado: string;
   puntos: number;
   puntosDesafio: number;
   esCosecha: boolean;
+  esStaff: boolean;
   puntualidad: ResultadoPuntualidad | null;
 }) {
   const llegadaTarde = Boolean(puntualidad && !puntualidad.obtuvoPuntos);
@@ -110,7 +113,7 @@ function CheckExistente({
     <>
       <div className={`mx-auto grid h-14 w-14 place-items-center rounded-full ${llegadaTarde ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>{llegadaTarde ? "!" : "✓"}</div>
       <h2 className="mt-3 text-xl font-extrabold">{llegadaTarde ? "Llegaste después del tiempo límite" : "Ya completaste este desafío"}</h2>
-      <p className="mt-2 text-slate-600">{puntualidad ? mensajePuntualidad(puntualidad, puntosDesafio) : estado === "PENDIENTE" ? "Tu evidencia sigue pendiente de revisión." : `Ganaste ${puntos} puntos.`}</p>
+      <p className="mt-2 text-slate-600">{esStaff ? "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos." : puntualidad ? mensajePuntualidad(puntualidad, puntosDesafio) : estado === "PENDIENTE" ? "Tu evidencia sigue pendiente de revisión." : `Ganaste ${puntos} puntos.`}</p>
       {esCosecha && <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
     </>
   );

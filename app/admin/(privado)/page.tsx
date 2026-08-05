@@ -12,7 +12,7 @@ export default async function DashboardAdmin() {
     db.desafio.count({ where: { estado: "PUBLICADO" } }),
     db.completitud.count(),
     db.recuerdo.count(),
-    db.participante.findMany({ where: { activo: true }, orderBy: { puntosTotales: "desc" }, take: 5, include: { empresa: true } }),
+    db.participante.findMany({ where: { activo: true, esStaff: false }, orderBy: { puntosTotales: "desc" }, take: 5, include: { empresa: true } }),
     db.empresa.findMany({ include: { _count: { select: { participantes: { where: { activo: true } } } } }, orderBy: { orden: "asc" } }),
     db.componente.findMany({ include: { _count: { select: { desafios: true } } }, orderBy: { orden: "asc" } }),
   ]);

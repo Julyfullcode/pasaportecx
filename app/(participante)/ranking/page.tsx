@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function Ranking() {
   const participante = await requerirParticipante("/ranking");
   const individual = await db.participante.findMany({
-      where: { activo: true },
+      where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
       select: {
         id: true,

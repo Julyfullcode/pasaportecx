@@ -20,4 +20,15 @@ describe("puntaje individual", () => {
   it("conserva los puntos de registro aunque no existan otros movimientos", () => {
     expect(calcularTotalIndividual([], [], 125)).toBe(125);
   });
+
+  it("un integrante Staff no participa en el esquema de puntos", () => {
+    expect(
+      calcularTotalIndividual(
+        [{ puntosOtorgados: 100, estado: "APROBADO" }],
+        [{ puntos: 50 }],
+        25,
+        false,
+      ),
+    ).toBe(0);
+  });
 });

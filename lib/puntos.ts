@@ -4,7 +4,9 @@ export function calcularTotalIndividual(
   completitudes: { puntosOtorgados: number; estado: string }[],
   ajustes: { puntos: number }[],
   puntosRegistro = 0,
+  participaEnPuntos = true,
 ): number {
+  if (!participaEnPuntos) return 0;
   return (
     puntosRegistro +
     completitudes
@@ -23,7 +25,7 @@ export async function recalcularPuntosParticipante(
   const [participante, completitudes, ajustes] = await Promise.all([
     tx.participante.findUniqueOrThrow({
       where: { id: participanteId },
-      select: { puntosRegistro: true },
+      select: { puntosRegistro: true, esStaff: true },
     }),
     tx.completitud.aggregate({
       where: { participanteId, estado: "APROBADO" },
@@ -34,10 +36,11 @@ export async function recalcularPuntosParticipante(
       _sum: { puntos: true },
     }),
   ]);
-  const total =
-    participante.puntosRegistro +
-    (completitudes._sum.puntosOtorgados ?? 0) +
-    (ajustes._sum.puntos ?? 0);
+  const total = participante.esStaff
+    ? 0
+    : participante.puntosRegistro
+      + (completitudes._sum.puntosOtorgados ?? 0)
+      + (ajustes._sum.puntos ?? 0);
   await tx.participante.update({
     where: { id: participanteId },
     data: { puntosTotales: total },

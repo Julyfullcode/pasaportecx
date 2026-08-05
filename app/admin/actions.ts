@@ -324,6 +324,11 @@ export async function ajustarPuntos(formulario: FormData) {
   const puntos = Number(formulario.get("puntos"));
   const motivo = String(formulario.get("motivo") ?? "").trim();
   if (!motivo || !Number.isInteger(puntos) || puntos === 0) return;
+  const participante = await db.participante.findUnique({
+    where: { id: participanteId },
+    select: { esStaff: true },
+  });
+  if (!participante || participante.esStaff) return;
   await db.$transaction(async (tx) => {
     await tx.ajustePuntos.create({ data: { participanteId, puntos, motivo, adminId: admin.id } });
     await recalcularPuntosParticipante(tx, participanteId);
@@ -339,6 +344,32 @@ export async function alternarParticipante(formulario: FormData) {
   await db.participante.update({ where: { id }, data: { activo: !actual.activo } });
   anunciarCambio("participante");
   revalidatePath("/admin/participantes");
+}
+
+export async function alternarStaff(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("participanteId"));
+  await db.$transaction(async (tx) => {
+    const actual = await tx.participante.findUniqueOrThrow({
+      where: { id },
+      select: { esStaff: true },
+    });
+    await tx.participante.update({
+      where: { id },
+      data: { esStaff: !actual.esStaff },
+    });
+    await recalcularPuntosParticipante(tx, id);
+    await actualizarPremioFotoMasReaccionada(tx);
+  });
+  anunciarCambio("participante");
+  anunciarCambio("puntos");
+  anunciarCambio("recuerdo");
+  revalidatePath("/admin/participantes");
+  revalidatePath(`/admin/participantes/${id}`);
+  revalidatePath("/");
+  revalidatePath("/ranking");
+  revalidatePath("/admin");
+  revalidatePath("/admin/proyeccion/podio");
 }
 
 export async function eliminarParticipante(formulario: FormData) {
@@ -421,7 +452,10 @@ export async function revisarEvidencia(formulario: FormData) {
   const id = String(formulario.get("id"));
   const decision = String(formulario.get("decision"));
   const urlParaEliminar = await db.$transaction(async (tx) => {
-    const completitud = await tx.completitud.findUniqueOrThrow({ where: { id }, include: { desafio: true } });
+    const completitud = await tx.completitud.findUniqueOrThrow({
+      where: { id },
+      include: { desafio: true, participante: { select: { esStaff: true } } },
+    });
     const aprobar = decision === "aprobar";
     const publicarEnRecuerdos = aprobar
       && Boolean((completitud.desafio.configuracion as { publicarEnRecuerdos?: boolean }).publicarEnRecuerdos);
@@ -434,7 +468,7 @@ export async function revisarEvidencia(formulario: FormData) {
       where: { id },
       data: {
         estado: aprobar ? "APROBADO" : "RECHAZADO",
-        puntosOtorgados: aprobar ? completitud.desafio.puntos : 0,
+        puntosOtorgados: aprobar && !completitud.participante.esStaff ? completitud.desafio.puntos : 0,
         urlEvidencia: eliminarFoto ? null : completitud.urlEvidencia,
       },
     });
@@ -481,7 +515,10 @@ export async function moderarRecuerdo(formulario: FormData) {
   const admin = await requerirAdmin();
   const id = String(formulario.get("id"));
   const accion = String(formulario.get("accion"));
-  const recuerdo = await db.recuerdo.findUniqueOrThrow({ where: { id } });
+  const recuerdo = await db.recuerdo.findUniqueOrThrow({
+    where: { id },
+    include: { participante: { select: { esStaff: true } } },
+  });
   if (accion === "eliminar") {
     await db.$transaction(async (tx) => {
       await tx.recuerdo.delete({ where: { id } });
@@ -505,7 +542,7 @@ export async function moderarRecuerdo(formulario: FormData) {
         const conPuntos = await tx.ajustePuntos.count({
           where: { participanteId: recuerdo.participanteId, motivo: { startsWith: "Recuerdo #" } },
         });
-        if (configuracion.puntosPorRecuerdo > 0 && conPuntos < configuracion.maxRecuerdosConPuntos) {
+        if (!recuerdo.participante.esStaff && configuracion.puntosPorRecuerdo > 0 && conPuntos < configuracion.maxRecuerdosConPuntos) {
           await tx.ajustePuntos.create({
             data: {
               participanteId: recuerdo.participanteId,

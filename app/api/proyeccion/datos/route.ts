@@ -7,7 +7,7 @@ export async function GET() {
   if (!(await adminActual())) return Response.json({ error: "Sin autorización" }, { status: 401 });
   const [individual, configuracion, recuerdos] = await Promise.all([
     db.participante.findMany({
-      where: { activo: true },
+      where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "desc" }],
       select: {
         id: true,

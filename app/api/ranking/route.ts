@@ -9,7 +9,7 @@ export async function GET() {
     return Response.json({ error: "Sin autorización" }, { status: 401 });
   }
   const individual = await db.participante.findMany({
-      where: { activo: true },
+      where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
       select: {
         id: true,

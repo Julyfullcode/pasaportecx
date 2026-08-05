@@ -62,6 +62,32 @@ test.describe("Retos y puntos", () => {
     await expect(tarjeta.getByText("125", { exact: true })).toBeVisible();
   });
 
+  test("Staff completa desafíos pero no recibe puntos ni participa por premios", async ({ playwright, context, page }) => {
+    const { participante, token } = await crearParticipanteConToken({
+      nombre: `Staff desafío ${Date.now()}`,
+      esStaff: true,
+    });
+    const api = await contextoApiParticipante(playwright.request, token);
+    const respuesta = await api.post("/api/desafios/reto-e2e-100/completar");
+    expect(respuesta.status()).toBe(200);
+    expect(await respuesta.json()).toMatchObject({
+      puntosGanados: 0,
+      nuevoTotal: 0,
+      mensaje: "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos.",
+    });
+    const completitud = await db.completitud.findUniqueOrThrow({
+      where: { participanteId_desafioId: { participanteId: participante.id, desafioId: "desafio-e2e-100" } },
+    });
+    expect(completitud.puntosOtorgados).toBe(0);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(0);
+
+    await autenticarParticipante(context, token);
+    await page.goto("/");
+    await expect(page.getByText("Perfil Staff", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Sin participación en ranking", { exact: true })).toBeVisible();
+    await api.dispose();
+  });
+
   test("el desafío de puntualidad otorga puntos dentro de la tolerancia", async ({ context, page }) => {
     const marca = Date.now();
     const { participante, token } = await crearParticipanteConToken({ nombre: `Puntual ${marca}` });

@@ -95,6 +95,34 @@ test.describe("Administrador", () => {
     await api.dispose();
   });
 
+  test("Participantes activa y desactiva Staff de forma reversible", async ({ page }) => {
+    const persona = await crearParticipanteConToken({
+      nombre: `Staff administrable ${Date.now()}`,
+      puntos: 700,
+    });
+    await iniciarAdmin(page);
+    await page.goto(`/admin/participantes?q=${encodeURIComponent(persona.participante.nombre)}`);
+    const tarjeta = page.locator("article").filter({ hasText: persona.participante.nombre });
+    await tarjeta.getByRole("button", { name: "Marcar Staff" }).click();
+    await expect(tarjeta.getByText("Staff", { exact: true }).first()).toBeVisible();
+    await expect.poll(async () => (
+      await db.participante.findUniqueOrThrow({ where: { id: persona.participante.id } })
+    ).puntosTotales).toBe(0);
+
+    const [reporteParticipantes, reporteRanking] = await page.evaluate(async () => Promise.all([
+      fetch("/api/reportes/participantes").then((respuesta) => respuesta.text()),
+      fetch("/api/reportes/ranking-individual").then((respuesta) => respuesta.text()),
+    ]));
+    expect(reporteParticipantes).toContain(persona.participante.nombre);
+    expect(reporteRanking).not.toContain(persona.participante.nombre);
+
+    await tarjeta.getByRole("button", { name: "Quitar Staff" }).click();
+    await expect(tarjeta.getByRole("button", { name: "Marcar Staff" })).toBeVisible();
+    await expect.poll(async () => (
+      await db.participante.findUniqueOrThrow({ where: { id: persona.participante.id } })
+    ).puntosTotales).toBe(700);
+  });
+
   test("un reto de todo el tiempo aparece para participantes en ambos días", async ({ page, browser }) => {
     const titulo = `Reto en caliente ${Date.now()}`;
     const { token } = await crearParticipanteConToken({ nombre: `Participante reto caliente ${Date.now()}` });
@@ -346,6 +374,10 @@ test.describe("Fotos y carrusel", () => {
     expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(25);
     expect((await db.participante.findUniqueOrThrow({ where: { id: autorB.participante.id } })).puntosTotales).toBe(325);
     expect(await db.ajustePuntos.count({ where: { motivo: { startsWith: "Premio foto mas reaccionada: " } } })).toBe(1);
+    await db.participante.update({ where: { id: autorB.participante.id }, data: { esStaff: true } });
+    expect((await apiB.post("/api/recuerdos/" + fotoA.id + "/reaccion", { data: { tipo: "RISA" } })).status()).toBe(200);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(325);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorB.participante.id } })).puntosTotales).toBe(0);
     await Promise.all([apiA.dispose(), apiB.dispose()]);
   });
 

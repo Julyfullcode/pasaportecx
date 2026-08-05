@@ -4,6 +4,11 @@ import { crearParticipanteConToken, contextoApiParticipante, iniciarAdmin } from
 
 test.describe.serial("Podio en tiempo real", () => {
   test("el podio individual muestra el top 5 ordenado por puntos", async ({ page }) => {
+    const staff = await crearParticipanteConToken({
+      nombre: `Staff fuera del podio ${Date.now()}`,
+      puntos: 100_000,
+      esStaff: true,
+    });
     await iniciarAdmin(page);
     const ranking = await page.evaluate(async () => {
       const respuesta = await fetch("/api/ranking");
@@ -13,7 +18,9 @@ test.describe.serial("Podio en tiempo real", () => {
     expect(ranking.individual.slice(0, 5).map((persona: { nombre: string }) => persona.nombre)).toEqual([
       "Podio 1", "Podio 2", "Podio 3", "Podio 4", "Podio 5",
     ]);
+    expect(ranking.individual.some((persona: { id: string }) => persona.id === staff.participante.id)).toBe(false);
     await page.goto("/admin/proyeccion/podio");
+    await expect(page.getByText(staff.participante.nombre, { exact: true })).toHaveCount(0);
     await expect(page.locator("article").filter({ hasText: "Primer lugar" })).toContainText("Podio 1");
     await expect(page.getByText("Podio 4", { exact: true })).toBeVisible();
     await expect(page.getByText("Podio 5", { exact: true })).toBeVisible();

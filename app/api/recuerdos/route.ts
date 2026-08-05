@@ -128,7 +128,7 @@ export async function POST(request: Request) {
           claveIdempotencia: clave,
         },
       });
-      if (!configuracion.recuerdosRequierenAprobacion && configuracion.puntosPorRecuerdo > 0) {
+      if (!participante.esStaff && !configuracion.recuerdosRequierenAprobacion && configuracion.puntosPorRecuerdo > 0) {
         const conPuntos = await tx.ajustePuntos.count({
           where: { participanteId: participante.id, motivo: { startsWith: "Recuerdo #" } },
         });

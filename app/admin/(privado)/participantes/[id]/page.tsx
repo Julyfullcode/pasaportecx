@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FileText, Sprout } from "lucide-react";
+import { ArrowLeft, FileText, ShieldCheck, Sprout } from "lucide-react";
 import { db } from "@/lib/db";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
@@ -27,9 +27,9 @@ export default async function DetalleParticipante({ params }: { params: Promise<
       <Link href="/admin/participantes" className="flex items-center gap-2 font-extrabold text-[var(--epm-azul)]"><ArrowLeft /> Volver</Link>
       <header className="tarjeta mt-4 flex flex-wrap items-center gap-4 p-5">
         <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-24 w-24" />
-        <div className="flex-1"><h1 className="text-3xl font-extrabold">{persona.nombre}</h1><p>{persona.empresa.nombre}</p><p className="font-bold text-[var(--epm-azul)]">{persona.correoAutorizado?.correo ?? "Correo no asociado"}</p><p className="mt-1 text-xs text-slate-500">Registro: {persona.creadoEn.toLocaleString("es-CO")}</p></div>
+        <div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-extrabold">{persona.nombre}</h1>{persona.esStaff && <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-xs font-extrabold uppercase text-violet-700"><ShieldCheck size={15} /> Staff</span>}</div><p>{persona.empresa.nombre}</p><p className="font-bold text-[var(--epm-azul)]">{persona.correoAutorizado?.correo ?? "Correo no asociado"}</p><p className="mt-1 text-xs text-slate-500">Registro: {persona.creadoEn.toLocaleString("es-CO")}</p></div>
         <div className="flex flex-col items-end gap-3">
-          <strong className="font-display text-4xl text-[var(--epm-azul-profundo)]">{persona.puntosTotales} pts</strong>
+          <strong className="font-display text-4xl text-[var(--epm-azul-profundo)]">{persona.esStaff ? "Sin ranking" : `${persona.puntosTotales} pts`}</strong>
           <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><FileText size={17} /> Ver pasaporte</a>
           {tieneCosecha && <a href={`/api/admin/participantes/${persona.id}/cosecha#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><Sprout size={17} /> Tarjeta de cierre</a>}
         </div>

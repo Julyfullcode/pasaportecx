@@ -30,6 +30,7 @@ export async function actualizarPremioFotoMasReaccionada(tx: Prisma.TransactionC
         visible: true,
         pendiente: false,
         reportado: false,
+        participante: { activo: true, esStaff: false },
         reacciones: { some: {} },
       },
       orderBy: [

@@ -22,20 +22,22 @@ export async function GET(
   const { tipo } = await params;
   let filas: (string | number | null | undefined)[][];
   if (tipo === "participantes" || tipo === "ranking-individual") {
+    const esRanking = tipo === "ranking-individual";
     const datos = await db.participante.findMany({
+      where: esRanking ? { activo: true, esStaff: false } : undefined,
       orderBy: { puntosTotales: "desc" },
       include: { empresa: true, correoAutorizado: true },
     });
     filas = [
-      ["Posición", "Nombre", "Correo", "Empresa", "Puntos", "Activo", "Registrado"],
-      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.puntosTotales, p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
+      ["Posición", "Nombre", "Correo", "Empresa", "Puntos", "Staff", "Activo", "Registrado"],
+      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.puntosTotales, p.esStaff ? "Sí" : "No", p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
     ];
   } else if (tipo === "completitudes") {
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: { include: { componente: true } } }, orderBy: { completadoEn: "asc" } });
-    filas = [["Participante", "Desafío", "Tipo", "Día", "Componente", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.desafio.titulo, esConfiguracionPuntualidad(c.desafio.configuracion) ? "PUNTUALIDAD" : c.desafio.tipo, etiquetaDiaDesafio(c.desafio.dia), c.desafio.componente?.nombre, c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];
+    filas = [["Participante", "Staff", "Desafío", "Tipo", "Día", "Componente", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.participante.esStaff ? "Sí" : "No", c.desafio.titulo, esConfiguracionPuntualidad(c.desafio.configuracion) ? "PUNTUALIDAD" : c.desafio.tipo, etiquetaDiaDesafio(c.desafio.dia), c.desafio.componente?.nombre, c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];
   } else if (tipo === "encuestas") {
     const datos = await db.completitud.findMany({ where: { desafio: { tipo: "ENCUESTA" } }, include: { participante: true, desafio: true } });
-    filas = [["Participante", "Encuesta", "Respuesta", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.desafio.titulo, JSON.stringify(c.respuesta), c.completadoEn.toISOString()])];
+    filas = [["Participante", "Staff", "Encuesta", "Respuesta", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.participante.esStaff ? "Sí" : "No", c.desafio.titulo, JSON.stringify(c.respuesta), c.completadoEn.toISOString()])];
   } else if (tipo === "empresas") {
     const datos = await db.empresa.findMany({ include: { participantes: true }, orderBy: { orden: "asc" } });
     filas = [["Empresa", "Participantes", "Puntos totales"], ...datos.map((e) => [e.nombre, e.participantes.length, e.participantes.reduce((s, p) => s + p.puntosTotales, 0)])];
