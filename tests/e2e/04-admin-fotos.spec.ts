@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
+import sharp from "sharp";
 import { db } from "@/lib/db";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { fechaHoraColombiaComoFecha, fechaParaInputColombia } from "@/lib/duracion-desafio";
@@ -283,6 +285,40 @@ test.describe("Administrador", () => {
     expect(guardado.disponibleHasta?.toISOString()).toBe(fechaHoraColombiaComoFecha(cierreInput).toISOString());
   });
 
+  test("editar un campo conserva tipo, duración e instrucciones sin cambios", async ({ page }) => {
+    const marca = Date.now();
+    const cierre = new Date("2026-08-10T20:15:00.000Z");
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `edicion-segura-${marca}`,
+        titulo: `Edición segura ${marca}`,
+        descripcion: "Descripción original",
+        tipo: "EVIDENCIA_FOTO",
+        puntos: 75,
+        dia: 1,
+        ubicacion: "",
+        estado: "BORRADOR",
+        duracionMinutos: null,
+        disponibleHasta: cierre,
+        configuracion: { instruccion: "Conserva esta instrucción", publicarEnRecuerdos: true },
+      },
+    });
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    const tarjeta = page.locator("article").filter({ hasText: desafio.titulo });
+    await tarjeta.getByText("Editar", { exact: true }).click();
+    const formulario = tarjeta.locator("details form").last();
+    await formulario.locator('textarea[name="descripcion"]').fill("Solo cambia esta descripción");
+    await formulario.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect.poll(async () => (await db.desafio.findUniqueOrThrow({ where: { id: desafio.id } })).descripcion).toBe("Solo cambia esta descripción");
+    const guardado = await db.desafio.findUniqueOrThrow({ where: { id: desafio.id } });
+    expect(guardado.tipo).toBe("EVIDENCIA_FOTO");
+    expect(guardado.puntos).toBe(75);
+    expect(guardado.duracionMinutos).toBeNull();
+    expect(guardado.disponibleHasta?.toISOString()).toBe(cierre.toISOString());
+    expect(guardado.configuracion).toMatchObject({ instruccion: "Conserva esta instrucción", publicarEnRecuerdos: true });
+  });
+
   test("el desafío de cierre ofrece una presentación que rota las tarjetas", async ({ page }) => {
     const marca = Date.now();
     const desafio = await db.desafio.upsert({
@@ -372,19 +408,34 @@ test.describe("Fotos y carrusel", () => {
     const desafio = await db.desafio.findFirstOrThrow({ where: { titulo } });
     expect(desafio.configuracion).toMatchObject({ publicarEnRecuerdos: true });
     const { participante, token } = await crearParticipanteConToken({ nombre: "Autor evidencia " + marca });
+    await autenticarParticipante(page.context(), token);
+    await page.goto("/d/" + desafio.codigoQr);
+    await expect(page.getByLabel("Comentario (opcional)")).toBeVisible();
+    await expect(page.getByText("Puedes elegir la foto original; Pasaporte CX la optimiza automáticamente.")).toBeVisible();
+    const fotoPesada = await sharp(randomBytes(1_400 * 1_000 * 3), {
+      raw: { width: 1_400, height: 1_000, channels: 3 },
+    }).png({ compressionLevel: 0 }).toBuffer();
+    expect(fotoPesada.byteLength).toBeGreaterThan(800_000);
+    const comentario = "Una conversación que vale la pena recordar";
     const api = await contextoApiParticipante(playwright.request, token);
     const respuesta = await api.post("/api/desafios/" + desafio.codigoQr + "/completar", {
-      multipart: { evidencia: fotoPng },
+      multipart: {
+        evidencia: { name: "evidencia-grande.png", mimeType: "image/png", buffer: fotoPesada },
+        comentario,
+      },
     });
     expect(respuesta.status()).toBe(200);
     const completitud = await db.completitud.findUniqueOrThrow({
       where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
     });
     expect(completitud.estado).toBe("PENDIENTE");
+    expect(completitud.urlEvidencia).toMatch(/\.webp$/);
+    expect(completitud.respuesta).toMatchObject({ comentario });
     expect(await db.recuerdo.count({ where: { claveIdempotencia: "evidencia:" + completitud.id } })).toBe(0);
 
     await page.goto("/admin/evidencias");
     const tarjeta = page.locator("article").filter({ hasText: titulo });
+    await expect(tarjeta.getByText(`“${comentario}”`)).toBeVisible();
     await tarjeta.getByRole("button", { name: "Aprobar" }).click();
     await expect.poll(() => db.recuerdo.count({
       where: { claveIdempotencia: "evidencia:" + completitud.id },
@@ -394,6 +445,7 @@ test.describe("Fotos y carrusel", () => {
     });
     expect(recuerdo.participanteId).toBe(participante.id);
     expect(recuerdo.visible).toBe(true);
+    expect(recuerdo.descripcion).toBe(comentario);
     await api.dispose();
   });
 
@@ -426,16 +478,16 @@ test.describe("Fotos y carrusel", () => {
     const apiB = await contextoApiParticipante(playwright.request, reactorB.token);
 
     expect((await apiA.post("/api/recuerdos/" + fotoA.id + "/reaccion", { data: { tipo: "CORAZON" } })).status()).toBe(200);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(325);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(310);
     expect((await apiB.post("/api/recuerdos/" + fotoB.id + "/reaccion", { data: { tipo: "CORAZON" } })).status()).toBe(200);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(325);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(310);
     expect((await apiA.post("/api/recuerdos/" + fotoB.id + "/reaccion", { data: { tipo: "RISA" } })).status()).toBe(200);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(25);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: autorB.participante.id } })).puntosTotales).toBe(325);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(10);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorB.participante.id } })).puntosTotales).toBe(310);
     expect(await db.ajustePuntos.count({ where: { motivo: { startsWith: "Premio foto mas reaccionada: " } } })).toBe(1);
     await db.participante.update({ where: { id: autorB.participante.id }, data: { esStaff: true } });
     expect((await apiB.post("/api/recuerdos/" + fotoA.id + "/reaccion", { data: { tipo: "RISA" } })).status()).toBe(200);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(325);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: autorA.participante.id } })).puntosTotales).toBe(310);
     expect((await db.participante.findUniqueOrThrow({ where: { id: autorB.participante.id } })).puntosTotales).toBe(0);
     await Promise.all([apiA.dispose(), apiB.dispose()]);
   });

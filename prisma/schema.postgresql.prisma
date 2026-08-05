@@ -245,7 +245,7 @@ model ConfiguracionEvento {
   organizadoresAgenda          String         @default("Vicepresidencia Experiencia Usuario-Cliente")
   diplomaHabilitado            Boolean        @default(false)
   tamanoPodioIndividual        Int            @default(5)
-  puntosPorRegistro            Int            @default(0)
+  puntosPorRegistro            Int            @default(10)
   puntosPorRecuerdo            Int            @default(0)
   maxRecuerdosConPuntos        Int            @default(0)
   maxRecuerdosPorParticipante  Int            @default(10)

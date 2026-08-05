@@ -21,6 +21,14 @@ try {
     + 'ADD COLUMN IF NOT EXISTS "revisionPremioReacciones" INTEGER NOT NULL DEFAULT 0',
   );
   await db.$executeRawUnsafe(
+    'ALTER TABLE "ConfiguracionEvento" '
+    + 'ALTER COLUMN "puntosPorRegistro" SET DEFAULT 10',
+  );
+  await db.$executeRawUnsafe(
+    'UPDATE "ConfiguracionEvento" SET "puntosPorRegistro" = 10 '
+    + 'WHERE "id" = \'evento\' AND "puntosPorRegistro" = 0',
+  );
+  await db.$executeRawUnsafe(
     'ALTER TABLE "Desafio" '
     + 'ADD COLUMN IF NOT EXISTS "duracionMinutos" INTEGER DEFAULT 60, '
     + 'ADD COLUMN IF NOT EXISTS "publicadoEn" TIMESTAMP',

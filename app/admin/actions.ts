@@ -32,6 +32,7 @@ import {
   fechaHoraColombiaComoFecha,
 } from "@/lib/duracion-desafio";
 import { clasificarCorreos } from "@/lib/correos-autorizados";
+import { comentarioEvidencia } from "@/lib/evidencias";
 
 export type EstadoLogin = { error?: string };
 export type EstadoGuardarDesafio = {
@@ -189,15 +190,42 @@ async function guardarDesafioEnBase(formulario: FormData) {
       ? { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA }
       : configuracionDesdeFormulario(datos.tipo, formulario),
   };
+  const controlaCambios = Boolean(id && formulario.has("camposModificados"));
+  const modificados = new Set(
+    String(formulario.get("camposModificados") ?? "")
+      .split(",")
+      .map((campo) => campo.trim())
+      .filter(Boolean),
+  );
+  const camposActualizables = new Set<string>();
+  const incluir = (...campos: string[]) => campos.forEach((campo) => camposActualizables.add(campo));
+  if (modificados.has("titulo")) incluir("titulo");
+  if (modificados.has("descripcion")) incluir("descripcion");
+  if (modificados.has("puntos")) incluir("puntos");
+  if (modificados.has("dia") || modificados.has("componenteId")) incluir("dia", "componenteId", "ubicacion");
+  if (modificados.has("tipo")) incluir("tipo", "configuracion");
+  if ([
+    "opciones", "multiple", "puntajeParcial", "respuestasAceptadas", "instruccion",
+    "publicarEnRecuerdos", "pregunta", "formato", "fechaHoraObjetivo", "toleranciaMinutos",
+  ].some((campo) => modificados.has(campo))) incluir("configuracion");
+  if (["modoDuracion", "duracionMinutos", "fechaHoraCierre"].some((campo) => modificados.has(campo))) {
+    incluir("duracionMinutos", "disponibleHasta");
+  }
+  if (modificados.has("estado")) incluir("estado", "publicadoEn");
+  if (modificados.has("limiteCompletitudes")) incluir("limiteCompletitudes");
+  if (modificados.has("esSecreto")) incluir("esSecreto");
+  const cambiosSolicitados = Object.fromEntries(
+    Object.entries(comun).filter(([campo]) => camposActualizables.has(campo)),
+  ) as Prisma.DesafioUncheckedUpdateInput;
   await db.$transaction(async (tx) => {
     const guardado = id
-      ? await tx.desafio.update({ where: { id }, data: comun })
+      ? await tx.desafio.update({ where: { id }, data: controlaCambios ? cambiosSolicitados : comun })
       : await tx.desafio.create({ data: { ...comun, codigoQr: crearCodigoQr(datos.titulo) } });
     const publicarEnRecuerdos = guardado.tipo === "EVIDENCIA_FOTO"
       && Boolean((guardado.configuracion as { publicarEnRecuerdos?: boolean }).publicarEnRecuerdos);
     const completitudes = await tx.completitud.findMany({
       where: { desafioId: guardado.id },
-      select: { id: true, participanteId: true, urlEvidencia: true, estado: true, completadoEn: true },
+      select: { id: true, participanteId: true, urlEvidencia: true, estado: true, completadoEn: true, respuesta: true },
     });
     if (publicarEnRecuerdos) {
       for (const completitud of completitudes) {
@@ -208,7 +236,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
             participanteId: completitud.participanteId,
             urlFoto: completitud.urlEvidencia,
             urlMiniatura: completitud.urlEvidencia,
-            descripcion: guardado.titulo,
+            descripcion: comentarioEvidencia(completitud.respuesta) || guardado.titulo,
             visible: true,
             pendiente: false,
             reportado: false,
@@ -217,7 +245,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
             participanteId: completitud.participanteId,
             urlFoto: completitud.urlEvidencia,
             urlMiniatura: completitud.urlEvidencia,
-            descripcion: guardado.titulo,
+            descripcion: comentarioEvidencia(completitud.respuesta) || guardado.titulo,
             visible: true,
             pendiente: false,
             creadoEn: completitud.completadoEn,
@@ -476,7 +504,7 @@ export async function revisarEvidencia(formulario: FormData) {
           participanteId: completitud.participanteId,
           urlFoto: completitud.urlEvidencia,
           urlMiniatura: completitud.urlEvidencia,
-          descripcion: completitud.desafio.titulo,
+          descripcion: comentarioEvidencia(completitud.respuesta) || completitud.desafio.titulo,
           visible: true,
           pendiente: false,
           reportado: false,
@@ -485,7 +513,7 @@ export async function revisarEvidencia(formulario: FormData) {
           participanteId: completitud.participanteId,
           urlFoto: completitud.urlEvidencia,
           urlMiniatura: completitud.urlEvidencia,
-          descripcion: completitud.desafio.titulo,
+          descripcion: comentarioEvidencia(completitud.respuesta) || completitud.desafio.titulo,
           visible: true,
           pendiente: false,
           creadoEn: completitud.completadoEn,

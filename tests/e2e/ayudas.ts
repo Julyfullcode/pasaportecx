@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 
 export const BASE_URL = "http://127.0.0.1:3000";
 export const EMPRESA_ID = "empresa-e2e";
-export const PUNTOS_REGISTRO = 25;
+export const PUNTOS_REGISTRO = 10;
 
 export const fotoPng = {
   name: "foto.png",

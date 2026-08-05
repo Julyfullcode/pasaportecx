@@ -123,6 +123,7 @@ async function main() {
       id: "evento",
       nombreEvento: "Pasaporte CX · Encuentro Grupo EPM",
       tamanoPodioIndividual: 5,
+      puntosPorRegistro: 10,
     },
   });
   const adminPassword = process.env.ADMIN_PASSWORD ?? "Cambiar123!";

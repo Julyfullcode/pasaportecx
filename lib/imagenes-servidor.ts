@@ -14,10 +14,10 @@ export async function normalizarImagen(
   try {
     const imagen = sharp(Buffer.from(datos), {
       failOn: "error",
-      limitInputPixels: 25_000_000,
+      limitInputPixels: 100_000_000,
     });
     const metadatos = await imagen.metadata();
-    if (!metadatos.width || !metadatos.height || !["jpeg", "png", "webp"].includes(metadatos.format ?? "")) {
+    if (!metadatos.width || !metadatos.height || !["jpeg", "png", "webp", "heif", "avif", "tiff", "gif"].includes(metadatos.format ?? "")) {
       throw new ImagenInvalidaError();
     }
     const buffer = await imagen

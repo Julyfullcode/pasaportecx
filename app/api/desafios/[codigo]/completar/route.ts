@@ -5,7 +5,6 @@ import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
 import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
-import { extensionImagen } from "@/lib/archivos";
 import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { esDesafioCosecha, esRespuestasCosecha, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import {
@@ -119,12 +118,8 @@ export async function POST(
     respuesta = { texto };
   } else if (desafio.tipo === "EVIDENCIA_FOTO") {
     const foto = formulario.get("evidencia");
-    const extension = foto instanceof File ? extensionImagen(foto.type) : null;
-    if (!(foto instanceof File) || !extension) {
+    if (!(foto instanceof File) || !foto.size) {
       return Response.json({ error: "Adjunta una foto como evidencia." }, { status: 400 });
-    }
-    if (foto.size > 800_000) {
-      return Response.json({ error: "La evidencia es demasiado pesada. Vuelve a seleccionarla para comprimirla." }, { status: 413 });
     }
     try {
       const imagen = await normalizarImagen(new Uint8Array(await foto.arrayBuffer()), {
@@ -144,6 +139,7 @@ export async function POST(
     }
     puntos = 0;
     estado = "PENDIENTE";
+    respuesta = { comentario: String(formulario.get("comentario") ?? "").trim().slice(0, 140) };
   } else if (desafio.tipo === "ENCUESTA") {
     const valor = String(formulario.get("respuesta") ?? "");
     if (!valor.trim()) return Response.json({ error: "Responde la pregunta para continuar." }, { status: 400 });

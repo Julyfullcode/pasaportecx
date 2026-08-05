@@ -9,7 +9,7 @@ async function sembrar() {
       id: "evento",
       nombreEvento: "Pasaporte CX E2E",
       tamanoPodioIndividual: 5,
-      puntosPorRegistro: 25,
+      puntosPorRegistro: 10,
       modoAsistentes: "CARRUSEL",
       intervaloAsistentesSegundos: 1,
       maxRecuerdosPorParticipante: 10,

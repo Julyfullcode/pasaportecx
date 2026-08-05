@@ -45,6 +45,7 @@ export function FormularioDesafio({
   const [modoDuracion, setModoDuracion] = useState<"MINUTOS" | "FECHA_HORA">(
     desafio?.duracionMinutos === null ? "FECHA_HORA" : "MINUTOS",
   );
+  const [camposModificados, setCamposModificados] = useState<string[]>([]);
   const [qrVistaPrevia, setQrVistaPrevia] = useState<string | null>(null);
   const [resultadoGuardado, accionGuardar, guardando] = useActionState(guardarDesafio, ESTADO_INICIAL_GUARDADO);
 
@@ -62,8 +63,17 @@ export function FormularioDesafio({
     setQrVistaPrevia(imagen);
   }
   return (
-    <form action={accionGuardar} className="grid gap-4 md:grid-cols-2">
+    <form
+      action={accionGuardar}
+      className="grid gap-4 md:grid-cols-2"
+      onChange={(evento) => {
+        if (!desafio) return;
+        const nombre = (evento.target as HTMLInputElement).name;
+        if (nombre) setCamposModificados((actuales) => actuales.includes(nombre) ? actuales : [...actuales, nombre]);
+      }}
+    >
       {desafio && <input type="hidden" name="id" value={desafio.id} />}
+      {desafio && <input type="hidden" name="camposModificados" value={camposModificados.join(",")} />}
       <div className="md:col-span-2"><label className="etiqueta">Título</label><input className="campo" name="titulo" required minLength={3} maxLength={100} defaultValue={desafio?.titulo} /></div>
       <div className="md:col-span-2"><label className="etiqueta">Descripción</label><textarea className="campo min-h-24" name="descripcion" required maxLength={600} defaultValue={desafio?.descripcion} /></div>
       <div><label className="etiqueta">Tipo</label><select className="campo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="CHECK_IN">Check-in</option><option value="PUNTUALIDAD">Puntualidad</option><option value="OPCION_MULTIPLE">Opción múltiple</option><option value="RESPUESTA_ABIERTA">Respuesta abierta</option><option value="EVIDENCIA_FOTO">Evidencia en foto</option><option value="ENCUESTA">Encuesta</option></select></div>

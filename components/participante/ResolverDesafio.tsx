@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
-import { comprimirImagen } from "@/lib/imagen";
+import { comprimirImagenHasta } from "@/lib/imagen";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import {
   esConfiguracionPuntualidad,
@@ -44,12 +44,18 @@ export function ResolverDesafio({
     setCargando(true);
     setError("");
     const controlador = new AbortController();
-    const timeout = setTimeout(() => controlador.abort(), 20_000);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
       const foto = formulario.get("evidencia");
       if (foto instanceof File && foto.size) {
-        formulario.set("evidencia", await comprimirImagen(foto, 1200, 0.72), "evidencia.webp");
+        try {
+          formulario.set("evidencia", await comprimirImagenHasta(foto, 1600, 650_000, 0.78), "evidencia.webp");
+        } catch {
+          // El servidor hace una segunda normalización y puede procesar formatos
+          // que el navegador no logra convertir localmente.
+        }
       }
+      timeout = setTimeout(() => controlador.abort(), 60_000);
       const respuesta = await fetch(`/api/desafios/${codigo}/completar`, {
         method: "POST",
         body: formulario,
@@ -70,7 +76,7 @@ export function ResolverDesafio({
           : e instanceof Error ? e.message : "No pudimos guardar tu respuesta.",
       );
     } finally {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
       setCargando(false);
     }
   }
@@ -152,10 +158,10 @@ export function ResolverDesafio({
         <div><label className="etiqueta" htmlFor="respuesta">Tu respuesta</label><input className="campo" id="respuesta" name="respuesta" maxLength={180} required autoComplete="off" /></div>
       )}
       {tipo === "EVIDENCIA_FOTO" && (
-        <div>
+        <div className="space-y-4">
           <p className="mb-3 rounded-xl bg-sky-50 p-3 text-sm font-bold text-[var(--epm-azul-profundo)]">{configuracion.instruccion}</p>
-          <label className="etiqueta" htmlFor="evidencia">Foto de evidencia</label>
-          <input className="campo file:mr-3 file:rounded-full file:border-0 file:bg-sky-50 file:px-3 file:py-2 file:font-bold file:text-[var(--epm-azul)]" id="evidencia" name="evidencia" type="file" accept="image/*" capture="environment" required />
+          <div><label className="etiqueta" htmlFor="evidencia">Foto de evidencia</label><input className="campo file:mr-3 file:rounded-full file:border-0 file:bg-sky-50 file:px-3 file:py-2 file:font-bold file:text-[var(--epm-azul)]" id="evidencia" name="evidencia" type="file" accept="image/*" capture="environment" required /><p className="mt-1 text-xs text-slate-500">Puedes elegir la foto original; Pasaporte CX la optimiza automáticamente.</p></div>
+          <div><label className="etiqueta" htmlFor="comentario">Comentario (opcional)</label><textarea className="campo min-h-24" id="comentario" name="comentario" maxLength={140} placeholder="Cuéntanos algo sobre esta foto" /></div>
         </div>
       )}
       {tipo === "ENCUESTA" && (
