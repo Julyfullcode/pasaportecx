@@ -3,7 +3,7 @@ import { CheckCircle2, Clock3, LockKeyhole } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { esDesafioCosecha, esRespuestasCosecha } from "@/lib/cosecha-config";
-import { diasVisiblesEn, etiquetaDiaDesafio } from "@/lib/dia-desafio";
+import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +15,12 @@ export default async function Desafios({
 }) {
   const participante = await requerirParticipante("/desafios");
   const { dia = "1" } = await searchParams;
-  const diaSeleccionado = dia === "2" ? 2 : 1;
+  const categoriaSeleccionada = dia === "2" ? "2" : dia === "permanentes" || dia === "0" ? "permanentes" : "1";
+  const diaSeleccionado = categoriaSeleccionada === "permanentes" ? 0 : Number(categoriaSeleccionada);
   const desafiosBase = await db.desafio.findMany({
     where: {
       estado: "PUBLICADO",
-      dia: { in: diasVisiblesEn(diaSeleccionado) },
+      dia: diaSeleccionado,
       OR: [
         { esSecreto: false },
         { completitudes: { some: { participanteId: participante.id } } },
@@ -51,10 +52,14 @@ export default async function Desafios({
         </div>
         <span className="rounded-full bg-white px-3 py-2 text-sm font-extrabold shadow-soft">{completados.length} completados</span>
       </div>
-      <div className="mt-5 grid grid-cols-2 rounded-full bg-white p-1 shadow-soft">
-        {["1", "2"].map((valor) => (
-          <Link key={valor} href={`/desafios?dia=${valor}`} className={`grid min-h-11 place-items-center rounded-full font-extrabold ${dia === valor ? "bg-[var(--epm-azul)] text-white" : "text-slate-500"}`}>
-            Día {valor}
+      <div className="mt-5 grid grid-cols-3 rounded-full bg-white p-1 shadow-soft">
+        {[
+          { valor: "1", etiqueta: "Día 1" },
+          { valor: "2", etiqueta: "Día 2" },
+          { valor: "permanentes", etiqueta: "Permanentes" },
+        ].map(({ valor, etiqueta }) => (
+          <Link key={valor} href={`/desafios?dia=${valor}`} className={`grid min-h-11 place-items-center rounded-full px-2 text-center text-sm font-extrabold sm:text-base ${categoriaSeleccionada === valor ? "bg-[var(--epm-azul)] text-white" : "text-slate-500"}`}>
+            {etiqueta}
           </Link>
         ))}
       </div>

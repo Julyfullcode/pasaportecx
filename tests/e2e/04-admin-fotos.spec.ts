@@ -123,13 +123,16 @@ test.describe("Administrador", () => {
     ).puntosTotales).toBe(700);
   });
 
-  test("un reto de todo el tiempo aparece para participantes en ambos días", async ({ page, browser }) => {
+  test("un reto permanente aparece únicamente en la categoría Permanentes", async ({ page, browser }) => {
     const titulo = `Reto en caliente ${Date.now()}`;
     const { token } = await crearParticipanteConToken({ nombre: `Participante reto caliente ${Date.now()}` });
     await iniciarAdmin(page);
     await page.goto("/admin/desafios");
     const creador = page.locator("details").first();
     await creador.locator("summary").click();
+    expect(await creador.locator('select[name="dia"] option').allTextContents()).toEqual([
+      "Día 1", "Día 2", "Permanentes",
+    ]);
     await creador.locator('input[name="titulo"]').fill(titulo);
     await creador.locator('textarea[name="descripcion"]').fill("Creado mientras el evento está activo.");
     await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
@@ -149,10 +152,16 @@ test.describe("Administrador", () => {
     await autenticarParticipante(contextoParticipante, token);
     const participante = await contextoParticipante.newPage();
     await participante.goto("/desafios");
-    await expect(participante.getByRole("heading", { name: titulo })).toBeVisible();
-    await expect(participante.getByText("Todo el tiempo", { exact: false }).first()).toBeVisible();
+    await expect(participante.getByRole("link", { name: "Día 1", exact: true })).toBeVisible();
+    await expect(participante.getByRole("link", { name: "Día 2", exact: true })).toBeVisible();
+    await expect(participante.getByRole("link", { name: "Permanentes", exact: true })).toBeVisible();
+    await expect(participante.getByRole("heading", { name: titulo })).toHaveCount(0);
+    await participante.getByRole("link", { name: "Permanentes", exact: true }).click();
+    const tarjetaPermanente = participante.getByRole("link").filter({ hasText: titulo });
+    await expect(tarjetaPermanente.getByRole("heading", { name: titulo })).toBeVisible();
+    await expect(tarjetaPermanente).toContainText("Permanente");
     await participante.goto("/desafios?dia=2");
-    await expect(participante.getByRole("heading", { name: titulo })).toBeVisible();
+    await expect(participante.getByRole("heading", { name: titulo })).toHaveCount(0);
     await contextoParticipante.close();
   });
 

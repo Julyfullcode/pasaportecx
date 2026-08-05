@@ -62,7 +62,7 @@ export default async function AdminDesafios() {
         <summary className="cursor-pointer list-none font-extrabold text-[var(--epm-azul-profundo)]">Descarga masiva con filtros</summary>
         <form action="/api/qr/todos" method="get" target="_blank" className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
           <input type="hidden" name="formato" value="pdf" />
-          <select className="campo" name="dia" defaultValue=""><option value="">Todos los desafíos</option><option value="0">Todo el tiempo</option><option value="1">Día 1 + todo el tiempo</option><option value="2">Día 2 + todo el tiempo</option></select>
+          <select className="campo" name="dia" defaultValue=""><option value="">Todos los desafíos</option><option value="1">Día 1</option><option value="2">Día 2</option><option value="0">Permanentes</option></select>
           <select className="campo" name="componenteId" defaultValue=""><option value="">Todos los componentes</option>{componentes.map((componente) => <option key={componente.id} value={componente.id}>{componente.nombre}</option>)}</select>
           <button className="boton-primario"><FileDown size={18} /> Ver PDF</button>
         </form>
