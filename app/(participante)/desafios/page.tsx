@@ -100,7 +100,7 @@ function Seccion({ titulo, desafios, completado, esStaff }: { titulo: string; de
                   </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{desafio.descripcion}</p>
-                <p className="mt-2 text-xs font-bold text-slate-500">{etiquetaDiaDesafio(desafio.dia)} · {desafio.componente?.nombre || desafio.ubicacion}</p>
+                <p className="mt-2 text-xs font-bold text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{desafio.componente ? ` · ${desafio.componente.nombre}` : ""}</p>
               </div>
             </div>
           </Link>

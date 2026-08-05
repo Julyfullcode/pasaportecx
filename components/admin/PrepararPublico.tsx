@@ -34,7 +34,7 @@ export function PrepararPublico({ resumen }: { resumen: Resumen }) {
       <div className="rounded-2xl border border-red-200 bg-white/75 p-4 text-sm text-red-950">
         <p className="flex items-start gap-2 font-extrabold"><ShieldAlert className="mt-0.5 shrink-0" size={20} /> Esta acción es irreversible.</p>
         <p className="mt-2">Elimina participantes, sesiones, respuestas, puntos y ajustes, recuerdos, reacciones, fotos y evidencias.</p>
-        <p className="mt-2 font-bold text-emerald-800">Conserva desafíos, agenda, empresas, componentes, ubicaciones, configuración del evento y administradores.</p>
+        <p className="mt-2 font-bold text-emerald-800">Conserva desafíos, agenda, empresas, componentes, configuración del evento y administradores.</p>
       </div>
       <form action={accion} className="space-y-3">
         <p className="text-sm text-red-800">Para confirmar, escribe <strong>{FRASE}</strong> en los dos campos.</p>

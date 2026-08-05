@@ -250,10 +250,7 @@ export async function crearDesafioCierre() {
       },
     });
   } else {
-    const [componente, ubicacion] = await Promise.all([
-      db.componente.findFirst({ where: { activo: true }, orderBy: { orden: "asc" } }),
-      db.ubicacion.findFirst({ where: { activa: true }, orderBy: { orden: "asc" } }),
-    ]);
+    const componente = await db.componente.findFirst({ where: { activo: true }, orderBy: { orden: "asc" } });
     await db.desafio.create({
       data: {
         codigoQr: CODIGO_DESAFIO_CIERRE,
@@ -263,7 +260,7 @@ export async function crearDesafioCierre() {
         puntos: 150,
         dia: componente ? 2 : 1,
         componenteId: componente?.id ?? null,
-        ubicacion: componente ? "" : (ubicacion?.nombre ?? ""),
+        ubicacion: "",
         estado: "BORRADOR",
         esSecreto: false,
         duracionMinutos: 60,

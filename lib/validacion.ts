@@ -63,7 +63,7 @@ export const desafioSchema = z
     puntos: z.coerce.number().int().min(0).max(10000),
     dia: z.coerce.number().int().min(0).max(2),
     componenteId: z.string().optional(),
-    ubicacion: z.string().trim().max(100),
+    ubicacion: z.string().trim().max(100).optional().default(""),
   })
   .refine((data) => data.dia !== 2 || Boolean(data.componenteId), {
     path: ["componenteId"],

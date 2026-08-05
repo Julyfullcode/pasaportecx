@@ -9,11 +9,10 @@ import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, componentes, ubicaciones, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
+  const [config, empresas, componentes, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.componente.findMany({ orderBy: { orden: "asc" } }),
-    db.ubicacion.findMany({ orderBy: { orden: "asc" } }),
     db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
     obtenerReporteAlmacenamiento(),
     Promise.all([
@@ -64,7 +63,6 @@ export default async function Configuracion() {
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />
           <Catalogo titulo="Componentes" tipo="componente" items={componentes} color />
-          <Catalogo titulo="Ubicaciones del Día 1" tipo="ubicacion" items={ubicaciones} />
         </div>
       </section>
       <section className="mt-6 rounded-2xl border-2 border-red-300 bg-red-50 p-5">

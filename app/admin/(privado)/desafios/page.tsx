@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3, Copy, Download, FileDown, MonitorPlay, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
+import { Clock3, Copy, Download, FileDown, MonitorPlay, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesafio } from "@/app/admin/actions";
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
@@ -31,20 +31,15 @@ export default async function AdminDesafios() {
       );
     }
   }
-  const [desafios, componentes, ubicaciones] = datos;
+  const [desafios, componentes] = datos;
   const desafioCierre = desafios.find((desafio) => desafio.codigoQr === CODIGO_DESAFIO_CIERRE);
   return (
     <div className="p-4 md:p-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Gestión en caliente</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Desafíos</h1></div>
+        <h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Desafíos</h1>
         <a href="/api/qr/todos?formato=pdf" target="_blank" rel="noopener noreferrer" className="boton-secundario"><FileDown size={19} /> Ver PDF con todos los QR</a>
       </div>
-      {desafioCierre ? (
-        <a href={`#${CODIGO_DESAFIO_CIERRE}`} className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-sky-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-[var(--epm-teal)]"><CheckCircle2 /></span>
-          <span className="min-w-0 flex-1"><strong className="block">El desafío de cierre ya está creado</strong><small className="text-slate-600">{desafioCierre.estado === "BORRADOR" ? "Está en borrador. Toca aquí para localizarlo y publicarlo cuando quieras." : `Estado actual: ${desafioCierre.estado}.`}</small></span>
-        </a>
-      ) : (
+      {!desafioCierre && (
         <section className="mt-5 flex flex-wrap items-center gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-sky-50 p-5 shadow-soft">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Sprout /></span>
           <div className="min-w-[220px] flex-1">
@@ -56,7 +51,7 @@ export default async function AdminDesafios() {
       )}
       <details className="tarjeta mt-6 p-5">
         <summary className="flex cursor-pointer list-none items-center gap-2 font-display text-lg font-extrabold text-[var(--epm-azul)]"><Plus /> Crear desafío ahora</summary>
-        <div className="mt-5 border-t pt-5"><FormularioDesafio componentes={componentes} ubicaciones={ubicaciones} /></div>
+        <div className="mt-5 border-t pt-5"><FormularioDesafio componentes={componentes} /></div>
       </details>
       <details className="tarjeta mt-4 p-4">
         <summary className="cursor-pointer list-none font-extrabold text-[var(--epm-azul-profundo)]">Descarga masiva con filtros</summary>
@@ -72,11 +67,13 @@ export default async function AdminDesafios() {
           <article id={desafio.codigoQr === CODIGO_DESAFIO_CIERRE ? CODIGO_DESAFIO_CIERRE : undefined} key={desafio.id} className="tarjeta scroll-mt-5 overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 p-4">
               <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${desafio.estado === "PUBLICADO" ? "bg-emerald-50 text-emerald-700" : desafio.estado === "CERRADO" ? "bg-slate-200 text-slate-700" : "bg-amber-50 text-amber-700"}`}>{desafio.estado}</span>
-              <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)} · {desafio.componente?.nombre || desafio.ubicacion}{esConfiguracionPuntualidad(desafio.configuracion) ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
+              <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{desafio.componente ? ` · ${desafio.componente.nombre}` : ""}{esConfiguracionPuntualidad(desafio.configuracion) ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
               <a href={`/api/qr/${desafio.id}`} className="boton-secundario !min-h-10 !px-3 text-sm"><Download size={17} /> PNG</a>
               <a href={`/api/qr/${desafio.id}?formato=pdf`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-3 text-sm"><FileDown size={17} /> Ver PDF</a>
             </div>
-            <div className="flex flex-wrap gap-2 border-t bg-slate-50 p-3">
+            <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 p-3">
+              <a href={`/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> Ver avance</a>
+              <span className="text-slate-300">·</span>
               {desafio.codigoQr === CODIGO_DESAFIO_CIERRE && (
                 <>
                   <a href="/admin/proyeccion/cierre" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> Proyectar tarjetas</a>
@@ -89,9 +86,9 @@ export default async function AdminDesafios() {
               <span className="text-slate-300">·</span>
               <form action={duplicarDesafio}><input type="hidden" name="id" value={desafio.id} /><button className="flex items-center gap-1 text-sm font-extrabold text-slate-600"><Copy size={15} /> Duplicar</button></form>
               <span className="text-slate-300">·</span>
-              <details className="group">
-                <summary className="flex cursor-pointer list-none items-center gap-1 text-sm font-extrabold text-slate-600"><Pencil size={15} /> Editar</summary>
-                <div className="mt-4 rounded-xl bg-white p-4"><FormularioDesafio componentes={componentes} ubicaciones={ubicaciones} desafio={desafio} /></div>
+              <details className="group self-center">
+                <summary className="relative -top-[10px] inline-flex h-6 cursor-pointer list-none items-center gap-1 align-middle text-sm font-extrabold leading-none text-slate-600"><Pencil size={15} /> Editar</summary>
+                <div className="mt-4 rounded-xl bg-white p-4"><FormularioDesafio componentes={componentes} desafio={desafio} /></div>
               </details>
               <span className="text-slate-300">·</span>
               <form action={eliminarDesafio}><input type="hidden" name="id" value={desafio.id} /><button className="flex items-center gap-1 text-sm font-extrabold text-red-700"><Trash2 size={15} /> {desafio._count.completitudes ? "Cerrar (tiene datos)" : "Eliminar"}</button></form>
@@ -112,6 +109,5 @@ function cargarDatosDesafios() {
   return Promise.all([
     db.desafio.findMany({ orderBy: [{ dia: "asc" }, { creadoEn: "desc" }], include: { componente: true, _count: { select: { completitudes: true } } } }),
     db.componente.findMany({ where: { activo: true }, orderBy: { orden: "asc" } }),
-    db.ubicacion.findMany({ where: { activa: true }, orderBy: { orden: "asc" } }),
   ]);
 }

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import QRCode from "qrcode";
 import { Eye } from "lucide-react";
-import type { Componente, Desafio, Ubicacion } from "@prisma/client";
+import type { Componente, Desafio } from "@prisma/client";
 import { guardarDesafio, type EstadoGuardarDesafio } from "@/app/admin/actions";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
@@ -32,11 +32,9 @@ const ESTADO_INICIAL_GUARDADO: EstadoGuardarDesafio = { tipo: "inicial", mensaje
 
 export function FormularioDesafio({
   componentes,
-  ubicaciones,
   desafio,
 }: {
   componentes: Componente[];
-  ubicaciones: Ubicacion[];
   desafio?: Desafio;
 }) {
   const config = (desafio?.configuracion ?? {}) as Config;
@@ -73,9 +71,7 @@ export function FormularioDesafio({
       <div><label className="etiqueta">Categoría del desafío</label><select className="campo" name="dia" value={dia} onChange={(e) => setDia(Number(e.target.value))}><option value={1}>Día 1</option><option value={2}>Día 2</option><option value={0}>Permanentes</option></select></div>
       {dia === 2 ? (
         <div><label className="etiqueta">Componente</label><select className="campo" name="componenteId" required defaultValue={desafio?.componenteId ?? ""}><option value="" disabled>Selecciona</option>{componentes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select><input type="hidden" name="ubicacion" value="" /></div>
-      ) : (
-        <div><label className="etiqueta">Ubicación / momento</label><select className="campo" name="ubicacion" required defaultValue={desafio?.ubicacion ?? ""}><option value="" disabled>Selecciona</option>{ubicaciones.map((u) => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}</select></div>
-      )}
+      ) : <input type="hidden" name="ubicacion" value="" />}
       {tipo === "OPCION_MULTIPLE" && (
         <div className="md:col-span-2 rounded-xl bg-sky-50 p-4">
           <label className="etiqueta">Opciones, una por línea. Anteponer * a las correctas.</label>

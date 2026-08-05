@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock3, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock3, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -52,7 +52,7 @@ export default async function DetalleDesafio({
             <Link href="/desafios" className="inline-flex items-center gap-2 font-extrabold"><ArrowLeft size={20} /> Desafíos</Link>
             <LogoBlanco className="h-7 w-auto shrink-0 md:h-8" />
           </div>
-          <div className="mt-8 flex items-center gap-2 text-sm font-extrabold text-white/85"><MapPin size={17} /> {etiquetaDiaDesafio(desafio.dia)} · {desafio.componente?.nombre || desafio.ubicacion}</div>
+          <div className="mt-8 text-sm font-extrabold text-white/85">{etiquetaDiaDesafio(desafio.dia)}{desafio.componente ? ` · ${desafio.componente.nombre}` : ""}</div>
           <h1 className="mt-2 text-3xl font-extrabold">{desafio.titulo}</h1>
           <p className="mt-3 max-w-xl text-white/85">{desafio.descripcion}</p>
           <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 font-extrabold"><Sparkles className="text-[var(--epm-verde)]" /> {participante.esStaff ? "Participación Staff" : `${desafio.puntos} puntos`}</span>

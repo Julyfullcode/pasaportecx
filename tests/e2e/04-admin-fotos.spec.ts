@@ -12,6 +12,7 @@ test.describe("Administrador", () => {
     await expect(page.getByRole("button", { name: "Ingresar" })).toBeVisible();
     expect((await request.get("/api/proyeccion/datos")).status()).toBe(401);
     expect((await request.get("/api/proyeccion/cierre")).status()).toBe(401);
+    expect((await request.get("/api/proyeccion/desafios/desafio-e2e-100")).status()).toBe(401);
     const anonimo = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
     expect((await anonimo.get("/api/ranking")).status()).toBe(401);
     await anonimo.dispose();
@@ -138,7 +139,7 @@ test.describe("Administrador", () => {
     await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
     await creador.locator('input[name="puntos"]').fill("175");
     await creador.locator('select[name="dia"]').selectOption("0");
-    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
+    await expect(creador.locator('select[name="ubicacion"]')).toHaveCount(0);
     await creador.locator('input[name="duracionMinutos"]').fill("20");
     await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
     await creador.getByRole("button", { name: "Crear desafío y generar QR" }).click();
@@ -165,6 +166,59 @@ test.describe("Administrador", () => {
     await contextoParticipante.close();
   });
 
+  test("cada desafío ofrece una presentación de avance, respuestas, puntos y tiempo", async ({ page }) => {
+    const marca = Date.now();
+    const persona = await crearParticipanteConToken({ nombre: `Avance desafío ${marca}` });
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `avance-desafio-${marca}`,
+        titulo: `Seguimiento en vivo ${marca}`,
+        descripcion: "Permite revisar el avance en modo presentación.",
+        tipo: "CHECK_IN",
+        puntos: 85,
+        dia: 1,
+        ubicacion: "",
+        estado: "PUBLICADO",
+        publicadoEn: new Date(),
+        duracionMinutos: 10,
+        configuracion: {},
+      },
+    });
+    await db.completitud.create({
+      data: {
+        participanteId: persona.participante.id,
+        desafioId: desafio.id,
+        puntosOtorgados: 85,
+        estado: "APROBADO",
+      },
+    });
+
+    await iniciarAdmin(page);
+    await page.goto("/admin/desafios");
+    await expect(page.getByText("Gestión en caliente", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("El desafío de cierre ya está creado", { exact: true })).toHaveCount(0);
+    const tarjeta = page.locator("article").filter({ hasText: desafio.titulo });
+    const avance = tarjeta.getByRole("link", { name: "Ver avance" });
+    await expect(avance).toHaveAttribute("href", `/admin/proyeccion/desafios/${desafio.id}`);
+    const editar = await tarjeta.getByText("Editar", { exact: true }).boundingBox();
+    const cerrar = await tarjeta.getByRole("button", { name: "Cerrar", exact: true }).boundingBox();
+    expect(Math.abs((editar?.y ?? 0) - (cerrar?.y ?? 0))).toBeLessThanOrEqual(3);
+
+    await page.goto(`/admin/proyeccion/desafios/${desafio.id}`);
+    await expect(page.getByRole("heading", { name: new RegExp(desafio.titulo) })).toBeVisible();
+    const participante = page.locator("article").filter({ hasText: persona.participante.nombre });
+    await expect(participante).toContainText("Respondió");
+    await expect(participante).toContainText("+85");
+    const tiempo = page.locator("section").filter({ hasText: "Tiempo restante" }).first();
+    await expect(tiempo).toContainText(/\d+m \d{2}s/);
+
+    const datos = await page.evaluate(async (id) => (
+      await fetch(`/api/proyeccion/desafios/${id}`, { cache: "no-store" })
+    ).json(), desafio.id);
+    expect(datos.resumen.respondieron).toBeGreaterThanOrEqual(1);
+    expect(datos.resumen.puntosOtorgados).toBeGreaterThanOrEqual(85);
+  });
+
   test("un error al guardar un desafío se muestra en el formulario sin tumbar la página", async ({ page }) => {
     await iniciarAdmin(page);
     await page.goto("/admin/desafios");
@@ -174,7 +228,6 @@ test.describe("Administrador", () => {
     await creador.locator('textarea[name="descripcion"]').fill("Comprueba la recuperación del formulario.");
     await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
     await creador.locator('select[name="dia"]').selectOption("0");
-    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
     const minutos = creador.locator('input[name="duracionMinutos"]');
     await minutos.evaluate((campo) => campo.removeAttribute("min"));
     await minutos.fill("0");
@@ -196,7 +249,6 @@ test.describe("Administrador", () => {
     await creador.locator('select[name="tipo"]').selectOption("PUNTUALIDAD");
     await creador.locator('input[name="puntos"]').fill("90");
     await creador.locator('select[name="dia"]').selectOption("1");
-    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
     await creador.locator('input[name="fechaHoraObjetivo"]').fill("2026-08-04T14:00");
     await creador.locator('input[name="toleranciaMinutos"]').fill("5");
     await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
@@ -220,7 +272,6 @@ test.describe("Administrador", () => {
     await creador.locator('select[name="tipo"]').selectOption("CHECK_IN");
     await creador.locator('input[name="puntos"]').fill("40");
     await creador.locator('select[name="dia"]').selectOption("1");
-    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
     await creador.locator('select[name="modoDuracion"]').selectOption("FECHA_HORA");
     await creador.locator('input[name="fechaHoraCierre"]').fill(cierreInput);
     await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
@@ -312,7 +363,6 @@ test.describe("Fotos y carrusel", () => {
     await creador.locator('select[name="tipo"]').selectOption("EVIDENCIA_FOTO");
     await creador.locator('input[name="puntos"]').fill("80");
     await creador.locator('select[name="dia"]').selectOption("1");
-    await creador.locator('select[name="ubicacion"]').selectOption("Registro E2E");
     await creador.locator('input[name="instruccion"]').fill("Toma una fotografía del encuentro.");
     await creador.locator('input[name="publicarEnRecuerdos"]').check();
     await creador.locator('select[name="estado"]').selectOption("PUBLICADO");
