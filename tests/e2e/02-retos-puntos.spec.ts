@@ -31,6 +31,9 @@ test.describe("Retos y puntos", () => {
     const { token } = await crearParticipanteConToken({ nombre: `QR inválido ${Date.now()}` });
     await autenticarParticipante(context, token);
     await page.goto("/escanear");
+    const contenedorLector = page.locator("#lector-qr");
+    await expect(contenedorLector).toBeVisible();
+    expect(await contenedorLector.evaluate((elemento) => elemento.clientWidth)).toBeGreaterThan(0);
     await page.getByLabel("Ingresar código manualmente").fill("%%%codigo-invalido%%%");
     await page.getByRole("button", { name: "Abrir" }).click();
 
