@@ -94,7 +94,7 @@ export default async function AdminParticipantes({
               <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-700"><Mail size={24} /></span>
               <div className="min-w-[220px] flex-1">
                 <div className="flex flex-wrap items-center gap-2"><h2 className="break-all font-extrabold text-[var(--epm-azul-profundo)]">{autorizacion.correo}</h2><span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-amber-700">Pendiente de registro</span></div>
-                <p className="mt-1 text-xs text-slate-500">Autorizado para crear su Pasaporte CX.</p>
+                <p className="mt-1 text-xs text-slate-500">Autorizado para crear su Pasaporte.</p>
               </div>
               <form action={eliminarCorreoAutorizado}>
                 <input type="hidden" name="id" value={autorizacion.id} />

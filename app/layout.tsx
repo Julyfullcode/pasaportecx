@@ -17,7 +17,7 @@ const nunito = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Pasaporte CX", template: "%s · Pasaporte CX" },
+  title: { default: "Pasaporte", template: "%s · Pasaporte" },
   description: "Experiencia gamificada del encuentro Grupo EPM",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/marca/icono.svg", apple: "/marca/icono.svg" },

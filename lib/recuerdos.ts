@@ -10,9 +10,10 @@ type ReaccionBase = {
 export function resumirReacciones(reacciones: ReaccionBase[], participanteId: string) {
   const corazon = reacciones.filter((reaccion) => reaccion.tipo === "CORAZON").length;
   const risa = reacciones.filter((reaccion) => reaccion.tipo === "RISA").length;
-  const mias = TIPOS_REACCION.filter((tipo) =>
-    reacciones.some((reaccion) => reaccion.participanteId === participanteId && reaccion.tipo === tipo),
-  );
+  const propia = [...reacciones].reverse().find((reaccion) => reaccion.participanteId === participanteId);
+  const mias = propia && TIPOS_REACCION.includes(propia.tipo as TipoReaccionRecuerdo)
+    ? [propia.tipo as TipoReaccionRecuerdo]
+    : [];
   return { corazon, risa, total: corazon + risa, mias };
 }
 

@@ -169,7 +169,7 @@ function agregarVinculo(
 export async function generarPasaportePdf(datos: DatosPasaporte) {
   const documento = await PDFDocument.create();
   documento.registerFontkit(fontkit);
-  documento.setTitle(`Pasaporte CX - ${datos.nombre}`);
+  documento.setTitle(`Pasaporte - ${datos.nombre}`);
   documento.setSubject(datos.evento);
   const pagina = documento.addPage([anchoPagina, 595]);
   const normal = datos.fuenteRegular
@@ -204,7 +204,7 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
     }
   }
 
-  const titulo = "Pasaporte CX";
+  const titulo = "Pasaporte";
   pagina.drawText(titulo, { x: textoCentrado(titulo, negrita, 25), y: 489, size: 25, font: negrita, color: blanco });
   const lineasEvento = lineas(datos.evento, normal, 10.5, 300).slice(0, 2);
   lineasEvento.forEach((linea, indice) => pagina.drawText(linea, {

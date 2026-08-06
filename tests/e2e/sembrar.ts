@@ -7,7 +7,7 @@ async function sembrar() {
   await db.configuracionEvento.create({
     data: {
       id: "evento",
-      nombreEvento: "Pasaporte CX E2E",
+      nombreEvento: "Pasaporte E2E",
       tamanoPodioIndividual: 5,
       puntosPorRegistro: 10,
       modoAsistentes: "CARRUSEL",

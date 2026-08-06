@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
     if (autorizacion.participanteId) {
-      return Response.json({ error: "Este correo ya fue registrado en Pasaporte CX." }, { status: 409 });
+      return Response.json({ error: "Este correo ya fue registrado en Pasaporte." }, { status: 409 });
     }
     const nombreCompleto = `${datos.nombres} ${datos.apellidos}`.replace(/\s+/g, " ").trim();
     const foto = formulario.get("foto");
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "La foto seleccionada no contiene una imagen válida." }, { status: 400 });
     }
     if (error instanceof CorreoYaRegistradoError) {
-      return Response.json({ error: "Este correo ya fue registrado en Pasaporte CX." }, { status: 409 });
+      return Response.json({ error: "Este correo ya fue registrado en Pasaporte." }, { status: 409 });
     }
     return Response.json(
       { error: "No pudimos completar el registro. Tus datos siguen en el formulario; vuelve a intentarlo." },

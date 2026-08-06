@@ -70,7 +70,7 @@ export function RotadorAsistentes({ inicial, modo, intervalo }: { inicial: Perso
               {nuevos.has(persona.id) && <span className="mb-2 inline-flex rounded-full bg-[var(--epm-verde)] px-3 py-1 text-xs font-extrabold text-[var(--epm-azul-profundo)]">¡Bienvenido!</span>}
               <h2 className={`font-extrabold leading-tight ${modo === "DESTACADO" ? "text-[clamp(34px,4vw,64px)]" : "text-[clamp(17px,1.7vw,28px)]"}`}>{persona.nombre}</h2>
               <div className="mt-2 flex min-w-0 items-center gap-3">
-                {persona.empresa.urlLogo && <span className="grid h-[clamp(34px,3vw,50px)] w-[clamp(65px,6vw,105px)] shrink-0 place-items-center rounded-lg bg-white/90 p-1.5"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
+                {persona.empresa.urlLogo && <span className="grid h-[clamp(24px,2vw,34px)] w-[clamp(46px,4vw,72px)] shrink-0 place-items-center rounded-md bg-white/90 p-1"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
                 <p className={`truncate font-bold text-white/80 ${modo === "DESTACADO" ? "text-[clamp(20px,2vw,34px)]" : "text-[clamp(12px,1.05vw,17px)]"}`}>{persona.empresa.nombre}</p>
               </div>
             </div>

@@ -6,7 +6,6 @@ const reportes = [
   ["completitudes", "Completitudes por desafío", "Detalle de estado, puntos y hora."],
   ["encuestas", "Respuestas de encuestas", "Respuestas libres y escalas exportables."],
   ["empresas", "Participación por empresa", "Totales agregados por filial."],
-  ["componentes", "Participación por componente", "Desafíos y completitudes por estación."],
 ];
 
 export default function Reportes() {

@@ -46,8 +46,8 @@ export default async function InvitacionRegistro() {
           <div className="mx-auto w-full max-w-[560px] rounded-[clamp(24px,3vw,42px)] bg-white p-[clamp(18px,2.2vw,30px)] text-center text-[var(--epm-azul-profundo)] shadow-2xl">
             <p className="font-display text-[clamp(24px,2.5vw,38px)] font-extrabold leading-tight">Escanea para registrarte</p>
             <p className="mt-2 text-[clamp(13px,1.1vw,17px)] text-slate-600">Abre la cámara de tu celular y apunta al código.</p>
-            <a href={urlRegistro} aria-label="Abrir registro de Pasaporte CX" className="mx-auto mt-4 block w-fit rounded-3xl border border-slate-100 bg-white p-2 shadow-inner">
-              <img src={qr} alt="Código QR para registrarse en Pasaporte CX" className="aspect-square w-[min(46vh,470px)] max-w-full" />
+            <a href={urlRegistro} aria-label="Abrir registro de Pasaporte" className="mx-auto mt-4 block w-fit rounded-3xl border border-slate-100 bg-white p-2 shadow-inner">
+              <img src={qr} alt="Código QR para registrarse en Pasaporte" className="aspect-square w-[min(46vh,470px)] max-w-full" />
             </a>
             <p className="mt-3 text-[clamp(12px,1vw,16px)] font-bold text-slate-500">También puedes ingresar a</p>
             <p className="mt-1 break-all text-[clamp(15px,1.25vw,20px)] font-extrabold text-[var(--epm-azul)]">{direccionVisible}</p>

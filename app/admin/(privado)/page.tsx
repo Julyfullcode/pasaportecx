@@ -7,14 +7,13 @@ import { ActualizacionEnVivo } from "@/components/admin/ActualizacionEnVivo";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardAdmin() {
-  const [participantes, desafios, completitudes, recuerdos, individual, empresas, componentes] = await Promise.all([
+  const [participantes, desafios, completitudes, recuerdos, individual, empresas] = await Promise.all([
     db.participante.count({ where: { activo: true } }),
     db.desafio.count({ where: { estado: "PUBLICADO" } }),
     db.completitud.count(),
     db.recuerdo.count(),
     db.participante.findMany({ where: { activo: true, esStaff: false }, orderBy: { puntosTotales: "desc" }, take: 5, include: { empresa: true } }),
     db.empresa.findMany({ include: { _count: { select: { participantes: { where: { activo: true } } } } }, orderBy: { orden: "asc" } }),
-    db.componente.findMany({ include: { _count: { select: { desafios: true } } }, orderBy: { orden: "asc" } }),
   ]);
   const metricas = [
     ["Participantes", participantes, Users, "#0079C2"],
@@ -45,7 +44,6 @@ export default async function DashboardAdmin() {
       </section>
       <section className="mt-6 grid gap-5 xl:grid-cols-2">
         <div className="tarjeta p-5"><h2 className="text-lg font-extrabold">Participación por empresa</h2><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">{empresas.map((empresa) => <div key={empresa.id} className="flex justify-between border-b border-slate-100 py-1 text-sm"><span>{empresa.nombre}</span><strong>{empresa._count.participantes}</strong></div>)}</div></div>
-        <div className="tarjeta p-5"><h2 className="text-lg font-extrabold">Desafíos por componente</h2><div className="mt-4 space-y-2">{componentes.map((componente) => <div key={componente.id} className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: componente.colorHex }} /><span className="flex-1">{componente.nombre}</span><strong>{componente._count.desafios}</strong></div>)}</div></div>
       </section>
     </div>
   );

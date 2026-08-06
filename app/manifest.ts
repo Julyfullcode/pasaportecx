@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Pasaporte CX · Grupo EPM",
-    short_name: "Pasaporte CX",
+    name: "Pasaporte · Grupo EPM",
+    short_name: "Pasaporte",
     description: "Desafíos, puntos y recuerdos del encuentro.",
     start_url: "/",
     display: "standalone",

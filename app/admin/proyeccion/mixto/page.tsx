@@ -7,5 +7,5 @@ export const dynamic = "force-dynamic";
 export default async function ProyeccionMixta() {
   await requerirAdmin();
   const configuracion = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
-  return <Mixto ciclo={configuracion.cicloMixto} />;
+  return <Mixto ciclo={configuracion.cicloMixto} rotacionAutomatica={configuracion.rotacionAutomaticaProyeccion} />;
 }

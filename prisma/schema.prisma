@@ -171,6 +171,7 @@ model ReaccionRecuerdo {
   participante   Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
 
   @@unique([recuerdoId, participanteId, tipo])
+  @@unique([recuerdoId, participanteId])
   @@index([recuerdoId, tipo])
   @@index([participanteId])
 }
@@ -237,14 +238,15 @@ model SesionAdmin {
 
 model ConfiguracionEvento {
   id                           String         @id @default("evento")
-  nombreEvento                 String         @default("Pasaporte CX")
+  nombreEvento                 String         @default("Pasaporte")
   descripcionAgenda            String         @default("")
   organizadoresAgenda          String         @default("Vicepresidencia Experiencia Usuario-Cliente")
   diplomaHabilitado            Boolean        @default(false)
   tamanoPodioIndividual        Int            @default(5)
   puntosPorRegistro            Int            @default(10)
-  puntosPorRecuerdo            Int            @default(0)
-  maxRecuerdosConPuntos        Int            @default(0)
+  puntosPorRecuerdo            Int            @default(10)
+  maxRecuerdosConPuntos        Int            @default(1)
+  revisionPuntosRecuerdo       Int            @default(0)
   maxRecuerdosPorParticipante  Int            @default(10)
   eliminarEvidenciasRechazadas Boolean        @default(true)
   recuerdosRequierenAprobacion Boolean        @default(false)
@@ -253,6 +255,7 @@ model ConfiguracionEvento {
   modoAsistentes               ModoAsistentes @default(MOSAICO)
   intervaloAsistentesSegundos  Int            @default(6)
   cicloMixto                   String         @default("asistentes:60,recuerdos:45,podio:30")
+  rotacionAutomaticaProyeccion Boolean        @default(true)
 }
 
 model DiaAgenda {

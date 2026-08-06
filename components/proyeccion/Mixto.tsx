@@ -6,10 +6,9 @@ const rutas: Record<string, string> = {
   asistentes: "/admin/proyeccion/asistentes",
   recuerdos: "/admin/proyeccion/recuerdos",
   podio: "/admin/proyeccion/podio",
-  cierre: "/admin/proyeccion/cierre",
 };
 
-export function Mixto({ ciclo }: { ciclo: string }) {
+export function Mixto({ ciclo, rotacionAutomatica }: { ciclo: string; rotacionAutomatica: boolean }) {
   const pasos = useMemo(
     () =>
       ciclo
@@ -23,10 +22,10 @@ export function Mixto({ ciclo }: { ciclo: string }) {
   );
   const [actual, setActual] = useState(0);
   useEffect(() => {
-    if (!pasos.length) return;
+    if (!pasos.length || !rotacionAutomatica || pasos.length < 2) return;
     const temporizador = setTimeout(() => setActual((valor) => (valor + 1) % pasos.length), pasos[actual]?.segundos * 1000);
     return () => clearTimeout(temporizador);
-  }, [actual, pasos]);
+  }, [actual, pasos, rotacionAutomatica]);
   const paso = pasos[actual] ?? { nombre: "asistentes", segundos: 60 };
   return <iframe key={`${paso.nombre}-${actual}`} src={rutas[paso.nombre]} title={`Proyección ${paso.nombre}`} className="fixed inset-0 h-screen w-screen border-0 bg-[var(--epm-azul-profundo)]" />;
 }

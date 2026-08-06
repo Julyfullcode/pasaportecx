@@ -23,13 +23,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     await db.$transaction(async (tx) => {
-      const existente = await tx.reaccionRecuerdo.findUnique({
-        where: { recuerdoId_participanteId_tipo: { recuerdoId, participanteId: participante.id, tipo } },
-        select: { id: true },
+      const existentes = await tx.reaccionRecuerdo.findMany({
+        where: { recuerdoId, participanteId: participante.id },
+        select: { id: true, tipo: true },
       });
-      if (existente) {
-        await tx.reaccionRecuerdo.delete({ where: { id: existente.id } });
-      } else {
+      const misma = existentes.find((reaccion) => reaccion.tipo === tipo);
+      await tx.reaccionRecuerdo.deleteMany({ where: { recuerdoId, participanteId: participante.id } });
+      if (!misma) {
         await tx.reaccionRecuerdo.create({ data: { recuerdoId, participanteId: participante.id, tipo } });
       }
       await actualizarPremioFotoMasReaccionada(tx);

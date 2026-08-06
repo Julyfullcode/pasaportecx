@@ -31,7 +31,7 @@ export default async function AdminDesafios() {
       );
     }
   }
-  const [desafios, componentes] = datos;
+  const desafios = datos;
   const desafioCierre = desafios.find((desafio) => desafio.codigoQr === CODIGO_DESAFIO_CIERRE);
   return (
     <div className="p-4 md:p-7">
@@ -51,14 +51,13 @@ export default async function AdminDesafios() {
       )}
       <details className="tarjeta mt-6 p-5">
         <summary className="flex cursor-pointer list-none items-center gap-2 font-display text-lg font-extrabold text-[var(--epm-azul)]"><Plus /> Crear desafío ahora</summary>
-        <div className="mt-5 border-t pt-5"><FormularioDesafio componentes={componentes} /></div>
+        <div className="mt-5 border-t pt-5"><FormularioDesafio /></div>
       </details>
       <details className="tarjeta mt-4 p-4">
         <summary className="cursor-pointer list-none font-extrabold text-[var(--epm-azul-profundo)]">Descarga masiva con filtros</summary>
-        <form action="/api/qr/todos" method="get" target="_blank" className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+        <form action="/api/qr/todos" method="get" target="_blank" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="formato" value="pdf" />
           <select className="campo" name="dia" defaultValue=""><option value="">Todos los desafíos</option><option value="1">Día 1</option><option value="2">Día 2</option><option value="0">Permanentes</option></select>
-          <select className="campo" name="componenteId" defaultValue=""><option value="">Todos los componentes</option>{componentes.map((componente) => <option key={componente.id} value={componente.id}>{componente.nombre}</option>)}</select>
           <button className="boton-primario"><FileDown size={18} /> Ver PDF</button>
         </form>
       </details>
@@ -67,7 +66,7 @@ export default async function AdminDesafios() {
           <article id={desafio.codigoQr === CODIGO_DESAFIO_CIERRE ? CODIGO_DESAFIO_CIERRE : undefined} key={desafio.id} className="tarjeta scroll-mt-5 overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 p-4">
               <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${desafio.estado === "PUBLICADO" ? "bg-emerald-50 text-emerald-700" : desafio.estado === "CERRADO" ? "bg-slate-200 text-slate-700" : "bg-amber-50 text-amber-700"}`}>{desafio.estado}</span>
-              <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{desafio.componente ? ` · ${desafio.componente.nombre}` : ""}{esConfiguracionPuntualidad(desafio.configuracion) ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
+              <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{esConfiguracionPuntualidad(desafio.configuracion) ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
               <a href={`/api/qr/${desafio.id}`} className="boton-secundario !min-h-10 !px-3 text-sm"><Download size={17} /> PNG</a>
               <a href={`/api/qr/${desafio.id}?formato=pdf`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-3 text-sm"><FileDown size={17} /> Ver PDF</a>
             </div>
@@ -88,7 +87,7 @@ export default async function AdminDesafios() {
               <span className="text-slate-300">·</span>
               <details className="group self-center">
                 <summary className="relative -top-[10px] inline-flex h-6 cursor-pointer list-none items-center gap-1 align-middle text-sm font-extrabold leading-none text-slate-600"><Pencil size={15} /> Editar</summary>
-                <div className="mt-4 rounded-xl bg-white p-4"><FormularioDesafio componentes={componentes} desafio={desafio} /></div>
+                <div className="mt-4 rounded-xl bg-white p-4"><FormularioDesafio desafio={desafio} /></div>
               </details>
               <span className="text-slate-300">·</span>
               <form action={eliminarDesafio}><input type="hidden" name="id" value={desafio.id} /><button className="flex items-center gap-1 text-sm font-extrabold text-red-700"><Trash2 size={15} /> {desafio._count.completitudes ? "Cerrar (tiene datos)" : "Eliminar"}</button></form>
@@ -106,8 +105,5 @@ export default async function AdminDesafios() {
 }
 
 function cargarDatosDesafios() {
-  return Promise.all([
-    db.desafio.findMany({ orderBy: [{ dia: "asc" }, { creadoEn: "desc" }], include: { componente: true, _count: { select: { completitudes: true } } } }),
-    db.componente.findMany({ where: { activo: true }, orderBy: { orden: "asc" } }),
-  ]);
+  return db.desafio.findMany({ orderBy: [{ dia: "asc" }, { creadoEn: "desc" }], include: { _count: { select: { completitudes: true } } } });
 }

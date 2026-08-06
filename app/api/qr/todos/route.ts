@@ -11,12 +11,10 @@ export async function GET(request: Request) {
   const filtroDia = dia === "0" || dia === "1" || dia === "2"
     ? { dia: Number(dia) }
     : {};
-  const componenteId = url.searchParams.get("componenteId");
   const desafiosPublicados = await db.desafio.findMany({
     where: {
       estado: "PUBLICADO",
       ...filtroDia,
-      ...(componenteId ? { componenteId } : {}),
     },
     orderBy: [{ dia: "asc" }, { creadoEn: "asc" }],
   });

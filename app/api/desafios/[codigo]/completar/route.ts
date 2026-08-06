@@ -20,12 +20,13 @@ import {
   esConfiguracionEncuestaMixta,
   respuestasEncuestaMixtaDesdeFormulario,
 } from "@/lib/encuesta-mixta";
+import { esConfiguracionMatricula } from "@/lib/matricula";
 
 type Configuracion = {
   opciones?: Opcion[];
   puntajeParcial?: boolean;
   respuestasAceptadas?: string[];
-  formato?: "texto" | "escala" | "cosecha" | "mixta";
+  formato?: "texto" | "escala" | "cosecha" | "mixta" | "matricula";
 };
 
 export async function POST(
@@ -46,6 +47,7 @@ export async function POST(
   const configuracion = desafio.configuracion as Configuracion;
   const esCosecha = esDesafioCosecha(desafio.codigoQr, configuracion);
   const esPuntualidad = esConfiguracionPuntualidad(configuracion);
+  const esMatricula = esConfiguracionMatricula(configuracion);
   const existente = desafio.completitudes[0];
   const cosechaIncompleta = Boolean(existente && esCosecha && !esRespuestasCosecha(existente.respuesta));
   const ahora = new Date();
@@ -53,7 +55,7 @@ export async function POST(
   const estadoTemporal = estadoTemporalDesafio(desafio, ahora);
   if (estadoTemporal === "PROGRAMADO") return Response.json({ error: "Este desafío aún no comienza." }, { status: 409 });
   if (estadoTemporal === "FINALIZADO") return Response.json({ error: "El tiempo de este desafío ya finalizó." }, { status: 409 });
-  if (existente && !cosechaIncompleta) {
+  if (existente && !cosechaIncompleta && !esMatricula) {
     const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
     return Response.json({
       yaCompletado: true,
@@ -146,7 +148,13 @@ export async function POST(
     estado = "PENDIENTE";
     respuesta = { comentario: String(formulario.get("comentario") ?? "").trim().slice(0, 140) };
   } else if (desafio.tipo === "ENCUESTA") {
-    if (esConfiguracionEncuestaMixta(configuracion)) {
+    if (esMatricula) {
+      const opcionId = String(formulario.get("matricula") ?? "");
+      if (!configuracion.opciones.some((opcion) => opcion.id === opcionId)) {
+        return Response.json({ error: "Selecciona una de las dos alternativas." }, { status: 400 });
+      }
+      respuesta = { opcionId };
+    } else if (esConfiguracionEncuestaMixta(configuracion)) {
       try {
         respuesta = {
           formato: configuracion.formato,
@@ -168,10 +176,10 @@ export async function POST(
 
   try {
     const resultado = await db.$transaction(async (tx) => {
-      const completitud = existente && esCosecha && !esRespuestasCosecha(existente.respuesta)
+      const completitud = existente && (esMatricula || (esCosecha && !esRespuestasCosecha(existente.respuesta)))
         ? await tx.completitud.update({
           where: { id: existente.id },
-          data: { puntosOtorgados, respuesta, estado },
+          data: { puntosOtorgados: esMatricula ? existente.puntosOtorgados : puntosOtorgados, respuesta, estado },
         })
         : await tx.completitud.create({
           data: {
@@ -189,7 +197,8 @@ export async function POST(
     anunciarCambio("puntos");
     return Response.json({
       estado: resultado.completitud.estado,
-      puntosGanados: puntosOtorgados,
+      puntosGanados: existente && esMatricula ? 0 : puntosOtorgados,
+      yaCompletado: Boolean(existente && esMatricula),
       nuevoTotal: resultado.nuevoTotal,
       puntualidad: resultadoPuntualidad,
       mensaje: participante.esStaff

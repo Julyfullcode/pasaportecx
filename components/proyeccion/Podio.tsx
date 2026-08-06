@@ -51,7 +51,7 @@ export function Podio({ inicial, tamano }: { inicial: PersonaPodio[]; tamano: nu
                 </span>
                 <h2 className={`${primero ? "text-[clamp(25px,2.8vw,46px)]" : "text-[clamp(19px,2.1vw,34px)]"} font-extrabold leading-tight`}>{persona.nombre}</h2>
                 <div className="mt-3 flex items-center gap-2">
-                  {persona.empresa.urlLogo && <span className="grid h-10 w-20 shrink-0 place-items-center rounded-lg bg-white/95 p-1"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
+                  {persona.empresa.urlLogo && <span className="grid h-7 w-14 shrink-0 place-items-center rounded-md bg-white/95 p-1"><img src={persona.empresa.urlLogo} alt={`Logo ${persona.empresa.nombre}`} className="max-h-full max-w-full object-contain" /></span>}
                   <p className="min-w-0 truncate text-[clamp(12px,1.1vw,18px)] text-white/75">{persona.empresa.nombre}</p>
                 </div>
                 <strong className={`mt-4 block font-display leading-none ${primero ? "text-[clamp(40px,5vw,80px)] text-amber-300 drop-shadow" : "text-[clamp(28px,3.5vw,56px)] text-[var(--epm-verde)]"}`}>{persona.puntosTotales.toLocaleString("es-CO")} <small className="text-[.34em] text-white/70">pts</small></strong>

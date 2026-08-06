@@ -101,7 +101,7 @@ export function RegistroForm({
               <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-verde-medio)] shadow-sm">Aporta</span>
             </div>
           </div>
-          <a href="/api/pasaporte#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario w-full"><Download size={19} /> Descargar Pasaporte CX</a>
+          <a href="/api/pasaporte#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario w-full"><Download size={19} /> Descargar Pasaporte</a>
           <button onClick={() => router.replace("/")} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
         </div>
       </section>
@@ -146,13 +146,13 @@ export function RegistroForm({
         <input type="checkbox" name="aceptaDatos" required className="mt-1 h-5 w-5 accent-[var(--epm-azul)]" />
         <span className="leading-relaxed">
           <strong className="flex items-start gap-1.5 text-[var(--epm-azul-profundo)]"><ShieldCheck className="mt-0.5 shrink-0" size={17} />Autorización de tratamiento de datos personales</strong>
-          <span className="mt-2 block">Al registrarme en Pasaporte CX, autorizo a Grupo EPM al tratamiento de mis datos personales. Estos datos serán utilizados como repositorio del evento y podrán ser publicados, total o parcialmente, en el micrositio de la Vicepresidencia Experiencia Usuario-Cliente y en piezas de comunicación interna relacionadas con este encuentro.</span>
+          <span className="mt-2 block">Al registrarme en Pasaporte, autorizo a Grupo EPM al tratamiento de mis datos personales. Estos datos serán utilizados como repositorio del evento y podrán ser publicados, total o parcialmente, en el micrositio de la Vicepresidencia Experiencia Usuario-Cliente y en piezas de comunicación interna relacionadas con este encuentro.</span>
         </span>
       </label>
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
       <button disabled={enviando || procesandoFoto} className="boton-primario w-full disabled:opacity-60">
         {enviando && <LoaderCircle className="animate-spin" size={20} />}
-        {enviando ? "Creando tu pasaporte CX…" : "Crear mi pasaporte CX"}
+        {enviando ? "Creando tu pasaporte…" : "Crear mi pasaporte"}
       </button>
     </form>
   );

@@ -16,6 +16,7 @@ import {
   resultadoPuntualidadDesdeRespuesta,
   type ResultadoPuntualidad,
 } from "@/lib/puntualidad";
+import { esConfiguracionMatricula, respuestaMatricula } from "@/lib/matricula";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,6 @@ export default async function DetalleDesafio({
   const desafio = await db.desafio.findUnique({
     where: { codigoQr },
     include: {
-      componente: true,
       completitudes: { where: { participanteId: participante.id }, take: 1 },
     },
   });
@@ -38,8 +38,9 @@ export default async function DetalleDesafio({
   const configuracion = desafio.configuracion as Record<string, unknown>;
   const esPuntualidad = esConfiguracionPuntualidad(configuracion);
   const completitud = desafio.completitudes[0];
+  const esMatricula = esConfiguracionMatricula(configuracion);
   const estaCompletado = Boolean(
-    completitud && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
+    completitud && !esMatricula && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
   );
   const estadoTemporal = estadoTemporalDesafio(desafio);
   const fechaCierre = fechaCierreDesafio(desafio);
@@ -52,7 +53,7 @@ export default async function DetalleDesafio({
             <Link href="/desafios" className="inline-flex items-center gap-2 font-extrabold"><ArrowLeft size={20} /> Desafíos</Link>
             <LogoBlanco className="h-7 w-auto shrink-0 md:h-8" />
           </div>
-          <div className="mt-8 text-sm font-extrabold text-white/85">{etiquetaDiaDesafio(desafio.dia)}{desafio.componente ? ` · ${desafio.componente.nombre}` : ""}</div>
+          <div className="mt-8 text-sm font-extrabold text-white/85">{etiquetaDiaDesafio(desafio.dia)}</div>
           <h1 className="mt-2 text-3xl font-extrabold">{desafio.titulo}</h1>
           <p className="mt-3 max-w-xl text-white/85">{desafio.descripcion}</p>
           <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 font-extrabold"><Sparkles className="text-[var(--epm-verde)]" /> {participante.esStaff ? "Participación Staff" : `${desafio.puntos} puntos`}</span>
@@ -83,6 +84,7 @@ export default async function DetalleDesafio({
             tipo={esCosecha ? "ENCUESTA" : esPuntualidad ? "PUNTUALIDAD" : desafio.tipo}
             puntos={participante.esStaff ? 0 : desafio.puntos}
             configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
+            respuestaInicial={esMatricula ? respuestaMatricula(completitud?.respuesta) : null}
           />
         )}
         {!estaCompletado && fechaCierre && estadoTemporal === "DISPONIBLE" && (

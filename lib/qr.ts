@@ -24,7 +24,7 @@ export async function qrPdf(
   const fuente = await documento.embedFont(StandardFonts.Helvetica);
   const negrita = await documento.embedFont(StandardFonts.HelveticaBold);
   pagina.drawRectangle({ x: 0, y: 742, width: 595, height: 100, color: rgb(0.043, 0.231, 0.376) });
-  pagina.drawText("GRUPO EPM · PASAPORTE CX", { x: 42, y: 792, size: 22, font: negrita, color: rgb(1, 1, 1) });
+  pagina.drawText("GRUPO EPM · PASAPORTE", { x: 42, y: 792, size: 22, font: negrita, color: rgb(1, 1, 1) });
   const png = await documento.embedPng(await qrPng(desafio.codigoQr));
   pagina.drawImage(png, { x: 100, y: 260, width: 395, height: 395 });
   pagina.drawText(desafio.titulo.slice(0, 55), { x: 55, y: 205, size: 24, font: negrita, color: rgb(0.043, 0.231, 0.376) });

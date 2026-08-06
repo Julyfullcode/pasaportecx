@@ -11,13 +11,14 @@ import {
   fechaHoraPuntualidadLegible,
   type ResultadoPuntualidad,
 } from "@/lib/puntualidad";
+import { esConfiguracionMatricula, type ConfiguracionMatricula } from "@/lib/matricula";
 
 type Configuracion = {
   opciones?: { id: string; texto: string; correcta: boolean }[];
   multiple?: boolean;
   instruccion?: string;
   pregunta?: string;
-  formato?: "texto" | "escala" | "cosecha" | "mixta";
+  formato?: "texto" | "escala" | "cosecha" | "mixta" | "matricula";
   preguntas?: PreguntaEncuestaMixta[];
   tipoEspecial?: string;
   fechaHoraObjetivo?: string;
@@ -29,17 +30,20 @@ export function ResolverDesafio({
   tipo,
   puntos,
   configuracion,
+  respuestaInicial,
 }: {
   codigo: string;
   tipo: string;
   puntos: number;
   configuracion: Configuracion;
+  respuestaInicial?: string | null;
 }) {
   const [cargando, setCargando] = useState(tipo === "CHECK_IN");
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
   const puntualidad = esConfiguracionPuntualidad(configuracion) ? configuracion : null;
+  const matricula = esConfiguracionMatricula(configuracion) ? configuracion as ConfiguracionMatricula : null;
 
   async function completar(formulario = new FormData()) {
     if (enviado.current) return;
@@ -101,7 +105,7 @@ export function ResolverDesafio({
           {pendiente || antesDeVentana || llegadaTarde ? <Clock3 size={34} /> : <CheckCircle2 size={34} />}
         </span>
         <h2 className="mt-4 text-2xl font-extrabold text-[var(--epm-azul-profundo)]">
-          {resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : antesDeVentana ? "El desafío aún no está disponible" : llegadaTarde ? "El tiempo para registrarte terminó" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
+          {matricula ? "¡Elección guardada!" : resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : antesDeVentana ? "El desafío aún no está disponible" : llegadaTarde ? "El tiempo para registrarte terminó" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
         </h2>
         {pendiente ? (
           <p className="mt-2 text-slate-600">La organización revisará tu foto. Los {puntos} puntos se sumarán al aprobarla.</p>
@@ -118,7 +122,7 @@ export function ResolverDesafio({
           </>
         ) : (
           <>
-            <p className="puntos-animados mt-4 font-display text-5xl font-extrabold text-[var(--epm-verde-medio)]">+{resultado.puntosGanados}</p>
+            {matricula && resultado.yaCompletado ? <p className="mt-4 font-bold text-[var(--epm-teal)]">Puedes volver y modificarla mientras el desafío siga publicado.</p> : <p className="puntos-animados mt-4 font-display text-5xl font-extrabold text-[var(--epm-verde-medio)]">+{resultado.puntosGanados}</p>}
             {resultado.mensaje && <p className="mt-2 font-bold text-[var(--epm-teal)]">{resultado.mensaje}</p>}
             <p className="mt-2 text-slate-600">Nuevo total: <strong>{resultado.nuevoTotal} puntos</strong></p>
             <div aria-hidden="true" className="mt-3 flex justify-center gap-2 text-[var(--epm-verde)]"><Sparkles /><Sparkles /><Sparkles /></div>
@@ -163,13 +167,27 @@ export function ResolverDesafio({
       {tipo === "EVIDENCIA_FOTO" && (
         <div className="space-y-4">
           <p className="mb-3 rounded-xl bg-sky-50 p-3 text-sm font-bold text-[var(--epm-azul-profundo)]">{configuracion.instruccion}</p>
-          <div><label className="etiqueta" htmlFor="evidencia">Foto de evidencia</label><input className="campo file:mr-3 file:rounded-full file:border-0 file:bg-sky-50 file:px-3 file:py-2 file:font-bold file:text-[var(--epm-azul)]" id="evidencia" name="evidencia" type="file" accept="image/*" capture="environment" required /><p className="mt-1 text-xs text-slate-500">Puedes elegir la foto original; Pasaporte CX la optimiza automáticamente.</p></div>
+          <div><label className="etiqueta" htmlFor="evidencia">Foto de evidencia</label><input className="campo file:mr-3 file:rounded-full file:border-0 file:bg-sky-50 file:px-3 file:py-2 file:font-bold file:text-[var(--epm-azul)]" id="evidencia" name="evidencia" type="file" accept="image/*" capture="environment" required /><p className="mt-1 text-xs text-slate-500">Puedes elegir la foto original; Pasaporte la optimiza automáticamente.</p></div>
           <div><label className="etiqueta" htmlFor="comentario">Comentario (opcional)</label><textarea className="campo min-h-24" id="comentario" name="comentario" maxLength={140} placeholder="Cuéntanos algo sobre esta foto" /></div>
         </div>
       )}
       {tipo === "ENCUESTA" && (
         <div>
-          {esConfiguracionEncuestaMixta(configuracion) ? (
+          {matricula ? (
+            <fieldset className="grid gap-4 md:grid-cols-2">
+              <legend className="etiqueta mb-2">Elige una alternativa</legend>
+              {matricula.opciones.map((opcion) => (
+                <label key={opcion.id} className="cursor-pointer overflow-hidden rounded-2xl border-2 border-transparent bg-white shadow-sm transition has-[:checked]:border-[var(--epm-azul)] has-[:checked]:bg-sky-50">
+                  <img src={opcion.urlImagen} alt="" className="h-48 w-full bg-slate-50 object-contain p-3" />
+                  <span className="flex min-h-16 items-center gap-3 p-4 font-extrabold text-[var(--epm-azul-profundo)]">
+                    <input type="radio" name="matricula" value={opcion.id} required defaultChecked={respuestaInicial === opcion.id} className="h-5 w-5 accent-[var(--epm-azul)]" />
+                    {opcion.texto}
+                  </span>
+                </label>
+              ))}
+              <p className="text-sm text-slate-600 md:col-span-2">Puedes modificar esta elección mientras el desafío permanezca publicado.</p>
+            </fieldset>
+          ) : esConfiguracionEncuestaMixta(configuracion) ? (
             <EncuestaMixta preguntas={configuracion.preguntas} />
           ) : configuracion.formato === FORMATO_COSECHA ? (
             <div className="space-y-4">
@@ -195,7 +213,7 @@ export function ResolverDesafio({
           <button type="submit" className="mt-2 flex items-center gap-1 underline"><RefreshCw size={16} /> Reintentar</button>
         </div>
       )}
-      {tipo !== "CHECK_IN" && <button disabled={cargando} className="boton-primario w-full">{cargando && <LoaderCircle className="animate-spin" />} {cargando ? "Registrando…" : tipo === "PUNTUALIDAD" ? "Registrar mi puntualidad" : "Enviar respuesta"}</button>}
+      {tipo !== "CHECK_IN" && <button disabled={cargando} className="boton-primario w-full">{cargando && <LoaderCircle className="animate-spin" />} {cargando ? "Registrando…" : tipo === "PUNTUALIDAD" ? "Registrar mi puntualidad" : matricula ? "Guardar mi elección" : "Enviar respuesta"}</button>}
     </form>
   );
 }

@@ -26,9 +26,8 @@ export default async function Desafios({
         { completitudes: { some: { participanteId: participante.id } } },
       ],
     },
-    orderBy: [{ componente: { orden: "asc" } }, { creadoEn: "asc" }],
+    orderBy: [{ dia: "asc" }, { creadoEn: "asc" }],
     include: {
-      componente: true,
       completitudes: { where: { participanteId: participante.id }, take: 1 },
     },
   });
@@ -77,7 +76,6 @@ export default async function Desafios({
 }
 
 type TarjetaDesafio = Awaited<ReturnType<typeof db.desafio.findMany>>[number] & {
-  componente: { nombre: string; colorHex: string } | null;
   completitudes: { puntosOtorgados: number; estado: string; respuesta: unknown }[];
 };
 
@@ -89,7 +87,7 @@ function Seccion({ titulo, desafios, completado, esStaff }: { titulo: string; de
       <div className="space-y-3">
         {desafios.map((desafio) => (
           <Link href={`/d/${desafio.codigoQr}`} key={desafio.id} className="tarjeta flex min-h-28 overflow-hidden">
-            <span className="w-2 shrink-0" style={{ background: desafio.componente?.colorHex ?? "var(--epm-azul)" }} />
+            <span className="w-2 shrink-0 bg-[var(--epm-azul)]" />
             <div className="flex flex-1 items-start gap-3 p-4">
               {completado ? <CheckCircle2 className="mt-1 shrink-0 text-[var(--epm-verde-medio)]" /> : <Clock3 className="mt-1 shrink-0 text-[var(--epm-azul)]" />}
               <div className="min-w-0 flex-1">
@@ -100,7 +98,7 @@ function Seccion({ titulo, desafios, completado, esStaff }: { titulo: string; de
                   </span>
                 </div>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{desafio.descripcion}</p>
-                <p className="mt-2 text-xs font-bold text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{desafio.componente ? ` · ${desafio.componente.nombre}` : ""}</p>
+                <p className="mt-2 text-xs font-bold text-slate-500">{etiquetaDiaDesafio(desafio.dia)}</p>
               </div>
             </div>
           </Link>

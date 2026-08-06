@@ -121,9 +121,11 @@ async function main() {
   await prisma.configuracionEvento.create({
     data: {
       id: "evento",
-      nombreEvento: "Pasaporte CX · Encuentro Grupo EPM",
+      nombreEvento: "Pasaporte · Encuentro Grupo EPM",
       tamanoPodioIndividual: 5,
       puntosPorRegistro: 10,
+      puntosPorRecuerdo: 10,
+      maxRecuerdosConPuntos: 1,
     },
   });
   const adminPassword = process.env.ADMIN_PASSWORD ?? "Cambiar123!";

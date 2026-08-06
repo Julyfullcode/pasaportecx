@@ -3,17 +3,16 @@ import { presentarRecuerdo, resumirReacciones } from "@/lib/recuerdos";
 
 describe("reacciones de recuerdos", () => {
   const reacciones = [
-    { participanteId: "ana", tipo: "CORAZON" },
     { participanteId: "luis", tipo: "CORAZON" },
     { participanteId: "ana", tipo: "RISA" },
   ];
 
   it("cuenta cada reacción y reconoce las del participante actual", () => {
     expect(resumirReacciones(reacciones, "ana")).toEqual({
-      corazon: 2,
+      corazon: 1,
       risa: 1,
-      total: 3,
-      mias: ["CORAZON", "RISA"],
+      total: 2,
+      mias: ["RISA"],
     });
   });
 
@@ -21,7 +20,7 @@ describe("reacciones de recuerdos", () => {
     const resultado = presentarRecuerdo({ id: "foto-1", reacciones }, "luis");
     expect(resultado).toEqual({
       id: "foto-1",
-      reacciones: { corazon: 2, risa: 1, total: 3, mias: ["CORAZON"] },
+      reacciones: { corazon: 1, risa: 1, total: 2, mias: ["CORAZON"] },
     });
   });
 });

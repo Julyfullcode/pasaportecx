@@ -46,8 +46,8 @@ test.describe("Administrador", () => {
     await expect(page.getByText("Pasaporte CX", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Vicepresidencia Experiencia Usuario-Cliente", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Escanea para registrarte", { exact: true })).toBeVisible();
-    await expect(page.getByRole("img", { name: "Código QR para registrarse en Pasaporte CX" })).toHaveAttribute("src", /^data:image\/png;base64,/);
-    await expect(page.getByRole("link", { name: "Abrir registro de Pasaporte CX" })).toHaveAttribute("href", /^http:\/\/(?:127\.0\.0\.1|localhost):3000\/registro$/);
+    await expect(page.getByRole("img", { name: "Código QR para registrarse en Pasaporte" })).toHaveAttribute("src", /^data:image\/png;base64,/);
+    await expect(page.getByRole("link", { name: "Abrir registro de Pasaporte" })).toHaveAttribute("href", /^http:\/\/(?:127\.0\.0\.1|localhost):3000\/registro$/);
   });
 
   test("el acceso administrativo se bloquea temporalmente tras cinco intentos fallidos", async ({ page }) => {
@@ -481,7 +481,7 @@ test.describe("Fotos y carrusel", () => {
     await autenticarParticipante(page.context(), token);
     await page.goto("/d/" + desafio.codigoQr);
     await expect(page.getByLabel("Comentario (opcional)")).toBeVisible();
-    await expect(page.getByText("Puedes elegir la foto original; Pasaporte CX la optimiza automáticamente.")).toBeVisible();
+    await expect(page.getByText("Puedes elegir la foto original; Pasaporte la optimiza automáticamente.")).toBeVisible();
     const fotoPesada = await sharp(randomBytes(1_400 * 1_000 * 3), {
       raw: { width: 1_400, height: 1_000, channels: 3 },
     }).png({ compressionLevel: 0 }).toBuffer();

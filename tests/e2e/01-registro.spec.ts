@@ -26,7 +26,7 @@ test.describe("Registro de participante", () => {
       expect(nombre!.y - (cabecera!.y + cabecera!.height)).toBeGreaterThanOrEqual(35);
     }
     await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Crear mi pasaporte CX" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Crear mi pasaporte" })).toBeVisible();
     await expect(page.getByText("Autorización de tratamiento de datos personales", { exact: true })).toBeVisible();
   });
 
@@ -38,7 +38,7 @@ test.describe("Registro de participante", () => {
     const registroCompletado = page.waitForResponse((respuesta) =>
       respuesta.url().endsWith("/api/registro") && respuesta.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Crear mi pasaporte CX" }).click();
+    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
     const respuestaRegistro = await registroCompletado;
 
     await expect(page.getByText("¡Tu pasaporte está listo!")).toBeVisible();
@@ -46,7 +46,7 @@ test.describe("Registro de participante", () => {
     await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toBeVisible();
     await expect(page.getByText("Código de recuperación", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("img", { name: /QR personal de recuperación/ })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Descargar Pasaporte CX" })).toHaveAttribute("href", "/api/pasaporte#view=Fit");
+    await expect(page.getByRole("link", { name: "Descargar Pasaporte" })).toHaveAttribute("href", "/api/pasaporte#view=Fit");
     const tokenSesion = (await respuestaRegistro.headerValue("set-cookie"))?.match(/pasaporte_participante=([^;]+)/)?.[1];
     expect(tokenSesion).toBeTruthy();
     await page.context().addCookies([{ name: "pasaporte_participante", value: tokenSesion!, url: BASE_URL }]);
@@ -63,7 +63,7 @@ test.describe("Registro de participante", () => {
     const antes = await db.participante.count();
     await page.goto("/registro");
     await completarCamposBasicos(page, `Vacío ${Date.now()}`);
-    await page.getByRole("button", { name: "Crear mi pasaporte CX" }).click();
+    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
 
     await expect(page).toHaveURL(/\/registro/);
     const mensaje = await page.getByLabel("Nombre", { exact: true }).evaluate((campo: HTMLInputElement) => campo.validationMessage);
@@ -81,7 +81,7 @@ test.describe("Registro de participante", () => {
     await page.getByLabel("Apellidos").fill(`E2E ${Date.now()}`);
     await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
     await page.getByRole("checkbox", { name: /Autorización de tratamiento de datos personales/ }).check();
-    await page.getByRole("button", { name: "Crear mi pasaporte CX" }).click();
+    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
 
     await expect(page.getByText("Toma o selecciona una foto para continuar.", { exact: true })).toBeVisible();
     expect(await db.participante.count()).toBe(antes);
@@ -117,7 +117,7 @@ test.describe("Registro de participante", () => {
     await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
     await page.getByLabel(/Tomar foto|Repetir/).setInputFiles(fotoPng);
     await page.getByRole("checkbox", { name: /Autorización de tratamiento de datos personales/ }).check();
-    await page.getByRole("button", { name: "Crear mi pasaporte CX" }).click();
+    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
 
     await expect(page.getByText("Este correo no está autorizado. Conversa con alguien de la Vicepresidencia Experiencia Usuario-Cliente para solicitar autorización.", { exact: true })).toBeVisible();
     expect(await db.participante.count()).toBe(antes);
@@ -131,7 +131,7 @@ test.describe("Registro de participante", () => {
 
     expect(primera.status()).toBe(200);
     expect(segunda.status()).toBe(409);
-    expect((await segunda.json()).error).toBe("Este correo ya fue registrado en Pasaporte CX.");
+    expect((await segunda.json()).error).toBe("Este correo ya fue registrado en Pasaporte.");
     expect(await db.correoAutorizado.count({ where: { correo, participanteId: { not: null } } })).toBe(1);
     await api.dispose();
   });

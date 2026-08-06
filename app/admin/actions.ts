@@ -37,6 +37,7 @@ import {
   configuracionEncuestaMixtaDesdeJson,
   EncuestaMixtaInvalidaError,
 } from "@/lib/encuesta-mixta";
+import { FORMATO_MATRICULA, esConfiguracionMatricula, type ConfiguracionMatricula } from "@/lib/matricula";
 
 export type EstadoLogin = { error?: string };
 export type EstadoGuardarDesafio = {
@@ -150,6 +151,8 @@ export async function guardarDesafio(
       : error instanceof Error && (
       error.message === "Configura una duración válida en minutos."
       || error.message === "Configura una fecha y hora de cierre válidas."
+      || error.message === "Cada opción de matrícula debe incluir una imagen válida."
+      || error.message === "Completa el texto y la imagen de las dos opciones de matrícula."
     )
       ? error.message
       : "No pudimos guardar el desafío. Tus demás datos siguen intactos; revisa los campos e intenta nuevamente.";
@@ -161,13 +164,36 @@ async function guardarDesafioEnBase(formulario: FormData) {
   const datos = desafioSchema.parse(Object.fromEntries(formulario));
   const id = String(formulario.get("id") ?? "");
   const existente = id
-    ? await db.desafio.findUnique({ where: { id }, select: { codigoQr: true, estado: true, publicadoEn: true } })
+    ? await db.desafio.findUnique({ where: { id }, select: { codigoQr: true, estado: true, publicadoEn: true, configuracion: true } })
     : null;
   const esCierre = existente?.codigoQr === CODIGO_DESAFIO_CIERRE;
   const estado = String(formulario.get("estado") ?? "BORRADOR") as "BORRADOR" | "PUBLICADO" | "CERRADO";
   const tipoPersistido = datos.tipo === "PUNTUALIDAD"
     ? "CHECK_IN" as const
-    : datos.tipo === "ENCUESTA_MIXTA" ? "ENCUESTA" as const : datos.tipo;
+    : datos.tipo === "ENCUESTA_MIXTA" || datos.tipo === "MATRICULA" ? "ENCUESTA" as const : datos.tipo;
+  let configuracionMatricula: ConfiguracionMatricula | null = null;
+  const imagenesAnterioresReemplazadas: string[] = [];
+  if (datos.tipo === "MATRICULA") {
+    const anterior = esConfiguracionMatricula(existente?.configuracion) ? existente.configuracion : null;
+    const opciones = [] as ConfiguracionMatricula["opciones"][number][];
+    for (const idOpcion of ["a", "b"] as const) {
+      const sufijo = idOpcion.toUpperCase();
+      const texto = String(formulario.get(`matriculaTexto${sufijo}`) ?? "").trim().slice(0, 140);
+      const actual = anterior?.opciones.find((opcion) => opcion.id === idOpcion)?.urlImagen
+        ?? String(formulario.get(`matriculaImagenActual${sufijo}`) ?? "");
+      const archivo = formulario.get(`matriculaImagen${sufijo}`);
+      let urlImagen = actual;
+      if (archivo instanceof File && archivo.size > 0) {
+        if (!extensionImagen(archivo.type)) throw new Error("Cada opción de matrícula debe incluir una imagen válida.");
+        const imagen = await normalizarImagen(new Uint8Array(await archivo.arrayBuffer()), { dimensionMaxima: 1000, calidad: 82 });
+        urlImagen = await storage.guardar(imagen.datos, imagen.extension, "matriculas");
+        if (actual && actual !== urlImagen) imagenesAnterioresReemplazadas.push(actual);
+      }
+      if (!texto || !urlImagen) throw new Error("Completa el texto y la imagen de las dos opciones de matrícula.");
+      opciones.push({ id: idOpcion, texto, urlImagen });
+    }
+    configuracionMatricula = { formato: FORMATO_MATRICULA, opciones: opciones as ConfiguracionMatricula["opciones"] };
+  }
   const modoDuracion = String(formulario.get("modoDuracion") ?? "MINUTOS");
   const minutosIngresados = Number(formulario.get("duracionMinutos"));
   const duracionMinutos = modoDuracion === "MINUTOS"
@@ -187,7 +213,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
   const comun = {
     ...datos,
     tipo: esCierre ? "ENCUESTA" as const : tipoPersistido,
-    componenteId: datos.componenteId || null,
+    componenteId: null,
     esSecreto: formulario.get("esSecreto") === "on",
     estado,
     limiteCompletitudes: formulario.get("limiteCompletitudes") ? Number(formulario.get("limiteCompletitudes")) : null,
@@ -199,7 +225,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
       : null,
     configuracion: esCierre
       ? { formato: FORMATO_COSECHA, preguntas: PREGUNTAS_COSECHA }
-      : configuracionDesdeFormulario(datos.tipo, formulario),
+      : configuracionMatricula ?? configuracionDesdeFormulario(datos.tipo, formulario),
   };
   const controlaCambios = Boolean(id && formulario.has("camposModificados"));
   const modificados = new Set(
@@ -219,6 +245,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
     "opciones", "multiple", "puntajeParcial", "respuestasAceptadas", "instruccion",
     "publicarEnRecuerdos", "pregunta", "formato", "fechaHoraObjetivo", "toleranciaMinutos",
     "preguntasMixtasEditor", "preguntasMixtas",
+    "matriculaTextoA", "matriculaTextoB", "matriculaImagenA", "matriculaImagenB",
   ].some((campo) => modificados.has(campo))) incluir("configuracion");
   if (["modoDuracion", "duracionMinutos", "fechaHoraCierre"].some((campo) => modificados.has(campo))) {
     incluir("duracionMinutos", "disponibleHasta");
@@ -273,6 +300,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
     }
     await actualizarPremioFotoMasReaccionada(tx);
   });
+  await Promise.allSettled(imagenesAnterioresReemplazadas.map((url) => storage.eliminar(url)));
   anunciarCambio("desafio");
   revalidatePath("/admin/desafios");
   revalidatePath("/desafios");
@@ -290,7 +318,6 @@ export async function crearDesafioCierre() {
       },
     });
   } else {
-    const componente = await db.componente.findFirst({ where: { activo: true }, orderBy: { orden: "asc" } });
     await db.desafio.create({
       data: {
         codigoQr: CODIGO_DESAFIO_CIERRE,
@@ -298,8 +325,8 @@ export async function crearDesafioCierre() {
         descripcion: "Recoge lo vivido en el encuentro: un aprendizaje, un agradecimiento y una acción para impulsar al regresar.",
         tipo: "ENCUESTA",
         puntos: 150,
-        dia: componente ? 2 : 1,
-        componenteId: componente?.id ?? null,
+        dia: 2,
+        componenteId: null,
         ubicacion: "",
         estado: "BORRADOR",
         esSecreto: false,
@@ -620,6 +647,7 @@ export async function guardarConfiguracion(formulario: FormData) {
       modoAsistentes: String(formulario.get("modoAsistentes")) as "MOSAICO" | "CARRUSEL" | "DESTACADO",
       intervaloAsistentesSegundos: Number(formulario.get("intervaloAsistentesSegundos")),
       cicloMixto: String(formulario.get("cicloMixto")),
+      rotacionAutomaticaProyeccion: formulario.get("rotacionAutomaticaProyeccion") === "on",
       puntosPorRecuerdo: Number(formulario.get("puntosPorRecuerdo")),
       maxRecuerdosConPuntos: Number(formulario.get("maxRecuerdosConPuntos")),
       maxRecuerdosPorParticipante: Math.max(1, Math.min(50, Number(formulario.get("maxRecuerdosPorParticipante")) || 10)),
@@ -837,10 +865,10 @@ export async function actualizarLogoEmpresa(formulario: FormData) {
     if (empresa.urlLogo) await storage.eliminar(empresa.urlLogo).catch(() => undefined);
   } else {
     const logo = formulario.get("logo");
-    if (!(logo instanceof File) || !extensionImagen(logo.type) || logo.size > 250_000) return;
+    if (!(logo instanceof File) || !extensionImagen(logo.type) || logo.size > 120_000) return;
     const imagen = await normalizarImagen(new Uint8Array(await logo.arrayBuffer()), {
-      dimensionMaxima: 800,
-      calidad: 85,
+      dimensionMaxima: 320,
+      calidad: 78,
     });
     const urlLogo = await storage.guardar(
       imagen.datos,
