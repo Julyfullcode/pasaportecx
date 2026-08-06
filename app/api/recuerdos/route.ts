@@ -14,6 +14,21 @@ import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 
 class LimiteRecuerdosError extends Error {}
 
+async function reintentarConflictoTransaccion<T>(operacion: () => Promise<T>) {
+  const intentosMaximos = 7;
+  for (let intento = 0; intento < intentosMaximos; intento += 1) {
+    try {
+      return await operacion();
+    } catch (error) {
+      const esConflicto = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+      if (!esConflicto || intento === intentosMaximos - 1) throw error;
+      const esperaMs = Math.min(800, 50 * (2 ** intento)) + Math.floor(Math.random() * 100);
+      await new Promise((resolver) => setTimeout(resolver, esperaMs));
+    }
+  }
+  throw new Error("No fue posible completar la transacción.");
+}
+
 export async function GET(request: Request) {
   const participante = await participanteActual();
   if (!participante) return Response.json({ error: "Sin sesión" }, { status: 401 });
@@ -105,7 +120,7 @@ export async function POST(request: Request) {
   }
   const [urlFoto, urlMiniatura] = cargas.map((carga) => (carga as PromiseFulfilledResult<string>).value);
   try {
-    const recuerdo = await db.$transaction(async (tx) => {
+    const recuerdo = await reintentarConflictoTransaccion(() => db.$transaction(async (tx) => {
       const configuracion = await tx.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
       const usados = await tx.recuerdo.count({
         where: {
@@ -146,7 +161,7 @@ export async function POST(request: Request) {
         }
       }
       return creado;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
     anunciarCambio("recuerdo");
     return Response.json({ recuerdo });
   } catch (error) {
