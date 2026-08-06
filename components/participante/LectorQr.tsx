@@ -22,9 +22,6 @@ function mensajeErrorCamara(error: unknown) {
     ? `${error.name} ${error.message}`.toLowerCase()
     : String(error).toLowerCase();
 
-  if (detalle.includes("notsupported") || detalle.includes("getusermedia")) {
-    return "Este navegador no permite abrir la cámara. Intenta con Chrome, Edge o Safari actualizado.";
-  }
   if (detalle.includes("notallowed") || detalle.includes("permission") || detalle.includes("denied")) {
     return "El navegador no tiene permiso para usar la cámara. Habilítalo para este sitio y vuelve a intentar.";
   }
@@ -36,6 +33,9 @@ function mensajeErrorCamara(error: unknown) {
   }
   if (detalle.includes("overconstrained") || detalle.includes("constraintnotsatisfied")) {
     return "La cámara disponible no es compatible con la configuración solicitada. Vuelve a intentar.";
+  }
+  if (detalle.includes("notsupported") || detalle.includes("media devices not supported") || detalle.includes("camera streaming not supported")) {
+    return "Este navegador no permite abrir la cámara. Intenta con Chrome, Edge o Safari actualizado.";
   }
   return "No pudimos iniciar la cámara. Revisa el permiso y vuelve a intentar.";
 }
@@ -77,7 +77,8 @@ export function LectorQr() {
         );
         lector = scanner;
         await scanner.start(
-          { facingMode: { ideal: "environment" } },
+          // html5-qrcode 2.3.8 admite el valor como texto; no admite `ideal`.
+          { facingMode: "environment" },
           {
             fps: 10,
             qrbox: (ancho, alto) => {
