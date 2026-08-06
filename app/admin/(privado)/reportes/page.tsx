@@ -5,6 +5,7 @@ const reportes = [
   ["ranking-individual", "Ranking individual final", "Posiciones ordenadas por puntaje."],
   ["completitudes", "Completitudes por desafío", "Detalle de estado, puntos y hora."],
   ["encuestas", "Respuestas de encuestas", "Respuestas libres y escalas exportables."],
+  ["actividades", "Respuestas de actividades", "Detalle de cada respuesta, actividad e insight."],
   ["empresas", "Participación por empresa", "Totales agregados por filial."],
 ];
 

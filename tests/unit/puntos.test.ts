@@ -21,6 +21,10 @@ describe("puntaje individual", () => {
     expect(calcularTotalIndividual([], [], 125)).toBe(125);
   });
 
+  it("suma una actividad completada solo una vez", () => {
+    expect(calcularTotalIndividual([], [], 10, true, [{ puntosOtorgados: 40 }])).toBe(50);
+  });
+
   it("un integrante Staff no participa en el esquema de puntos", () => {
     expect(
       calcularTotalIndividual(

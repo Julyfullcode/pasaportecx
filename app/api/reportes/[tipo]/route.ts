@@ -38,6 +38,22 @@ export async function GET(
   } else if (tipo === "encuestas") {
     const datos = await db.completitud.findMany({ where: { desafio: { tipo: "ENCUESTA" } }, include: { participante: true, desafio: true } });
     filas = [["Participante", "Staff", "Encuesta", "Respuesta", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.participante.esStaff ? "Sí" : "No", c.desafio.titulo, JSON.stringify(c.respuesta), c.completadoEn.toISOString()])];
+  } else if (tipo === "actividades") {
+    const datos = await db.respuestaActividad.findMany({
+      include: { participante: true, actividad: true },
+      orderBy: { respondidoEn: "asc" },
+    });
+    filas = [
+      ["Participante", "Staff", "Actividad", "Pregunta", "Respuesta", "Fecha"],
+      ...datos.map((item) => [
+        item.participante.nombre,
+        item.participante.esStaff ? "Sí" : "No",
+        item.actividad.titulo,
+        item.preguntaId,
+        JSON.stringify(item.respuesta),
+        item.respondidoEn.toISOString(),
+      ]),
+    ];
   } else if (tipo === "empresas") {
     const datos = await db.empresa.findMany({ include: { participantes: true }, orderBy: { orden: "asc" } });
     filas = [["Empresa", "Participantes", "Puntos totales"], ...datos.map((e) => [e.nombre, e.participantes.length, e.participantes.reduce((s, p) => s + p.puntosTotales, 0)])];

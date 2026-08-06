@@ -54,6 +54,8 @@ model Participante {
   ajustes             AjustePuntos[]
   sesiones            SesionParticipante[]
   correoAutorizado    CorreoAutorizado?
+  respuestasActividad RespuestaActividad[]
+  actividadesCompletadas ParticipacionActividad[]
 
   @@index([puntosTotales])
   @@index([activo, esStaff, puntosTotales])
@@ -144,6 +146,52 @@ model Completitud {
   @@index([participanteId])
   @@index([desafioId])
   @@index([estado])
+}
+
+model Actividad {
+  id                 String                  @id @default(cuid())
+  titulo             String
+  invitacion         String
+  cierre             String
+  estado             String                  @default("BORRADOR")
+  pasoActual         Int                     @default(0)
+  puntosHabilitados  Boolean                 @default(false)
+  puntos             Int                     @default(0)
+  configuracion      Json
+  creadoEn           DateTime                @default(now())
+  actualizadoEn      DateTime                @updatedAt
+  respuestas         RespuestaActividad[]
+  participaciones    ParticipacionActividad[]
+
+  @@index([estado, creadoEn])
+}
+
+model RespuestaActividad {
+  id              String       @id @default(cuid())
+  actividadId     String
+  participanteId String
+  preguntaId      String
+  respuesta       Json
+  respondidoEn    DateTime     @default(now())
+  actividad       Actividad    @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  participante    Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadId, participanteId, preguntaId])
+  @@index([actividadId, preguntaId])
+  @@index([participanteId])
+}
+
+model ParticipacionActividad {
+  id              String       @id @default(cuid())
+  actividadId     String
+  participanteId String
+  puntosOtorgados Int          @default(0)
+  completadaEn    DateTime     @default(now())
+  actividad       Actividad    @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  participante    Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadId, participanteId])
+  @@index([participanteId])
 }
 
 model Recuerdo {

@@ -8,6 +8,36 @@ if (!url || !url.startsWith("postgres")) {
 const db = new PrismaClient({ datasources: { db: { url } } });
 try {
   await db.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS "Actividad" ('
+    + '"id" TEXT NOT NULL PRIMARY KEY, "titulo" TEXT NOT NULL, '
+    + '"invitacion" TEXT NOT NULL, "cierre" TEXT NOT NULL, '
+    + '"estado" TEXT NOT NULL DEFAULT \'BORRADOR\', "pasoActual" INTEGER NOT NULL DEFAULT 0, '
+    + '"puntosHabilitados" BOOLEAN NOT NULL DEFAULT false, "puntos" INTEGER NOT NULL DEFAULT 0, '
+    + '"configuracion" JSONB NOT NULL, "creadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, '
+    + '"actualizadoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)'
+  );
+  await db.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS "RespuestaActividad" ('
+    + '"id" TEXT NOT NULL PRIMARY KEY, "actividadId" TEXT NOT NULL, "participanteId" TEXT NOT NULL, '
+    + '"preguntaId" TEXT NOT NULL, "respuesta" JSONB NOT NULL, '
+    + '"respondidoEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, '
+    + 'CONSTRAINT "RespuestaActividad_actividadId_fkey" FOREIGN KEY ("actividadId") REFERENCES "Actividad"("id") ON DELETE CASCADE ON UPDATE CASCADE, '
+    + 'CONSTRAINT "RespuestaActividad_participanteId_fkey" FOREIGN KEY ("participanteId") REFERENCES "Participante"("id") ON DELETE CASCADE ON UPDATE CASCADE)'
+  );
+  await db.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS "ParticipacionActividad" ('
+    + '"id" TEXT NOT NULL PRIMARY KEY, "actividadId" TEXT NOT NULL, "participanteId" TEXT NOT NULL, '
+    + '"puntosOtorgados" INTEGER NOT NULL DEFAULT 0, "completadaEn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, '
+    + 'CONSTRAINT "ParticipacionActividad_actividadId_fkey" FOREIGN KEY ("actividadId") REFERENCES "Actividad"("id") ON DELETE CASCADE ON UPDATE CASCADE, '
+    + 'CONSTRAINT "ParticipacionActividad_participanteId_fkey" FOREIGN KEY ("participanteId") REFERENCES "Participante"("id") ON DELETE CASCADE ON UPDATE CASCADE)'
+  );
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Actividad_estado_creadoEn_idx" ON "Actividad"("estado", "creadoEn")');
+  await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "RespuestaActividad_actividadId_participanteId_preguntaId_key" ON "RespuestaActividad"("actividadId", "participanteId", "preguntaId")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "RespuestaActividad_actividadId_preguntaId_idx" ON "RespuestaActividad"("actividadId", "preguntaId")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "RespuestaActividad_participanteId_idx" ON "RespuestaActividad"("participanteId")');
+  await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "ParticipacionActividad_actividadId_participanteId_key" ON "ParticipacionActividad"("actividadId", "participanteId")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ParticipacionActividad_participanteId_idx" ON "ParticipacionActividad"("participanteId")');
+  await db.$executeRawUnsafe(
     'ALTER TABLE "Participante" '
     + 'ADD COLUMN IF NOT EXISTS "esStaff" BOOLEAN NOT NULL DEFAULT false',
   );

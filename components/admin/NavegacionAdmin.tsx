@@ -9,6 +9,7 @@ import {
   Image,
   LayoutDashboard,
   MonitorPlay,
+  MessagesSquare,
   QrCode,
   Settings,
   Target,
@@ -20,6 +21,7 @@ import { Logo } from "@/components/marca/Logo";
 const enlaces = [
   ["/admin", "Resumen", LayoutDashboard],
   ["/admin/desafios", "Desafíos", Target],
+  ["/admin/actividades", "Actividades", MessagesSquare],
   ["/admin/participantes", "Participantes", Users],
   ["/admin/evidencias", "Evidencias", Camera],
   ["/admin/recuerdos", "Recuerdos", Image],
@@ -51,7 +53,7 @@ export function NavegacionAdmin({ pendientes }: { pendientes: number }) {
         <form action={salirAdmin}><button className="flex w-full items-center gap-2 rounded-xl p-3 text-white/75"><DoorOpen /> Cerrar sesión</button></form>
       </aside>
       <nav className="fixed inset-x-0 bottom-0 z-50 flex overflow-x-auto border-t bg-white p-2 shadow-lg lg:hidden" aria-label="Administración móvil">
-        {enlaces.slice(0, 7).map(([href, etiqueta, Icono]) => (
+        {enlaces.map(([href, etiqueta, Icono]) => (
           <Link key={href} href={href} className={`relative flex min-w-[74px] flex-col items-center gap-0.5 rounded-lg py-1 text-[10px] font-extrabold ${ruta === href ? "text-[var(--epm-azul)]" : "text-slate-500"}`}>
             <Icono size={20} /> {etiqueta}
             {href === "/admin/evidencias" && pendientes > 0 && <span className="absolute right-2 top-0 rounded-full bg-amber-400 px-1 text-[9px] text-slate-900">{pendientes}</span>}
