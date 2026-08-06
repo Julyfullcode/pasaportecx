@@ -21,7 +21,7 @@ export default async function Inicio() {
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { diplomaHabilitado: true } }),
     db.completitud.findFirst({
       where: { participanteId: participante.id, desafio: { codigoQr: CODIGO_DESAFIO_CIERRE } },
-      select: { respuesta: true },
+      select: { id: true, respuesta: true },
     }),
   ]);
   const tieneCosecha = esRespuestasCosecha(cosechaCompletada?.respuesta);
@@ -74,7 +74,7 @@ export default async function Inicio() {
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
         </a>
         {tieneCosecha && (
-          <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-verde)] bg-gradient-to-r from-lime-50 to-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+          <a href={`/api/cosecha?v=${encodeURIComponent(cosechaCompletada!.id)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-verde)] bg-gradient-to-r from-lime-50 to-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Sprout /></span>
             <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Mi tarjeta de cierre</strong><small className="text-slate-600">Abre tu cosecha, gratitud y acción en PDF</small></span>
           </a>

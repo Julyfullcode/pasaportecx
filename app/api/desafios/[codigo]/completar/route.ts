@@ -59,6 +59,7 @@ export async function POST(
     const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
     return Response.json({
       yaCompletado: true,
+      completitudId: existente.id,
       estado: existente.estado,
       puntosGanados: participante.esStaff ? 0 : existente.puntosOtorgados,
       nuevoTotal: participante.puntosTotales,
@@ -196,6 +197,7 @@ export async function POST(
     }, { maxWait: 15_000, timeout: 20_000 });
     anunciarCambio("puntos");
     return Response.json({
+      completitudId: resultado.completitud.id,
       estado: resultado.completitud.estado,
       puntosGanados: existente && esMatricula ? 0 : puntosOtorgados,
       yaCompletado: Boolean(existente && esMatricula),
@@ -214,6 +216,7 @@ export async function POST(
       const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
       return Response.json({
         yaCompletado: true,
+        completitudId: existente.id,
         estado: existente.estado,
         puntosGanados: participante.esStaff ? 0 : existente.puntosOtorgados,
         nuevoTotal: participante.puntosTotales,

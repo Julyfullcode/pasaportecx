@@ -68,6 +68,7 @@ export default async function DetalleDesafio({
               puntos={completitud.puntosOtorgados}
               puntosDesafio={desafio.puntos}
               esCosecha={esCosecha}
+              completitudId={completitud.id}
               esStaff={participante.esStaff}
               puntualidad={resultadoPuntualidadDesdeRespuesta(completitud.respuesta)}
             />
@@ -100,6 +101,7 @@ function CheckExistente({
   puntos,
   puntosDesafio,
   esCosecha,
+  completitudId,
   esStaff,
   puntualidad,
 }: {
@@ -107,6 +109,7 @@ function CheckExistente({
   puntos: number;
   puntosDesafio: number;
   esCosecha: boolean;
+  completitudId: string;
   esStaff: boolean;
   puntualidad: ResultadoPuntualidad | null;
 }) {
@@ -116,7 +119,7 @@ function CheckExistente({
       <div className={`mx-auto grid h-14 w-14 place-items-center rounded-full ${llegadaTarde ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--epm-verde-medio)]"}`}>{llegadaTarde ? "!" : "✓"}</div>
       <h2 className="mt-3 text-xl font-extrabold">{llegadaTarde ? "Llegaste después del tiempo límite" : "Ya completaste este desafío"}</h2>
       <p className="mt-2 text-slate-600">{esStaff ? "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos." : puntualidad ? mensajePuntualidad(puntualidad, puntosDesafio) : estado === "PENDIENTE" ? "Tu evidencia sigue pendiente de revisión." : `Ganaste ${puntos} puntos.`}</p>
-      {esCosecha && <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
+      {esCosecha && <a href={`/api/cosecha?v=${encodeURIComponent(completitudId)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
     </>
   );
 }

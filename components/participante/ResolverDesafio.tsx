@@ -40,7 +40,7 @@ export function ResolverDesafio({
 }) {
   const [cargando, setCargando] = useState(tipo === "CHECK_IN");
   const [error, setError] = useState("");
-  const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
+  const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; completitudId?: string; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
   const puntualidad = esConfiguracionPuntualidad(configuracion) ? configuracion : null;
   const matricula = esConfiguracionMatricula(configuracion) ? configuracion as ConfiguracionMatricula : null;
@@ -128,7 +128,7 @@ export function ResolverDesafio({
             <div aria-hidden="true" className="mt-3 flex justify-center gap-2 text-[var(--epm-verde)]"><Sparkles /><Sparkles /><Sparkles /></div>
           </>
         )}
-        {configuracion.formato === FORMATO_COSECHA && <a href="/api/cosecha#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
+        {configuracion.formato === FORMATO_COSECHA && resultado.completitudId && <a href={`/api/cosecha?v=${encodeURIComponent(resultado.completitudId)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full">Ver mi tarjeta de cierre</a>}
       </div>
     );
   }
