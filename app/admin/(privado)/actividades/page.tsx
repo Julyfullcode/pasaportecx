@@ -9,7 +9,7 @@ export default async function AdminActividades() {
   await asegurarActividadesBase();
   const actividades = await db.actividad.findMany({ orderBy: { creadoEn: "desc" }, include: { _count: { select: { respuestas: true, participaciones: true } } } });
   return <div className="p-4 md:p-7">
-    <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Participación guiada</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Actividades</h1><p className="mt-2 max-w-3xl text-slate-600">Configura el ejercicio y controla en vivo cuándo aparece cada pregunta. Las actividades son independientes de los desafíos.</p></div>
+    <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Participación guiada</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Actividades</h1><p className="mt-2 max-w-3xl text-slate-600">Configura la actividad, modera y proyecta su resultado.</p></div>
     <div className="mt-6 space-y-4">{actividades.map((actividad) => {
       const preguntas = preguntasDe(actividad.configuracion);
       return <article key={actividad.id} className="tarjeta overflow-hidden">
