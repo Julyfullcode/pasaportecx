@@ -20,7 +20,8 @@ type DatosActividad = {
     invitacion: string;
     cierre: string;
     estado: string;
-    etapa: "INVITACION" | "PREGUNTA" | "CIERRE";
+    etapa: "INVITACION" | "PREGUNTA" | "FORMULARIO_COMPLETO" | "CIERRE";
+    tipo: string;
     pasoActual: number;
     totalPreguntas: number;
     puntosHabilitados: boolean;
@@ -28,6 +29,7 @@ type DatosActividad = {
     requiereEmpresa: boolean;
   };
   empresas: { id: string; nombre: string; urlLogo: string | null }[];
+  preguntas: PreguntaVisible[];
   empresaEvaluadaId: string | null;
   pregunta: PreguntaVisible | null;
   respondida: boolean;
@@ -43,6 +45,7 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
   const [afirmaciones, setAfirmaciones] = useState<Record<string, boolean>>({});
   const [respuestaAbierta, setRespuestaAbierta] = useState("");
   const [empresaEvaluadaId, setEmpresaEvaluadaId] = useState("");
+  const [respuestasAbiertas, setRespuestasAbiertas] = useState<Record<string, string>>({});
 
   const cargar = useCallback(async () => {
     const respuesta = await fetch(`/api/actividades/${encodeURIComponent(codigo)}`, { cache: "no-store" });
@@ -84,10 +87,42 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
     }
   }
 
+  async function responderFormularioCompleto() {
+    if (!datos || enviando || !empresaEvaluadaId || datos.preguntas.some((pregunta) => (respuestasAbiertas[pregunta.id] ?? "").trim().length < 2)) return;
+    setEnviando(true);
+    setError("");
+    try {
+      const respuesta = await fetch(`/api/actividades/${encodeURIComponent(codigo)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empresaEvaluadaId, respuestas: datos.preguntas.map((pregunta) => ({ preguntaId: pregunta.id, respuesta: (respuestasAbiertas[pregunta.id] ?? "").trim() })) }),
+      });
+      const cuerpo = await respuesta.json();
+      if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos guardar tus respuestas.");
+      await cargar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos guardar tus respuestas.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   if (!datos && !error) return <div className="tarjeta grid min-h-72 place-items-center p-8"><LoaderCircle className="animate-spin text-[var(--epm-azul)]" size={36} /></div>;
   if (!datos) return <div className="tarjeta p-7 text-center text-red-700"><p className="font-extrabold">{error}</p><button onClick={() => void cargar()} className="boton-secundario mt-4">Intentar de nuevo</button></div>;
 
   const { actividad, pregunta } = datos;
+  if (actividad.etapa === "FORMULARIO_COMPLETO") {
+    const listo = Boolean(empresaEvaluadaId) && datos.preguntas.every((item) => (respuestasAbiertas[item.id] ?? "").trim().length >= 2);
+    return <section className="tarjeta entrada-suave overflow-hidden">
+      <div className="marca-gradiente p-7 text-white sm:p-10"><Sparkles className="text-[var(--epm-verde)]" size={42} /><h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">{actividad.titulo}</h1><p className="mt-3 max-w-3xl text-lg leading-relaxed text-white/90">{actividad.invitacion}</p></div>
+      <div className="space-y-6 p-5 sm:p-8">
+        <label><span className="etiqueta">Empresa que estás evaluando</span><select className="campo" value={empresaEvaluadaId} onChange={(evento) => setEmpresaEvaluadaId(evento.target.value)}><option value="">Selecciona una empresa</option>{datos.empresas.map((empresa) => <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>)}</select></label>
+        {datos.preguntas.map((item, indice) => <label key={item.id} className="block rounded-2xl border border-slate-200 p-5"><span className="text-sm font-extrabold text-[var(--epm-azul)]">Pregunta {indice + 1}</span><strong className="mt-1 block text-lg text-[var(--epm-azul-profundo)]">{item.titulo}</strong><span className="mt-2 block text-sm leading-relaxed text-slate-600">{item.contexto}</span><textarea className="campo mt-4 min-h-36" maxLength={4000} value={respuestasAbiertas[item.id] ?? ""} onChange={(evento) => setRespuestasAbiertas((actuales) => ({ ...actuales, [item.id]: evento.target.value }))} placeholder="Escribe aquí tus hallazgos..." /></label>)}
+        {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
+        <button type="button" disabled={!listo || enviando} onClick={() => void responderFormularioCompleto()} className="boton-primario w-full disabled:cursor-not-allowed disabled:opacity-50">{enviando ? <LoaderCircle className="animate-spin" /> : <Send />} Enviar evaluación</button>
+      </div>
+    </section>;
+  }
   if (actividad.etapa === "INVITACION") {
     return (
       <section className="tarjeta entrada-suave overflow-hidden">

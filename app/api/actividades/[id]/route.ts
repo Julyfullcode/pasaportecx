@@ -31,15 +31,18 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
     ? preguntas[actividad.pasoActual - 1]
     : null;
   const respuesta = pregunta ? actividad.respuestas.find((item) => item.preguntaId === pregunta.id) : null;
+  const completada = actividad.respuestas.length >= preguntas.length;
   const empresas = actividad.requiereEmpresa
     ? await db.empresa.findMany({ where: { activa: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true, urlLogo: true } })
     : [];
-  const etapa = actividad.estado === "CERRADA" || actividad.pasoActual > preguntas.length
+  const etapa = actividad.estado === "CERRADA" || (actividad.tipo === "EVALUACION_WHATSAPP" && completada) || actividad.pasoActual > preguntas.length
     ? "CIERRE"
+    : actividad.tipo === "EVALUACION_WHATSAPP" ? "FORMULARIO_COMPLETO"
     : actividad.pasoActual === 0 ? "INVITACION" : "PREGUNTA";
   return Response.json({
     actividad: {
       id: actividad.id,
+      tipo: actividad.tipo,
       titulo: actividad.titulo,
       invitacion: actividad.invitacion,
       cierre: actividad.cierre,
@@ -52,6 +55,7 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
       requiereEmpresa: actividad.requiereEmpresa,
     },
     empresas,
+    preguntas: actividad.tipo === "EVALUACION_WHATSAPP" ? preguntas.map(sinRespuestasCorrectas) : [],
     empresaEvaluadaId: actividad.respuestas.find((item) => item.empresaEvaluadaId)?.empresaEvaluadaId ?? null,
     pregunta: pregunta ? sinRespuestasCorrectas(pregunta) : null,
     respondida: Boolean(respuesta),
@@ -64,7 +68,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
   const participante = await participanteActual();
   if (!participante) return Response.json({ error: "Debes iniciar sesión." }, { status: 401 });
   const { id: codigoAcceso } = await contexto.params;
-  let cuerpo: { preguntaId?: string; respuesta?: unknown; empresaEvaluadaId?: string };
+  let cuerpo: { preguntaId?: string; respuesta?: unknown; respuestas?: { preguntaId?: string; respuesta?: unknown }[]; empresaEvaluadaId?: string };
   try {
     cuerpo = await request.json();
   } catch {
@@ -75,6 +79,29 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
       const actividad = await tx.actividad.findUniqueOrThrow({ where: { codigoAcceso } });
       const id = actividad.id;
       const preguntas = preguntasDe(actividad.configuracion);
+      if (actividad.tipo === "EVALUACION_WHATSAPP") {
+        if (actividad.estado !== "PUBLICADA") throw new Error("ETAPA_CAMBIO");
+        const empresa = await tx.empresa.findFirst({ where: { id: cuerpo.empresaEvaluadaId, activa: true }, select: { id: true } });
+        if (!empresa) throw new Error("EMPRESA_INVALIDA");
+        if (!Array.isArray(cuerpo.respuestas) || cuerpo.respuestas.length !== preguntas.length) throw new Error("RESPUESTA_INVALIDA");
+        const recibidas = new Map(cuerpo.respuestas.map((item) => [item.preguntaId, item.respuesta]));
+        if (recibidas.size !== preguntas.length || preguntas.some((item) => !respuestaActividadValida(item, recibidas.get(item.id)))) throw new Error("RESPUESTA_INVALIDA");
+        for (const preguntaAbierta of preguntas) {
+          await tx.respuestaActividad.upsert({
+            where: { actividadId_participanteId_preguntaId: { actividadId: id, participanteId: participante.id, preguntaId: preguntaAbierta.id } },
+            update: { respuesta: recibidas.get(preguntaAbierta.id) as Prisma.InputJsonValue, empresaEvaluadaId: empresa.id },
+            create: { actividadId: id, participanteId: participante.id, preguntaId: preguntaAbierta.id, empresaEvaluadaId: empresa.id, respuesta: recibidas.get(preguntaAbierta.id) as Prisma.InputJsonValue },
+          });
+        }
+        const puntosOtorgados = actividad.puntosHabilitados && !participante.esStaff ? actividad.puntos : 0;
+        await tx.participacionActividad.upsert({
+          where: { actividadId_participanteId: { actividadId: id, participanteId: participante.id } },
+          update: {},
+          create: { actividadId: id, participanteId: participante.id, puntosOtorgados },
+        });
+        await recalcularPuntosParticipante(tx, participante.id);
+        return { insight: null, completada: true, puntosOtorgados };
+      }
       const pregunta = preguntas[actividad.pasoActual - 1];
       if (actividad.estado !== "PUBLICADA" || !pregunta || pregunta.id !== cuerpo.preguntaId) throw new Error("ETAPA_CAMBIO");
       if (!respuestaActividadValida(pregunta, cuerpo.respuesta)) throw new Error("RESPUESTA_INVALIDA");

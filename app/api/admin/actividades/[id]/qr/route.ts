@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   return new Response(png, {
     headers: {
       "Content-Type": "image/png",
-      "Content-Disposition": `attachment; filename="qr-${id}.png"`,
+      "Content-Disposition": `inline; filename="qr-${id}.png"`,
       "Cache-Control": "private, no-store",
     },
   });

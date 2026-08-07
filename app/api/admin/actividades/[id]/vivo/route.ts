@@ -10,6 +10,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const actividad = await db.actividad.findUnique({ where: { id } });
   if (!actividad) return Response.json({ error: "Actividad no encontrada." }, { status: 404 });
   const preguntas = preguntasDe(actividad.configuracion);
+  if (actividad.tipo === "EVALUACION_WHATSAPP") {
+    const total = await db.participacionActividad.count({ where: { actividadId: id } });
+    return Response.json({ pregunta: actividad.titulo, total, tipo: "ABIERTA", datos: [] }, { headers: { "Cache-Control": "no-store" } });
+  }
   const pregunta = preguntas[actividad.pasoActual - 1];
   if (!pregunta) return Response.json({ pregunta: null, total: 0, tipo: "SIN_PREGUNTA", datos: [] }, { headers: { "Cache-Control": "no-store" } });
   const respuestas = await db.respuestaActividad.findMany({ where: { actividadId: id, preguntaId: pregunta.id }, select: { respuesta: true } });
