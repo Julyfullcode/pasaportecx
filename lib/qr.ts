@@ -7,7 +7,11 @@ export function urlDesafio(codigo: string) {
 }
 
 export async function qrPng(codigo: string) {
-  return QRCode.toBuffer(urlDesafio(codigo), {
+  return qrPngUrl(urlDesafio(codigo));
+}
+
+export async function qrPngUrl(url: string) {
+  return QRCode.toBuffer(url, {
     type: "png",
     width: 900,
     margin: 2,

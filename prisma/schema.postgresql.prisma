@@ -151,6 +151,10 @@ model Completitud {
 model Actividad {
   id                 String                  @id @default(cuid())
   titulo             String
+  tipo               String                  @default("GUIADA")
+  codigoAcceso       String?                 @unique
+  anonima            Boolean                 @default(false)
+  requiereEmpresa    Boolean                 @default(false)
   invitacion         String
   cierre             String
   estado             String                  @default("BORRADOR")
@@ -171,6 +175,7 @@ model RespuestaActividad {
   actividadId     String
   participanteId String
   preguntaId      String
+  empresaEvaluadaId String?
   respuesta       Json
   respondidoEn    DateTime     @default(now())
   actividad       Actividad    @relation(fields: [actividadId], references: [id], onDelete: Cascade)
@@ -179,6 +184,7 @@ model RespuestaActividad {
   @@unique([actividadId, participanteId, preguntaId])
   @@index([actividadId, preguntaId])
   @@index([participanteId])
+  @@index([empresaEvaluadaId])
 }
 
 model ParticipacionActividad {

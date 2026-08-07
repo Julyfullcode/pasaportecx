@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import type { ConfiguracionActividad, PreguntaActividad } from "@/lib/actividad";
 import { guardarActividad } from "@/app/admin/(privado)/actividades/actions";
 
 type ActividadEditable = {
   id: string;
+  tipo: string;
   titulo: string;
   invitacion: string;
   cierre: string;
@@ -21,6 +22,16 @@ export function EditorActividad({ actividad }: { actividad: ActividadEditable })
 
   function actualizarPregunta(indice: number, cambios: Partial<PreguntaActividad>) {
     setPreguntas((actuales) => actuales.map((pregunta, posicion) => posicion === indice ? { ...pregunta, ...cambios } : pregunta));
+  }
+
+  function agregarPreguntaAbierta() {
+    setPreguntas((actuales) => [...actuales, {
+      id: `pregunta-${Date.now()}`,
+      titulo: "Nueva pregunta abierta",
+      contexto: "Escribe aquí la orientación para responder.",
+      tipo: "RESPUESTA_ABIERTA",
+      insight: "Gracias por compartir tu respuesta.",
+    }]);
   }
 
   return (
@@ -39,6 +50,7 @@ export function EditorActividad({ actividad }: { actividad: ActividadEditable })
           <details key={pregunta.id} className="tarjeta overflow-hidden" open={indice === 0}>
             <summary className="cursor-pointer list-none bg-gradient-to-r from-sky-50 to-emerald-50 p-5 font-extrabold text-[var(--epm-azul-profundo)]">Pregunta {indice + 1}: {pregunta.titulo}</summary>
             <div className="space-y-4 p-5">
+              {actividad.tipo === "EVALUACION_WHATSAPP" && preguntas.length > 1 && <button type="button" onClick={() => setPreguntas((actuales) => actuales.filter((_, posicion) => posicion !== indice))} className="inline-flex items-center gap-2 text-sm font-extrabold text-red-700"><Trash2 size={17} /> Eliminar pregunta</button>}
               <label><span className="etiqueta">Pregunta</span><input className="campo" value={pregunta.titulo} onChange={(e) => actualizarPregunta(indice, { titulo: e.target.value })} /></label>
               <label><span className="etiqueta">Descripción o contexto</span><textarea className="campo min-h-28" value={pregunta.contexto} onChange={(e) => actualizarPregunta(indice, { contexto: e.target.value })} /></label>
               {pregunta.tipo === "OPCION_UNICA" && (
@@ -53,6 +65,7 @@ export function EditorActividad({ actividad }: { actividad: ActividadEditable })
         ))}
       </div>
       <button className="boton-primario"><Save size={19} /> Guardar configuración</button>
+      {actividad.tipo === "EVALUACION_WHATSAPP" && <button type="button" onClick={agregarPreguntaAbierta} className="boton-secundario"><Plus size={18} /> Agregar pregunta abierta</button>}
     </form>
   );
 }

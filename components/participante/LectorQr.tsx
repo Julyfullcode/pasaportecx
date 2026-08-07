@@ -4,13 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CameraOff, Keyboard, LoaderCircle, RefreshCw } from "lucide-react";
 
-function extraerCodigo(texto: string) {
+function extraerDestino(texto: string) {
   try {
     const url = new URL(texto);
     const partes = url.pathname.split("/").filter(Boolean);
-    if (partes.at(-2) === "d") return partes.at(-1) ?? "";
+    const codigo = partes.at(-1) ?? "";
+    if ((partes.at(-2) === "d" || partes.at(-2) === "a") && codigoValido(codigo)) return `/${partes.at(-2)}/${encodeURIComponent(codigo)}`;
   } catch {}
-  return texto.trim();
+  const codigo = texto.trim();
+  return codigoValido(codigo) ? `/d/${encodeURIComponent(codigo)}` : "";
 }
 
 function codigoValido(codigo: string) {
@@ -87,10 +89,10 @@ export function LectorQr() {
             },
           },
           (texto) => {
-            const codigo = extraerCodigo(texto);
-            if (procesandoLectura.current || !codigoValido(codigo)) return;
+            const destino = extraerDestino(texto);
+            if (procesandoLectura.current || !destino) return;
             procesandoLectura.current = true;
-            void scanner.stop().finally(() => router.push(`/d/${encodeURIComponent(codigo)}`));
+            void scanner.stop().finally(() => router.push(destino));
           },
           () => {},
         );

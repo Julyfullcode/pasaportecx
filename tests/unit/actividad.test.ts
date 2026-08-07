@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ACTIVIDAD_CONOCIMIENTO,
+  ACTIVIDAD_WHATSAPP,
   leerConfiguracionActividad,
   preguntasDe,
   respuestaActividadValida,
@@ -25,5 +26,13 @@ describe("actividad moderada", () => {
     const pregunta = ACTIVIDAD_CONOCIMIENTO.configuracion.preguntas[0];
     expect(respuestaActividadValida(pregunta, "a")).toBe(true);
     expect(respuestaActividadValida(pregunta, "opcion-inventada")).toBe(false);
+  });
+
+  it("configura la evaluación de WhatsApp únicamente con respuestas abiertas", () => {
+    const preguntas = preguntasDe(ACTIVIDAD_WHATSAPP.configuracion);
+    expect(preguntas).toHaveLength(4);
+    expect(preguntas.every((pregunta) => pregunta.tipo === "RESPUESTA_ABIERTA")).toBe(true);
+    expect(respuestaActividadValida(preguntas[0], "Hallazgo detallado del canal")).toBe(true);
+    expect(respuestaActividadValida(preguntas[0], "")).toBe(false);
   });
 });

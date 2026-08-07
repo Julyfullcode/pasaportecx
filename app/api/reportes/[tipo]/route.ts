@@ -46,7 +46,7 @@ export async function GET(
     filas = [
       ["Participante", "Staff", "Actividad", "Pregunta", "Respuesta", "Fecha"],
       ...datos.map((item) => [
-        item.participante.nombre,
+        item.actividad.anonima ? "Anónimo" : item.participante.nombre,
         item.participante.esStaff ? "Sí" : "No",
         item.actividad.titulo,
         item.preguntaId,

@@ -38,6 +38,18 @@ try {
   await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "ParticipacionActividad_actividadId_participanteId_key" ON "ParticipacionActividad"("actividadId", "participanteId")');
   await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ParticipacionActividad_participanteId_idx" ON "ParticipacionActividad"("participanteId")');
   await db.$executeRawUnsafe(
+    'ALTER TABLE "Actividad" '
+    + 'ADD COLUMN IF NOT EXISTS "tipo" TEXT NOT NULL DEFAULT \'GUIADA\', '
+    + 'ADD COLUMN IF NOT EXISTS "codigoAcceso" TEXT, '
+    + 'ADD COLUMN IF NOT EXISTS "anonima" BOOLEAN NOT NULL DEFAULT false, '
+    + 'ADD COLUMN IF NOT EXISTS "requiereEmpresa" BOOLEAN NOT NULL DEFAULT false'
+  );
+  await db.$executeRawUnsafe(
+    'ALTER TABLE "RespuestaActividad" ADD COLUMN IF NOT EXISTS "empresaEvaluadaId" TEXT'
+  );
+  await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "Actividad_codigoAcceso_key" ON "Actividad"("codigoAcceso")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "RespuestaActividad_empresaEvaluadaId_idx" ON "RespuestaActividad"("empresaEvaluadaId")');
+  await db.$executeRawUnsafe(
     'ALTER TABLE "Participante" '
     + 'ADD COLUMN IF NOT EXISTS "esStaff" BOOLEAN NOT NULL DEFAULT false',
   );

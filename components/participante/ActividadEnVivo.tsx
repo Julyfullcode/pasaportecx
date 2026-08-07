@@ -8,7 +8,7 @@ type PreguntaVisible = {
   id: string;
   titulo: string;
   contexto: string;
-  tipo: "OPCION_UNICA" | "VERDADERO_FALSO";
+  tipo: "OPCION_UNICA" | "VERDADERO_FALSO" | "RESPUESTA_ABIERTA";
   opciones?: { id: string; texto: string }[];
   afirmaciones?: { id: string; texto: string }[];
 };
@@ -25,47 +25,54 @@ type DatosActividad = {
     totalPreguntas: number;
     puntosHabilitados: boolean;
     puntos: number;
+    requiereEmpresa: boolean;
   };
+  empresas: { id: string; nombre: string; urlLogo: string | null }[];
+  empresaEvaluadaId: string | null;
   pregunta: PreguntaVisible | null;
   respondida: boolean;
   respuesta: unknown;
   insight: string | null;
 };
 
-export function ActividadEnVivo({ id }: { id: string }) {
+export function ActividadEnVivo({ codigo }: { codigo: string }) {
   const [datos, setDatos] = useState<DatosActividad | null>(null);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [opcion, setOpcion] = useState("");
   const [afirmaciones, setAfirmaciones] = useState<Record<string, boolean>>({});
+  const [respuestaAbierta, setRespuestaAbierta] = useState("");
+  const [empresaEvaluadaId, setEmpresaEvaluadaId] = useState("");
 
   const cargar = useCallback(async () => {
-    const respuesta = await fetch(`/api/actividades/${encodeURIComponent(id)}`, { cache: "no-store" });
+    const respuesta = await fetch(`/api/actividades/${encodeURIComponent(codigo)}`, { cache: "no-store" });
     const cuerpo = await respuesta.json();
     if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos cargar la actividad.");
     setDatos(cuerpo);
-  }, [id]);
+    if (cuerpo.empresaEvaluadaId) setEmpresaEvaluadaId(cuerpo.empresaEvaluadaId);
+  }, [codigo]);
 
   useEffect(() => { void cargar().catch((e) => setError(e instanceof Error ? e.message : "No pudimos cargar la actividad.")); }, [cargar]);
-  useEffect(() => { setOpcion(""); setAfirmaciones({}); setError(""); }, [datos?.pregunta?.id]);
+  useEffect(() => { setOpcion(""); setAfirmaciones({}); setRespuestaAbierta(""); setError(""); }, [datos?.pregunta?.id]);
   usePollingVisible(cargar, 2000);
 
   const completa = useMemo(() => {
     if (!datos?.pregunta) return false;
     if (datos.pregunta.tipo === "OPCION_UNICA") return Boolean(opcion);
+    if (datos.pregunta.tipo === "RESPUESTA_ABIERTA") return respuestaAbierta.trim().length >= 2 && (!datos.actividad.requiereEmpresa || Boolean(empresaEvaluadaId));
     return Boolean(datos.pregunta.afirmaciones?.every((item) => typeof afirmaciones[item.id] === "boolean"));
-  }, [datos?.pregunta, opcion, afirmaciones]);
+  }, [datos?.pregunta, datos?.actividad.requiereEmpresa, opcion, afirmaciones, respuestaAbierta, empresaEvaluadaId]);
 
   async function responder() {
     if (!datos?.pregunta || !completa || enviando) return;
     setEnviando(true);
     setError("");
-    const respuestaElegida = datos.pregunta.tipo === "OPCION_UNICA" ? opcion : afirmaciones;
+    const respuestaElegida = datos.pregunta.tipo === "OPCION_UNICA" ? opcion : datos.pregunta.tipo === "RESPUESTA_ABIERTA" ? respuestaAbierta.trim() : afirmaciones;
     try {
-      const respuesta = await fetch(`/api/actividades/${encodeURIComponent(id)}`, {
+      const respuesta = await fetch(`/api/actividades/${encodeURIComponent(codigo)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preguntaId: datos.pregunta.id, respuesta: respuestaElegida }),
+        body: JSON.stringify({ preguntaId: datos.pregunta.id, respuesta: respuestaElegida, empresaEvaluadaId }),
       });
       const cuerpo = await respuesta.json();
       if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos guardar tu respuesta.");
@@ -146,6 +153,10 @@ export function ActividadEnVivo({ id }: { id: string }) {
               </div>
             </div>
           ))}
+          {pregunta.tipo === "RESPUESTA_ABIERTA" && <>
+            {actividad.requiereEmpresa && <label><span className="etiqueta">Empresa que estás evaluando</span><select className="campo" value={empresaEvaluadaId} onChange={(evento) => setEmpresaEvaluadaId(evento.target.value)} disabled={Boolean(datos.empresaEvaluadaId)}><option value="">Selecciona una empresa</option>{datos.empresas.map((empresa) => <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>)}</select>{datos.empresaEvaluadaId && <small className="mt-1 block text-slate-500">La empresa se conserva para todas tus respuestas.</small>}</label>}
+            <label><span className="etiqueta">Tu respuesta</span><textarea className="campo min-h-40" maxLength={4000} value={respuestaAbierta} onChange={(evento) => setRespuestaAbierta(evento.target.value)} placeholder="Escribe aquí tus hallazgos..." /></label>
+          </>}
           {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
           <button type="button" disabled={!completa || enviando} onClick={() => void responder()} className="boton-primario w-full disabled:cursor-not-allowed disabled:opacity-50">{enviando ? <LoaderCircle className="animate-spin" /> : <Send />} Guardar respuesta</button>
         </div>

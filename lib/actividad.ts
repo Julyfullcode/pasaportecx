@@ -1,7 +1,9 @@
 import type { Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 
 export const ACTIVIDAD_CONOCIMIENTO_ID = "actividad-conocimiento-indicadores-mejora";
+export const ACTIVIDAD_WHATSAPP_ID = "actividad-evaluacion-canal-whatsapp";
 
 export type OpcionActividad = { id: string; texto: string };
 export type AfirmacionActividad = { id: string; texto: string; correcta: boolean };
@@ -10,7 +12,7 @@ export type PreguntaActividad = {
   id: string;
   titulo: string;
   contexto: string;
-  tipo: "OPCION_UNICA" | "VERDADERO_FALSO";
+  tipo: "OPCION_UNICA" | "VERDADERO_FALSO" | "RESPUESTA_ABIERTA";
   opciones?: OpcionActividad[];
   afirmaciones?: AfirmacionActividad[];
   respuestaCorrecta?: string;
@@ -106,6 +108,46 @@ export const ACTIVIDAD_CONOCIMIENTO = {
   } satisfies ConfiguracionActividad,
 };
 
+export const ACTIVIDAD_WHATSAPP = {
+  titulo: "Evaluación del canal WhatsApp",
+  invitacion:
+    "Te invitamos a recorrer el canal de WhatsApp de una de las empresas del Grupo EPM y registrar lo que encuentres. Tus respuestas serán anónimas y nos ayudarán a reconocer fortalezas, fricciones y oportunidades de mejora.",
+  cierre:
+    "Gracias por compartir tu evaluación. Cada observación nos ayuda a comprender mejor la experiencia y a convertir los hallazgos en oportunidades concretas de mejora.",
+  configuracion: {
+    preguntas: [
+      {
+        id: "recorrido-realizado",
+        titulo: "¿Qué recorrido o consulta realizaste en el canal de WhatsApp?",
+        contexto: "Describe brevemente qué intentaste hacer y hasta dónde pudiste avanzar.",
+        tipo: "RESPUESTA_ABIERTA" as const,
+        insight: "Comprender el recorrido permite interpretar cada hallazgo dentro del momento real en que ocurrió.",
+      },
+      {
+        id: "aspectos-positivos",
+        titulo: "¿Qué funcionó bien durante la experiencia?",
+        contexto: "Cuéntanos qué te pareció claro, fácil, útil o agradable.",
+        tipo: "RESPUESTA_ABIERTA" as const,
+        insight: "Reconocer lo que funciona bien ayuda a proteger y replicar las fortalezas del canal.",
+      },
+      {
+        id: "fricciones",
+        titulo: "¿Qué dificultades o fricciones encontraste?",
+        contexto: "Describe cualquier momento confuso, lento, repetitivo o que te impidió continuar.",
+        tipo: "RESPUESTA_ABIERTA" as const,
+        insight: "Las fricciones muestran dónde concentrar la investigación y priorizar mejoras.",
+      },
+      {
+        id: "oportunidad-mejora",
+        titulo: "¿Qué mejorarías del canal de WhatsApp?",
+        contexto: "Propón cambios que harían la experiencia más clara, ágil o resolutiva.",
+        tipo: "RESPUESTA_ABIERTA" as const,
+        insight: "Las propuestas convierten la observación en una primera hipótesis de acción.",
+      },
+    ],
+  } satisfies ConfiguracionActividad,
+};
+
 function textoValido(valor: unknown, maximo = 5000) {
   return typeof valor === "string" && valor.trim().length > 0 && valor.length <= maximo;
 }
@@ -125,23 +167,50 @@ export function leerConfiguracionActividad(valor: unknown): ConfiguracionActivid
     } else if (item.tipo === "VERDADERO_FALSO") {
       if (!Array.isArray(item.afirmaciones) || item.afirmaciones.length < 1 || item.afirmaciones.length > 12) return null;
       if (item.afirmaciones.some((afirmacion) => !afirmacion || typeof afirmacion !== "object" || !textoValido((afirmacion as Record<string, unknown>).id, 20) || !textoValido((afirmacion as Record<string, unknown>).texto) || typeof (afirmacion as Record<string, unknown>).correcta !== "boolean")) return null;
-    } else return null;
+    } else if (item.tipo !== "RESPUESTA_ABIERTA") return null;
   }
   return valor as ConfiguracionActividad;
 }
 
 export async function asegurarActividadConocimiento() {
-  return db.actividad.upsert({
+  const actividad = await db.actividad.upsert({
     where: { id: ACTIVIDAD_CONOCIMIENTO_ID },
     update: {},
     create: {
       id: ACTIVIDAD_CONOCIMIENTO_ID,
+      codigoAcceso: randomUUID().replace(/-/g, ""),
       titulo: ACTIVIDAD_CONOCIMIENTO.titulo,
       invitacion: ACTIVIDAD_CONOCIMIENTO.invitacion,
       cierre: ACTIVIDAD_CONOCIMIENTO.cierre,
       configuracion: ACTIVIDAD_CONOCIMIENTO.configuracion as unknown as Prisma.InputJsonValue,
     },
   });
+  if (actividad.codigoAcceso) return actividad;
+  return db.actividad.update({ where: { id: actividad.id }, data: { codigoAcceso: randomUUID().replace(/-/g, "") } });
+}
+
+export async function asegurarActividadWhatsapp() {
+  const actividad = await db.actividad.upsert({
+    where: { id: ACTIVIDAD_WHATSAPP_ID },
+    update: {},
+    create: {
+      id: ACTIVIDAD_WHATSAPP_ID,
+      tipo: "EVALUACION_WHATSAPP",
+      codigoAcceso: randomUUID().replace(/-/g, ""),
+      anonima: true,
+      requiereEmpresa: true,
+      titulo: ACTIVIDAD_WHATSAPP.titulo,
+      invitacion: ACTIVIDAD_WHATSAPP.invitacion,
+      cierre: ACTIVIDAD_WHATSAPP.cierre,
+      configuracion: ACTIVIDAD_WHATSAPP.configuracion as unknown as Prisma.InputJsonValue,
+    },
+  });
+  if (actividad.codigoAcceso) return actividad;
+  return db.actividad.update({ where: { id: actividad.id }, data: { codigoAcceso: randomUUID().replace(/-/g, "") } });
+}
+
+export async function asegurarActividadesBase() {
+  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp()]);
 }
 
 export function preguntasDe(valor: unknown) {
@@ -151,6 +220,9 @@ export function preguntasDe(valor: unknown) {
 export function respuestaActividadValida(pregunta: PreguntaActividad, respuesta: unknown) {
   if (pregunta.tipo === "OPCION_UNICA") {
     return typeof respuesta === "string" && Boolean(pregunta.opciones?.some((opcion) => opcion.id === respuesta));
+  }
+  if (pregunta.tipo === "RESPUESTA_ABIERTA") {
+    return typeof respuesta === "string" && respuesta.trim().length >= 2 && respuesta.length <= 4000;
   }
   if (!respuesta || typeof respuesta !== "object" || Array.isArray(respuesta)) return false;
   const mapa = respuesta as Record<string, unknown>;
