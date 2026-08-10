@@ -46,7 +46,7 @@ test.describe("Registro de participante", () => {
     await expect(page.getByText("Te damos una cálida bienvenida.", { exact: true })).toBeVisible();
     await expect(page.getByText("Gracias por realizar tu registro y prepárate para vivir una gran experiencia.", { exact: true })).toBeVisible();
     await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toHaveCount(0);
+    await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toBeHidden();
     await expect(page.getByText("Código de recuperación", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("img", { name: /QR personal de recuperación/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Descargar Pasaporte" })).toHaveAttribute("href", /^\/api\/pasaporte\?v=.+#view=Fit$/);

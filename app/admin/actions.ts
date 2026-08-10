@@ -59,7 +59,7 @@ export async function iniciarSesionAdmin(
 ): Promise<EstadoLogin> {
   const usuario = String(formulario.get("usuario") ?? "").trim();
   const password = String(formulario.get("password") ?? "");
-  const limite = await consumirLimite({ accion: "login-admin", limite: 20, ventanaSegundos: 600 });
+  const limite = await consumirLimite({ accion: `login-admin:${usuario.toLowerCase()}`, limite: 20, ventanaSegundos: 600 });
   if (!limite.permitido) {
     return { error: "Demasiados intentos. Intenta nuevamente en unos minutos." };
   }

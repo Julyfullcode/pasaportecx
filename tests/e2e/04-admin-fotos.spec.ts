@@ -268,7 +268,7 @@ test.describe("Administrador", () => {
     await page.goto("/admin/desafios");
     const tarjeta = page.locator("article").filter({ hasText: titulo });
     await expect(tarjeta.getByRole("link", { name: "Proyectar QR dinámico" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
-    await expect(tarjeta.getByRole("link", { name: "Ver QR de llegada" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
+    await expect(tarjeta.getByRole("link", { name: "Ver avance y QR" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
     await page.goto(`/admin/proyeccion/desafios/${guardado.id}`);
     await expect(page).toHaveURL(`/admin/proyeccion/puntualidad/${guardado.id}`);
     const qr = page.getByRole("img", { name: "Código QR dinámico para registrar la llegada a tiempo" });
