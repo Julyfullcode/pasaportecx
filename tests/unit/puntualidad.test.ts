@@ -4,6 +4,8 @@ import {
   configuracionPuntualidadDesdeValor,
   crearConfiguracionPuntualidad,
   evaluarPuntualidad,
+  esDesafioPuntualidad,
+  esTituloDesafioPuntualidad,
   mensajePuntualidad,
 } from "@/lib/puntualidad";
 import { crearTokenQrPuntualidad, datosQrPuntualidad, validarTokenQrPuntualidad } from "@/lib/puntualidad-qr";
@@ -46,6 +48,12 @@ describe("desafíos de puntualidad", () => {
     expect(configuracionPuntualidadDesafio({}, [
       { respuesta: { ...configuracion, estadoVentana: "DENTRO", obtuvoPuntos: true, minutosAntes: 0, minutosTarde: 1 } },
     ])).toEqual(configuracion);
+  });
+
+  it("reconoce Presentes a tiempo aunque la configuración histórica esté vacía", () => {
+    expect(esTituloDesafioPuntualidad("Presentes a tiempo")).toBe(true);
+    expect(esDesafioPuntualidad({ titulo: "Presentes a tiempo", configuracion: {}, completitudes: [] })).toBe(true);
+    expect(esDesafioPuntualidad({ titulo: "Encuesta general", configuracion: {}, completitudes: [] })).toBe(false);
   });
 });
 

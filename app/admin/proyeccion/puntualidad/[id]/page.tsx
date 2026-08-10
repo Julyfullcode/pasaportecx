@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { configuracionPuntualidadDesafio, configuracionPuntualidadDesdeValor, fechaHoraPuntualidadLegible } from "@/lib/puntualidad";
+import { configuracionPuntualidadDesafio, configuracionPuntualidadDesdeValor, esDesafioPuntualidad, fechaHoraPuntualidadLegible } from "@/lib/puntualidad";
 import { datosQrPuntualidad } from "@/lib/puntualidad-qr";
 import { obtenerSeguimientoDesafio } from "@/lib/seguimiento-desafio";
 import { MarcoProyeccion } from "@/components/proyeccion/MarcoProyeccion";
@@ -21,8 +21,8 @@ export default async function ProyeccionPuntualidad({ params }: { params: Promis
   if (!desafio) notFound();
   const guardada = configuracionPuntualidadDesdeValor(desafio.configuracion);
   const puntualidad = configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes);
-  if (!puntualidad) notFound();
-  if (!guardada) {
+  if (!esDesafioPuntualidad(desafio)) notFound();
+  if (puntualidad && !guardada) {
     await db.desafio.update({ where: { id }, data: { configuracion: puntualidad } });
   }
   const seguimiento = await obtenerSeguimientoDesafio(id);
@@ -41,7 +41,7 @@ export default async function ProyeccionPuntualidad({ params }: { params: Promis
         <QrPuntualidadDinamico
           desafioId={desafio.id}
           inicial={{ qr, vigenciaMs: datos.vigenciaMs }}
-          hora={fechaHoraPuntualidadLegible(puntualidad)}
+          hora={puntualidad ? fechaHoraPuntualidadLegible(puntualidad) : "Acceso habilitado únicamente con el QR dinámico"}
           compacto
         />
         <SeguimientoDesafioEnVivo inicial={seguimiento} compacto />

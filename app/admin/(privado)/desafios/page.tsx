@@ -4,7 +4,7 @@ import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesa
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
-import { configuracionPuntualidadDesafio } from "@/lib/puntualidad";
+import { esDesafioPuntualidad } from "@/lib/puntualidad";
 import { descripcionDuracionDesafio, estadoTemporalDesafio } from "@/lib/duracion-desafio";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +63,7 @@ export default async function AdminDesafios() {
       </details>
       <div className="mt-6 space-y-3">
         {desafios.map((desafio) => {
-          const esPuntualidad = Boolean(configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes));
+          const esPuntualidad = esDesafioPuntualidad(desafio);
           return (
           <article id={desafio.codigoQr === CODIGO_DESAFIO_CIERRE ? CODIGO_DESAFIO_CIERRE : undefined} key={desafio.id} className="tarjeta scroll-mt-5 overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 p-4">

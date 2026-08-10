@@ -9,6 +9,7 @@ import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { esDesafioCosecha, esRespuestasCosecha, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import {
   configuracionPuntualidadDesdeValor,
+  esTituloDesafioPuntualidad,
   evaluarPuntualidad,
   mensajePuntualidad,
   resultadoPuntualidadDesdeRespuesta,
@@ -48,7 +49,7 @@ export async function POST(
   const configuracion = desafio.configuracion as Configuracion;
   const esCosecha = esDesafioCosecha(desafio.codigoQr, configuracion);
   const puntualidad = configuracionPuntualidadDesdeValor(configuracion);
-  const esPuntualidad = Boolean(puntualidad);
+  const esPuntualidad = Boolean(puntualidad) || esTituloDesafioPuntualidad(desafio.titulo);
   const esMatricula = esConfiguracionMatricula(configuracion);
   const existente = desafio.completitudes[0];
   const cosechaIncompleta = Boolean(existente && esCosecha && !esRespuestasCosecha(existente.respuesta));

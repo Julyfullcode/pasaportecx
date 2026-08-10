@@ -63,6 +63,26 @@ export function esConfiguracionPuntualidad(valor: unknown): valor is Configuraci
   return configuracionPuntualidadDesdeValor(valor) !== null;
 }
 
+function normalizarTituloPuntualidad(titulo: string) {
+  return titulo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+export function esTituloDesafioPuntualidad(titulo: string) {
+  const normalizado = normalizarTituloPuntualidad(titulo);
+  return normalizado.includes("puntualidad")
+    || normalizado.includes("llegada a tiempo")
+    || normalizado.includes("presentes a tiempo");
+}
+
+export function esDesafioPuntualidad(desafio: {
+  titulo: string;
+  configuracion: unknown;
+  completitudes?: unknown[];
+}) {
+  return Boolean(configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes))
+    || esTituloDesafioPuntualidad(desafio.titulo);
+}
+
 export function configuracionPuntualidadDesafio(
   configuracion: unknown,
   completitudes: unknown[] = [],

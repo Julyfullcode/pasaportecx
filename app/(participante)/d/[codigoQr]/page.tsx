@@ -12,6 +12,7 @@ import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio, fechaCierreDesafio } from "@/lib/duracion-desafio";
 import {
   configuracionPuntualidadDesdeValor,
+  esTituloDesafioPuntualidad,
   mensajePuntualidad,
   resultadoPuntualidadDesdeRespuesta,
   type ResultadoPuntualidad,
@@ -42,7 +43,7 @@ export default async function DetalleDesafio({
   const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
   const configuracion = desafio.configuracion as Record<string, unknown>;
   const puntualidad = configuracionPuntualidadDesdeValor(configuracion);
-  const esPuntualidad = Boolean(puntualidad);
+  const esPuntualidad = Boolean(puntualidad) || esTituloDesafioPuntualidad(desafio.titulo);
   const tokenLlegada = esPuntualidad && llegada && validarTokenQrPuntualidad(codigoQr, llegada)
     ? llegada
     : undefined;

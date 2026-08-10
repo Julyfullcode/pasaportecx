@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 import { adminActual } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { configuracionPuntualidadDesafio } from "@/lib/puntualidad";
+import { esDesafioPuntualidad } from "@/lib/puntualidad";
 import { datosQrPuntualidad } from "@/lib/puntualidad-qr";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +13,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     where: { id },
     select: {
       codigoQr: true,
+      titulo: true,
       configuracion: true,
       completitudes: { orderBy: { completadoEn: "desc" }, take: 5, select: { respuesta: true } },
     },
   });
-  if (!desafio || !configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes)) {
+  if (!desafio || !esDesafioPuntualidad(desafio)) {
     return Response.json({ error: "Este desafío no es de puntualidad." }, { status: 404 });
   }
   const origen = (process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin).replace(/\/$/, "");
