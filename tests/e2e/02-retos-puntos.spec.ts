@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { db } from "@/lib/db";
 import { autenticarParticipante, crearParticipanteConToken, contextoApiParticipante, PUNTOS_REGISTRO } from "./ayudas";
+import { crearTokenQrPuntualidad } from "@/lib/puntualidad-qr";
 
 function fechaHoraColombia(fecha: Date) {
   const partes = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
@@ -112,9 +113,7 @@ test.describe("Retos y puntos", () => {
       },
     });
     await autenticarParticipante(context, token);
-    await page.goto(`/d/${desafio.codigoQr}`);
-    await expect(page.getByRole("button", { name: "Registrar mi puntualidad" })).toBeVisible();
-    await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
+    await page.goto(`/d/${desafio.codigoQr}?llegada=${encodeURIComponent(crearTokenQrPuntualidad(desafio.codigoQr))}`);
 
     await expect(page.getByRole("heading", { name: "¡Puntualidad registrada!" })).toBeVisible();
     await expect(page.getByText("+80", { exact: true })).toBeVisible();
@@ -142,8 +141,7 @@ test.describe("Retos y puntos", () => {
       },
     });
     await autenticarParticipante(context, token);
-    await page.goto(`/d/${desafio.codigoQr}`);
-    await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
+    await page.goto(`/d/${desafio.codigoQr}?llegada=${encodeURIComponent(crearTokenQrPuntualidad(desafio.codigoQr))}`);
 
     await expect(page.getByRole("heading", { name: "El desafío aún no está disponible" })).toBeVisible();
     await expect(page.getByText("No se registró ninguna completitud.", { exact: true })).toBeVisible();
@@ -171,14 +169,47 @@ test.describe("Retos y puntos", () => {
       },
     });
     await autenticarParticipante(context, token);
-    await page.goto(`/d/${desafio.codigoQr}`);
-    await page.getByRole("button", { name: "Registrar mi puntualidad" }).click();
+    await page.goto(`/d/${desafio.codigoQr}?llegada=${encodeURIComponent(crearTokenQrPuntualidad(desafio.codigoQr))}`);
 
     await expect(page.getByRole("heading", { name: "El tiempo para registrarte terminó" })).toBeVisible();
     await expect(page.getByText(/Desafortunadamente, llegaste \d+ minutos tarde. El registro cerró 5 minutos después/)).toBeVisible();
     await expect(page.getByText("No se registró ninguna completitud.", { exact: true })).toBeVisible();
     expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: desafio.id } })).toBe(0);
     expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO);
+  });
+
+  test("el desafío de puntualidad exige escanear el QR dinámico vigente", async ({ playwright, context, page }) => {
+    const marca = Date.now();
+    const { participante, token } = await crearParticipanteConToken({ nombre: `QR puntualidad ${marca}` });
+    const desafio = await db.desafio.create({
+      data: {
+        codigoQr: `puntualidad-qr-${marca}`,
+        titulo: "Llegada con QR dinámico",
+        descripcion: "Escanea el código proyectado.",
+        tipo: "CHECK_IN",
+        puntos: 60,
+        dia: 1,
+        ubicacion: "",
+        estado: "PUBLICADO",
+        configuracion: {
+          tipoEspecial: "PUNTUALIDAD",
+          fechaHoraObjetivo: fechaHoraColombia(new Date()),
+          toleranciaMinutos: 5,
+        },
+      },
+    });
+    await autenticarParticipante(context, token);
+    await page.goto(`/d/${desafio.codigoQr}`);
+    await expect(page.getByRole("heading", { name: "Escanea el QR de llegada" })).toBeVisible();
+    await expect(page.locator("#lector-qr")).toBeVisible();
+    await expect(page.getByLabel("Ingresar código manualmente")).toHaveCount(0);
+
+    const api = await contextoApiParticipante(playwright.request, token);
+    const sinToken = await api.post(`/api/desafios/${desafio.codigoQr}/completar`, { multipart: {} });
+    expect(sinToken.status()).toBe(409);
+    expect(await sinToken.json()).toMatchObject({ noRegistrado: true });
+    expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: desafio.id } })).toBe(0);
+    await api.dispose();
   });
 
   test("un desafío vencido por minutos rechaza incluso el acceso directo por QR", async ({ playwright }) => {

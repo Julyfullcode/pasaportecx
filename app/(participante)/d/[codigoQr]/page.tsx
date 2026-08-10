@@ -17,15 +17,20 @@ import {
   type ResultadoPuntualidad,
 } from "@/lib/puntualidad";
 import { esConfiguracionMatricula, respuestaMatricula } from "@/lib/matricula";
+import { LectorQr } from "@/components/participante/LectorQr";
+import { validarTokenQrPuntualidad } from "@/lib/puntualidad-qr";
 
 export const dynamic = "force-dynamic";
 
 export default async function DetalleDesafio({
   params,
+  searchParams,
 }: {
   params: Promise<{ codigoQr: string }>;
+  searchParams: Promise<{ llegada?: string }>;
 }) {
   const { codigoQr } = await params;
+  const { llegada } = await searchParams;
   const participante = await requerirParticipante(`/d/${codigoQr}`);
   const desafio = await db.desafio.findUnique({
     where: { codigoQr },
@@ -37,6 +42,9 @@ export default async function DetalleDesafio({
   const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
   const configuracion = desafio.configuracion as Record<string, unknown>;
   const esPuntualidad = esConfiguracionPuntualidad(configuracion);
+  const tokenLlegada = esPuntualidad && llegada && validarTokenQrPuntualidad(codigoQr, llegada)
+    ? llegada
+    : undefined;
   const completitud = desafio.completitudes[0];
   const esMatricula = esConfiguracionMatricula(configuracion);
   const estaCompletado = Boolean(
@@ -79,6 +87,16 @@ export default async function DetalleDesafio({
             <h2 className="mt-3 text-xl font-extrabold">{estadoTemporal === "FINALIZADO" ? "Este desafío ya finalizó" : "Este desafío aún no está disponible"}</h2>
             <p className="mt-2 text-slate-600">{estadoTemporal === "FINALIZADO" ? "La duración configurada terminó y ya no se reciben respuestas." : "La organización lo publicará cuando sea el momento."}</p>
           </div>
+        ) : esPuntualidad && !tokenLlegada ? (
+          <div className="space-y-4">
+            <div className="tarjeta p-5 text-center">
+              <Clock3 className="mx-auto text-[var(--epm-azul)]" size={38} />
+              <h2 className="mt-3 text-xl font-extrabold text-[var(--epm-azul-profundo)]">Escanea el QR de llegada</h2>
+              <p className="mt-2 text-sm text-slate-600">Abre la cámara y apunta al QR que está siendo proyectado. El código cambia cada 15 segundos.</p>
+              {llegada && <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-800">El QR anterior ya venció. Escanea el nuevo código de la pantalla.</p>}
+            </div>
+            <LectorQr codigoDesafio={desafio.codigoQr} ocultarIngresoManual />
+          </div>
         ) : (
           <ResolverDesafio
             codigo={desafio.codigoQr}
@@ -86,6 +104,7 @@ export default async function DetalleDesafio({
             puntos={participante.esStaff ? 0 : desafio.puntos}
             configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
             respuestaInicial={esMatricula ? respuestaMatricula(completitud?.respuesta) : null}
+            tokenLlegada={tokenLlegada}
           />
         )}
         {!estaCompletado && fechaCierre && estadoTemporal === "DISPONIBLE" && (

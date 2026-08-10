@@ -67,8 +67,14 @@ export default async function AdminDesafios() {
             <div className="flex flex-wrap items-center gap-3 p-4">
               <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${desafio.estado === "PUBLICADO" ? "bg-emerald-50 text-emerald-700" : desafio.estado === "CERRADO" ? "bg-slate-200 text-slate-700" : "bg-amber-50 text-amber-700"}`}>{desafio.estado}</span>
               <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{esConfiguracionPuntualidad(desafio.configuracion) ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
-              <a href={`/api/qr/${desafio.id}`} className="boton-secundario !min-h-10 !px-3 text-sm"><Download size={17} /> PNG</a>
-              <a href={`/api/qr/${desafio.id}?formato=pdf`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-3 text-sm"><FileDown size={17} /> Ver PDF</a>
+              {esConfiguracionPuntualidad(desafio.configuracion) ? (
+                <a href={`/admin/proyeccion/puntualidad/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="boton-primario !min-h-10 !px-3 text-sm"><MonitorPlay size={17} /> Proyectar QR dinámico</a>
+              ) : (
+                <>
+                  <a href={`/api/qr/${desafio.id}`} className="boton-secundario !min-h-10 !px-3 text-sm"><Download size={17} /> PNG</a>
+                  <a href={`/api/qr/${desafio.id}?formato=pdf`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-3 text-sm"><FileDown size={17} /> Ver PDF</a>
+                </>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 p-3">
               <a href={`/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> Ver avance</a>

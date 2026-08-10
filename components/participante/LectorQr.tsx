@@ -4,13 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CameraOff, Keyboard, LoaderCircle, RefreshCw } from "lucide-react";
 
-function extraerDestino(texto: string) {
+function extraerDestino(texto: string, codigoDesafio?: string) {
   try {
     const url = new URL(texto);
     const partes = url.pathname.split("/").filter(Boolean);
     const codigo = partes.at(-1) ?? "";
-    if ((partes.at(-2) === "d" || partes.at(-2) === "a") && codigoValido(codigo)) return `/${partes.at(-2)}/${encodeURIComponent(codigo)}`;
+    const tipo = partes.at(-2);
+    if (codigoDesafio) {
+      const token = url.searchParams.get("llegada") ?? "";
+      if (tipo === "d" && codigo === codigoDesafio && /^\d+\.[A-Za-z0-9_-]{43}$/.test(token)) {
+        return `/d/${encodeURIComponent(codigo)}?llegada=${encodeURIComponent(token)}`;
+      }
+      return "";
+    }
+    if ((tipo === "d" || tipo === "a") && codigoValido(codigo)) return `/${tipo}/${encodeURIComponent(codigo)}`;
   } catch {}
+  if (codigoDesafio) return "";
   const codigo = texto.trim();
   return codigoValido(codigo) ? `/d/${encodeURIComponent(codigo)}` : "";
 }
@@ -42,7 +51,13 @@ function mensajeErrorCamara(error: unknown) {
   return "No pudimos iniciar la cámara. Revisa el permiso y vuelve a intentar.";
 }
 
-export function LectorQr() {
+export function LectorQr({
+  codigoDesafio,
+  ocultarIngresoManual = false,
+}: {
+  codigoDesafio?: string;
+  ocultarIngresoManual?: boolean;
+} = {}) {
   const router = useRouter();
   const procesandoLectura = useRef(false);
   const [error, setError] = useState("");
@@ -89,7 +104,7 @@ export function LectorQr() {
             },
           },
           (texto) => {
-            const destino = extraerDestino(texto);
+            const destino = extraerDestino(texto, codigoDesafio);
             if (procesandoLectura.current || !destino) return;
             procesandoLectura.current = true;
             void scanner.stop().finally(() => router.push(destino));
@@ -126,7 +141,7 @@ export function LectorQr() {
         }
       })();
     };
-  }, [router, intento]);
+  }, [router, intento, codigoDesafio]);
 
   return (
     <div>
@@ -144,7 +159,7 @@ export function LectorQr() {
 
       <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
         <p className="flex items-center gap-2 font-extrabold"><CameraOff size={19} /> ¿La cámara no funciona?</p>
-        <p className="mt-1">En la configuración del navegador, permite el acceso a la cámara para este sitio y recarga. También puedes usar el código impreso.</p>
+        <p className="mt-1">En la configuración del navegador, permite el acceso a la cámara para este sitio y recarga.{codigoDesafio ? " Debes leer el QR dinámico que aparece en la pantalla del evento." : " También puedes usar el código impreso."}</p>
       </div>
 
       {error && (
@@ -160,7 +175,7 @@ export function LectorQr() {
         </div>
       )}
 
-      <form
+      {!ocultarIngresoManual && <form
         className="tarjeta mt-4 p-4"
         onSubmit={(evento) => {
           evento.preventDefault();
@@ -178,7 +193,7 @@ export function LectorQr() {
           <input className="campo" id="codigo" name="codigo" required minLength={2} maxLength={80} autoComplete="off" placeholder="Código del desafío" />
           <button className="boton-primario">Abrir</button>
         </div>
-      </form>
+      </form>}
     </div>
   );
 }

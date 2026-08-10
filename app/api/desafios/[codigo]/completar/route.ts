@@ -21,6 +21,7 @@ import {
   respuestasEncuestaMixtaDesdeFormulario,
 } from "@/lib/encuesta-mixta";
 import { esConfiguracionMatricula } from "@/lib/matricula";
+import { validarTokenQrPuntualidad } from "@/lib/puntualidad-qr";
 
 type Configuracion = {
   opciones?: Opcion[];
@@ -82,13 +83,24 @@ export async function POST(
       mensaje,
     }, { status: 409 });
   }
+  const formulario = desafio.tipo === "CHECK_IN" && !esCosecha && !esPuntualidad
+    ? new FormData()
+    : await request.formData();
+  if (esPuntualidad) {
+    const tokenLlegada = String(formulario.get("tokenLlegada") ?? "");
+    if (!validarTokenQrPuntualidad(desafio.codigoQr, tokenLlegada, ahora)) {
+      return Response.json({
+        error: "El código QR venció. Abre nuevamente la cámara y escanea el código que está en la pantalla del evento.",
+        noRegistrado: true,
+      }, { status: 409 });
+    }
+  }
   if (!existente && desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
     return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
   }
 
   // Un check-in no lleva campos. Evitar parsear multipart vacío también hace el
   // flujo más resistente a navegadores que omiten el boundary cuando no hay partes.
-  const formulario = desafio.tipo === "CHECK_IN" && !esCosecha ? new FormData() : await request.formData();
   let puntos = desafio.puntos;
   let estado: EstadoCompletitud = "APROBADO";
   let urlEvidencia: string | undefined;

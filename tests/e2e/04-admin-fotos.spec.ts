@@ -261,6 +261,13 @@ test.describe("Administrador", () => {
     const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
     expect(guardado.tipo).toBe("CHECK_IN");
     expect(guardado.configuracion).toMatchObject({ tipoEspecial: "PUNTUALIDAD", fechaHoraObjetivo: "2026-08-04T14:00", toleranciaMinutos: 5 });
+    const tarjeta = page.locator("article").filter({ hasText: titulo });
+    await expect(tarjeta.getByRole("link", { name: "Proyectar QR dinámico" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
+    await page.goto(`/admin/proyeccion/puntualidad/${guardado.id}`);
+    const qr = page.getByRole("img", { name: "Código QR dinámico para registrar la llegada a tiempo" });
+    await expect(qr).toBeVisible();
+    const primero = await qr.getAttribute("src");
+    await expect.poll(async () => qr.getAttribute("src"), { timeout: 20_000 }).not.toBe(primero);
   });
 
   test("administración configura el cierre del desafío con fecha y hora de Colombia", async ({ page }) => {

@@ -31,14 +31,17 @@ export function ResolverDesafio({
   puntos,
   configuracion,
   respuestaInicial,
+  tokenLlegada,
 }: {
   codigo: string;
   tipo: string;
   puntos: number;
   configuracion: Configuracion;
   respuestaInicial?: string | null;
+  tokenLlegada?: string;
 }) {
-  const [cargando, setCargando] = useState(tipo === "CHECK_IN");
+  const completarAutomaticamente = tipo === "CHECK_IN" || (tipo === "PUNTUALIDAD" && Boolean(tokenLlegada));
+  const [cargando, setCargando] = useState(completarAutomaticamente);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; completitudId?: string; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
@@ -53,6 +56,7 @@ export function ResolverDesafio({
     const controlador = new AbortController();
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
+      if (tokenLlegada) formulario.set("tokenLlegada", tokenLlegada);
       const foto = formulario.get("evidencia");
       if (foto instanceof File && foto.size) {
         try {
@@ -89,10 +93,10 @@ export function ResolverDesafio({
   }
 
   useEffect(() => {
-    if (tipo === "CHECK_IN") void completar();
+    if (completarAutomaticamente) void completar();
     // Solo una vez: evita doble puntaje incluso en Strict Mode.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tipo]);
+  }, [tipo, completarAutomaticamente]);
 
   if (resultado) {
     const pendiente = resultado.estado === "PENDIENTE";
@@ -213,7 +217,7 @@ export function ResolverDesafio({
           <button type="submit" className="mt-2 flex items-center gap-1 underline"><RefreshCw size={16} /> Reintentar</button>
         </div>
       )}
-      {tipo !== "CHECK_IN" && <button disabled={cargando} className="boton-primario w-full">{cargando && <LoaderCircle className="animate-spin" />} {cargando ? "Registrando…" : tipo === "PUNTUALIDAD" ? "Registrar mi puntualidad" : matricula ? "Guardar mi elección" : "Enviar respuesta"}</button>}
+      {!completarAutomaticamente && <button disabled={cargando} className="boton-primario w-full">{cargando && <LoaderCircle className="animate-spin" />} {cargando ? "Registrando…" : tipo === "PUNTUALIDAD" ? "Registrar mi puntualidad" : matricula ? "Guardar mi elección" : "Enviar respuesta"}</button>}
     </form>
   );
 }

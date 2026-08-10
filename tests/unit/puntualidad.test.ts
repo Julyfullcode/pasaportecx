@@ -4,6 +4,7 @@ import {
   evaluarPuntualidad,
   mensajePuntualidad,
 } from "@/lib/puntualidad";
+import { crearTokenQrPuntualidad, datosQrPuntualidad, validarTokenQrPuntualidad } from "@/lib/puntualidad-qr";
 
 describe("desafíos de puntualidad", () => {
   const configuracion = crearConfiguracionPuntualidad("2026-08-04T14:00", 5);
@@ -26,5 +27,25 @@ describe("desafíos de puntualidad", () => {
     expect(() => crearConfiguracionPuntualidad("", 5)).toThrow(/fecha, hora y tolerancia/);
     expect(() => crearConfiguracionPuntualidad("2026-08-04T14:00", -1)).toThrow(/fecha, hora y tolerancia/);
     expect(() => crearConfiguracionPuntualidad("2026-02-31T14:00", 5)).toThrow(/fecha, hora y tolerancia/);
+  });
+});
+
+describe("QR dinámico de puntualidad", () => {
+  const codigo = "llegada-segura";
+  const inicio = new Date("2026-08-10T15:00:00.000Z");
+
+  it("firma el desafío y renueva la URL cada 15 segundos", () => {
+    const primero = crearTokenQrPuntualidad(codigo, inicio);
+    const segundo = crearTokenQrPuntualidad(codigo, new Date(inicio.getTime() + 15_000));
+    expect(primero).not.toBe(segundo);
+    expect(datosQrPuntualidad(codigo, "https://pasaportecx.vercel.app", inicio).url).toContain(encodeURIComponent(primero));
+  });
+
+  it("acepta el QR vigente y rechaza alteraciones, otros desafíos y capturas antiguas", () => {
+    const token = crearTokenQrPuntualidad(codigo, inicio);
+    expect(validarTokenQrPuntualidad(codigo, token, new Date(inicio.getTime() + 14_000))).toBe(true);
+    expect(validarTokenQrPuntualidad("otro-desafio", token, new Date(inicio.getTime() + 14_000))).toBe(false);
+    expect(validarTokenQrPuntualidad(codigo, `${token.slice(0, -1)}x`, new Date(inicio.getTime() + 14_000))).toBe(false);
+    expect(validarTokenQrPuntualidad(codigo, token, new Date(inicio.getTime() + 21_000))).toBe(false);
   });
 });
