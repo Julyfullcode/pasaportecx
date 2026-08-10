@@ -11,10 +11,8 @@ type Empresa = { id: string; nombre: string };
 
 export function RegistroForm({
   empresas,
-  nombreEvento,
 }: {
   empresas: Empresa[];
-  nombreEvento: string;
 }) {
   const router = useRouter();
   const [foto, setFoto] = useState<Blob | null>(null);
@@ -22,7 +20,7 @@ export function RegistroForm({
   const [procesandoFoto, setProcesandoFoto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
-  const [registro, setRegistro] = useState<{ nombre: string }>();
+  const [registro, setRegistro] = useState<{ nombre: string; versionPasaporte: string }>();
 
   async function cambiarFoto(archivo?: File) {
     if (!archivo) return;
@@ -56,7 +54,10 @@ export function RegistroForm({
       });
       const cuerpo = await respuesta.json();
       if (!respuesta.ok) throw new Error(cuerpo.error);
-      setRegistro({ nombre: cuerpo.participante.nombre });
+      setRegistro({
+        nombre: cuerpo.participante.nombre,
+        versionPasaporte: cuerpo.participante.versionPasaporte,
+      });
     } catch (e) {
       setError(
         e instanceof DOMException && e.name === "AbortError"
@@ -73,7 +74,7 @@ export function RegistroForm({
 
   if (registro) {
     return (
-      <section className="tarjeta entrada-suave overflow-hidden text-center" aria-live="polite">
+      <section data-registro-completado className="tarjeta entrada-suave overflow-hidden text-center" aria-live="polite">
         <div className="marca-gradiente relative overflow-hidden px-5 pb-6 pt-5 text-white">
           <TexturaArcos />
           <div className="relative z-10">
@@ -81,7 +82,7 @@ export function RegistroForm({
             <span className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-lg"><Check size={30} /></span>
             <p className="mt-4 text-xs font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">Tu experiencia comienza ahora</p>
             <h2 className="mt-2 text-3xl font-extrabold leading-tight">¡Te damos la bienvenida al encuentro de experiencia y comunicaciones!</h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-white/85">En <strong className="text-white">{nombreEvento}</strong>, conecta con otras personas, escanea los retos, suma puntos y comparte los momentos que dejarán huella. Tu participación hace especial este encuentro.</p>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-white/85">En este Encuentro de experiencia y comunicaciones, conecta con otras personas, participa en los desafíos, suma puntos y comparte los momentos que dejarán huella. Tu presencia hace especial este encuentro.</p>
             <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] font-extrabold">
               <span className="rounded-xl bg-white/10 p-2"><ScanLine className="mx-auto mb-1" size={20} />Escanea</span>
               <span className="rounded-xl bg-white/10 p-2"><Trophy className="mx-auto mb-1" size={20} />Participa</span>
@@ -92,16 +93,7 @@ export function RegistroForm({
         <div className="p-5 md:p-6">
           <h3 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">¡Tu pasaporte está listo!</h3>
           <p className="mt-1 text-slate-600">{registro.nombre}</p>
-          <div className="my-5 rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 p-5">
-            <p className="text-xs font-extrabold uppercase tracking-[.18em] text-[var(--epm-teal)]">Ahora, vive la experiencia</p>
-            <p className="mx-auto mt-2 max-w-lg text-base font-bold leading-relaxed text-[var(--epm-azul-profundo)]">Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-extrabold">
-              <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-azul)] shadow-sm">Conéctate</span>
-              <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-teal)] shadow-sm">Escucha</span>
-              <span className="rounded-full bg-white px-3 py-2 text-[var(--epm-verde-medio)] shadow-sm">Aporta</span>
-            </div>
-          </div>
-          <a href="/api/pasaporte#view=Fit" target="_blank" rel="noopener noreferrer" className="boton-secundario w-full"><Download size={19} /> Descargar Pasaporte</a>
+          <a href={`/api/pasaporte?v=${encodeURIComponent(registro.versionPasaporte)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full"><Download size={19} /> Descargar Pasaporte</a>
           <button onClick={() => router.replace("/")} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
         </div>
       </section>

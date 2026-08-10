@@ -7,6 +7,10 @@
   box-sizing: border-box;
 }
 
+.pagina-registro:has([data-registro-completado]) .ocultar-tras-registro {
+  display: none;
+}
+
 html {
   background: var(--epm-gris-fondo);
   color: var(--epm-gris-texto);

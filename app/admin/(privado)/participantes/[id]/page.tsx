@@ -32,7 +32,7 @@ export default async function DetalleParticipante({ params }: { params: Promise<
         <div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-extrabold">{persona.nombre}</h1>{persona.esStaff && <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-xs font-extrabold uppercase text-violet-700"><ShieldCheck size={15} /> Staff</span>}</div><p>{persona.empresa.nombre} · {persona.equipo?.nombre ?? "Sin equipo"}</p><p className="font-bold text-[var(--epm-azul)]">{persona.correoAutorizado?.correo ?? "Correo no asociado"}</p><p className="mt-1 text-xs text-slate-500">Registro: {persona.creadoEn.toLocaleString("es-CO")}</p></div>
         <div className="flex flex-col items-end gap-3">
           <strong className="font-display text-4xl text-[var(--epm-azul-profundo)]">{persona.esStaff ? "Sin ranking" : `${persona.puntosTotales} pts`}</strong>
-          <a href={`/api/admin/participantes/${persona.id}/pasaporte#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><FileText size={17} /> Ver pasaporte</a>
+          <a href={`/api/admin/participantes/${persona.id}/pasaporte?v=${encodeURIComponent(persona.urlFoto)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><FileText size={17} /> Ver pasaporte</a>
           {tieneCosecha && <a href={`/api/admin/participantes/${persona.id}/cosecha#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-4 text-sm"><Sprout size={17} /> Tarjeta de cierre</a>}
         </div>
       </header>

@@ -489,6 +489,11 @@ export async function eliminarParticipante(formulario: FormData) {
     include: { recuerdos: true, completitudes: { select: { urlEvidencia: true } } },
   });
   await db.$transaction(async (tx) => {
+    await tx.sesionParticipante.deleteMany({ where: { participanteId: id } });
+    await tx.correoAutorizado.updateMany({
+      where: { participanteId: id },
+      data: { participanteId: null },
+    });
     await tx.participante.delete({ where: { id } });
     await actualizarPremioFotoMasReaccionada(tx);
   });
@@ -504,6 +509,7 @@ export async function eliminarParticipante(formulario: FormData) {
   ]);
   anunciarCambio("participante");
   revalidatePath("/admin/participantes");
+  revalidatePath("/", "layout");
 }
 
 export async function agregarCorreosAutorizados(

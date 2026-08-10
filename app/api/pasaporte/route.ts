@@ -14,9 +14,15 @@ export async function GET(request: Request) {
 
     return new Response(Buffer.from(pdf), {
       headers: {
-        "Cache-Control": "private, no-store",
+        "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
+        "CDN-Cache-Control": "no-store",
+        "Vercel-CDN-Cache-Control": "no-store",
+        "Surrogate-Control": "no-store",
+        Pragma: "no-cache",
+        Expires: "0",
         "Content-Disposition": `inline; filename="pasaporte-${nombreSeguro || "participante"}.pdf"`,
         "Content-Type": "application/pdf",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {

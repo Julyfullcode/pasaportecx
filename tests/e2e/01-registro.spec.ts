@@ -43,16 +43,19 @@ test.describe("Registro de participante", () => {
 
     await expect(page.getByText("¡Tu pasaporte está listo!")).toBeVisible();
     await expect(page.getByRole("heading", { name: "¡Te damos la bienvenida al encuentro de experiencia y comunicaciones!" })).toBeVisible();
-    await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toBeVisible();
+    await expect(page.getByText("En este Encuentro de experiencia y comunicaciones, conecta con otras personas, participa en los desafíos, suma puntos y comparte los momentos que dejarán huella. Tu presencia hace especial este encuentro.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toHaveCount(0);
     await expect(page.getByText("Código de recuperación", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("img", { name: /QR personal de recuperación/ })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Descargar Pasaporte" })).toHaveAttribute("href", "/api/pasaporte#view=Fit");
+    await expect(page.getByRole("link", { name: "Descargar Pasaporte" })).toHaveAttribute("href", /^\/api\/pasaporte\?v=.+#view=Fit$/);
     const tokenSesion = (await respuestaRegistro.headerValue("set-cookie"))?.match(/pasaporte_participante=([^;]+)/)?.[1];
     expect(tokenSesion).toBeTruthy();
     await page.context().addCookies([{ name: "pasaporte_participante", value: tokenSesion!, url: BASE_URL }]);
     const pasaporte = await page.request.get("/api/pasaporte");
     expect(pasaporte.status()).toBe(200);
     expect(pasaporte.headers()["content-type"]).toContain("application/pdf");
+    expect(pasaporte.headers()["cache-control"]).toContain("no-store");
     expect((await pasaporte.body()).subarray(0, 4).toString()).toBe("%PDF");
     const participante = await db.participante.findFirstOrThrow({ where: { nombre: `${marca} E2E` }, include: { correoAutorizado: true } });
     expect(participante.puntosTotales).toBe(PUNTOS_REGISTRO);

@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       participante: {
         nombre: participante.nombre,
         codigoRecuperacion: participante.codigoRecuperacion,
+        versionPasaporte: `${participante.id}-${participante.urlFoto.split("/").at(-1) ?? "foto"}`,
       },
     });
   } catch (error) {

@@ -69,7 +69,7 @@ export default async function Inicio() {
           <Camera size={24} /> Escanear QR
         </Link>
         <Link href="/recuerdos?subir=1" className="boton-secundario w-full"><ImagePlus size={20} /> Subir recuerdo</Link>
-        <a href="/api/pasaporte#view=Fit" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+        <a href={`/api/pasaporte?v=${encodeURIComponent(`${participante.id}-${participante.urlFoto}`)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
         </a>
