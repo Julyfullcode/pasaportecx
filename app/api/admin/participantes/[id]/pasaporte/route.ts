@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const participante = await db.participante.findUnique({
     where: { id },
-    include: { empresa: true },
+    include: { empresa: true, equipo: true },
   });
   if (!participante) return Response.json({ error: "No encontramos al participante." }, { status: 404 });
 

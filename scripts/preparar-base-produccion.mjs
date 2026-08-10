@@ -8,6 +8,18 @@ if (!url || !url.startsWith("postgres")) {
 const db = new PrismaClient({ datasources: { db: { url } } });
 try {
   await db.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS "Equipo" ('
+    + '"id" TEXT NOT NULL PRIMARY KEY, "nombre" TEXT NOT NULL, '
+    + '"orden" INTEGER NOT NULL, "activo" BOOLEAN NOT NULL DEFAULT true)'
+  );
+  await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "Equipo_nombre_key" ON "Equipo"("nombre")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Equipo_orden_idx" ON "Equipo"("orden")');
+  await db.$executeRawUnsafe('ALTER TABLE "Participante" ADD COLUMN IF NOT EXISTS "equipoId" TEXT');
+  await db.$executeRawUnsafe('ALTER TABLE "CorreoAutorizado" ADD COLUMN IF NOT EXISTS "equipoId" TEXT');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Participante_equipoId_idx" ON "Participante"("equipoId")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "CorreoAutorizado_equipoId_idx" ON "CorreoAutorizado"("equipoId")');
+  await db.$executeRawUnsafe('INSERT INTO "Equipo" ("id", "nombre", "orden", "activo") VALUES (\'equipo-1\', \'Equipo 1\', 1, true), (\'equipo-2\', \'Equipo 2\', 2, true), (\'equipo-3\', \'Equipo 3\', 3, true) ON CONFLICT ("nombre") DO NOTHING');
+  await db.$executeRawUnsafe(
     'CREATE TABLE IF NOT EXISTS "Actividad" ('
     + '"id" TEXT NOT NULL PRIMARY KEY, "titulo" TEXT NOT NULL, '
     + '"invitacion" TEXT NOT NULL, "cierre" TEXT NOT NULL, '

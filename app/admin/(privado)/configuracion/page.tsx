@@ -9,9 +9,10 @@ import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
+  const [config, empresas, equipos, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
+    db.equipo.findMany({ orderBy: { orden: "asc" } }),
     db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
     obtenerReporteAlmacenamiento(),
     Promise.all([
@@ -65,6 +66,7 @@ export default async function Configuracion() {
       <section className="mt-6"><h2 className="text-2xl font-extrabold">Catálogos</h2><p className="text-sm text-slate-600">Edite, reordene o agregue registros; estarán disponibles de inmediato.</p>
         <div className="mt-4 grid gap-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />
+          <CatalogoEquipos items={equipos} />
         </div>
       </section>
       <section className="mt-6 rounded-2xl border-2 border-red-300 bg-red-50 p-5">
@@ -116,6 +118,39 @@ function CatalogoEmpresas({ items }: { items: { id: string; nombre: string; orde
         <input type="hidden" name="tipo" value="empresa" />
         <input className="campo !min-h-10 !py-1 text-sm" name="nombre" placeholder="Nueva empresa" required />
         <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={items.length + 1} />
+        <button className="text-xs font-extrabold text-[var(--epm-azul)]">Agregar</button>
+      </form>
+    </div>
+  );
+}
+
+function CatalogoEquipos({ items }: { items: { id: string; nombre: string; orden: number; activo: boolean }[] }) {
+  return (
+    <div className="tarjeta p-4">
+      <h3 className="text-lg font-extrabold">Equipos</h3>
+      <p className="mt-1 text-xs text-slate-500">Configura los equipos disponibles para asignarlos manualmente antes o después del registro.</p>
+      <div className="mt-3 space-y-3">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-3">
+            <form action={guardarCatalogo} className="grid min-w-0 flex-1 grid-cols-[1fr_55px_auto] gap-2">
+              <input type="hidden" name="tipo" value="equipo" />
+              <input type="hidden" name="id" value={item.id} />
+              <input className="campo !min-h-10 !py-1 text-sm" name="nombre" defaultValue={item.nombre} required />
+              <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={item.orden} required />
+              <button className="text-xs font-extrabold text-[var(--epm-azul)]">Guardar</button>
+            </form>
+            <form action={alternarCatalogo}>
+              <input type="hidden" name="tipo" value="equipo" />
+              <input type="hidden" name="id" value={item.id} />
+              <button className="text-[10px] font-extrabold text-slate-500">{item.activo ? "Desactivar" : "Activar"}</button>
+            </form>
+          </div>
+        ))}
+      </div>
+      <form action={guardarCatalogo} className="mt-4 grid grid-cols-[1fr_55px_auto] gap-2 border-t pt-4">
+        <input type="hidden" name="tipo" value="equipo" />
+        <input className="campo !min-h-10 !py-1 text-sm" name="nombre" placeholder="Nuevo equipo" required />
+        <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={items.length + 1} required />
         <button className="text-xs font-extrabold text-[var(--epm-azul)]">Agregar</button>
       </form>
     </div>

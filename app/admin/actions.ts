@@ -436,6 +436,51 @@ export async function alternarStaff(formulario: FormData) {
   revalidatePath("/admin/proyeccion/podio");
 }
 
+export async function asignarEquipo(formulario: FormData) {
+  await requerirAdmin();
+  const participanteId = String(formulario.get("participanteId") ?? "");
+  const correoAutorizadoId = String(formulario.get("correoAutorizadoId") ?? "");
+  const equipoIdSolicitado = String(formulario.get("equipoId") ?? "");
+  const equipoId = equipoIdSolicitado || null;
+  if (!participanteId && !correoAutorizadoId) return;
+  if (equipoId) {
+    const equipo = await db.equipo.findUnique({ where: { id: equipoId }, select: { id: true } });
+    if (!equipo) return;
+  }
+  await db.$transaction(async (tx) => {
+    if (participanteId) {
+      const participante = await tx.participante.findUnique({
+        where: { id: participanteId },
+        select: { correoAutorizado: { select: { id: true } } },
+      });
+      if (!participante) return;
+      await tx.participante.update({ where: { id: participanteId }, data: { equipoId } });
+      if (participante.correoAutorizado) {
+        await tx.correoAutorizado.update({
+          where: { id: participante.correoAutorizado.id },
+          data: { equipoId },
+        });
+      }
+      return;
+    }
+    const autorizacion = await tx.correoAutorizado.findUnique({
+      where: { id: correoAutorizadoId },
+      select: { participanteId: true },
+    });
+    if (!autorizacion) return;
+    await tx.correoAutorizado.update({ where: { id: correoAutorizadoId }, data: { equipoId } });
+    if (autorizacion.participanteId) {
+      await tx.participante.update({
+        where: { id: autorizacion.participanteId },
+        data: { equipoId },
+      });
+    }
+  });
+  anunciarCambio("participante");
+  revalidatePath("/admin/participantes");
+  if (participanteId) revalidatePath(`/admin/participantes/${participanteId}`);
+}
+
 export async function eliminarParticipante(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("participanteId"));
@@ -477,6 +522,12 @@ export async function agregarCorreosAutorizados(
     return { tipo: "error", mensaje: "Ingresa al menos un correo electrónico válido." };
   }
   try {
+    const equipoIdSolicitado = String(formulario.get("equipoId") ?? "");
+    const equipoId = equipoIdSolicitado || null;
+    if (equipoId) {
+      const equipo = await db.equipo.findUnique({ where: { id: equipoId }, select: { id: true } });
+      if (!equipo) return { tipo: "error", mensaje: "El equipo seleccionado ya no está disponible." };
+    }
     const existentes = await db.correoAutorizado.findMany({
       where: { correo: { in: validos } },
       select: { correo: true },
@@ -484,7 +535,7 @@ export async function agregarCorreosAutorizados(
     const yaAutorizados = new Set(existentes.map(({ correo }) => correo));
     const nuevos = validos.filter((correo) => !yaAutorizados.has(correo));
     if (nuevos.length > 0) {
-      await db.correoAutorizado.createMany({ data: nuevos.map((correo) => ({ correo })) });
+      await db.correoAutorizado.createMany({ data: nuevos.map((correo) => ({ correo, equipoId })) });
     }
     revalidatePath("/admin/participantes");
     return {
@@ -851,9 +902,13 @@ export async function guardarCatalogo(formulario: FormData) {
   } else if (tipo === "ubicacion") {
     if (id) await db.ubicacion.update({ where: { id }, data: { nombre, orden } });
     else await db.ubicacion.create({ data: { nombre, orden } });
+  } else if (tipo === "equipo") {
+    if (id) await db.equipo.update({ where: { id }, data: { nombre, orden } });
+    else await db.equipo.create({ data: { nombre, orden } });
   }
   anunciarCambio("catalogo");
   revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/participantes");
 }
 
 export async function actualizarLogoEmpresa(formulario: FormData) {
@@ -897,9 +952,13 @@ export async function alternarCatalogo(formulario: FormData) {
   } else if (tipo === "ubicacion") {
     const actual = await db.ubicacion.findUniqueOrThrow({ where: { id } });
     await db.ubicacion.update({ where: { id }, data: { activa: !actual.activa } });
+  } else if (tipo === "equipo") {
+    const actual = await db.equipo.findUniqueOrThrow({ where: { id } });
+    await db.equipo.update({ where: { id }, data: { activo: !actual.activo } });
   }
   anunciarCambio("catalogo");
   revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/participantes");
 }
 
 export type EstadoPreparacionPublico = {

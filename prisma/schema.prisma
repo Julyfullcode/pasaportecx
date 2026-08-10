@@ -37,6 +37,7 @@ model Participante {
   id                  String               @id @default(cuid())
   nombre              String
   empresaId           String
+  equipoId            String?
   urlFoto             String
   codigoRecuperacion  String               @unique
   puntosRegistro      Int                  @default(0)
@@ -45,6 +46,7 @@ model Participante {
   esStaff             Boolean              @default(false)
   creadoEn            DateTime             @default(now())
   empresa             Empresa              @relation(fields: [empresaId], references: [id])
+  equipo              Equipo?               @relation(fields: [equipoId], references: [id], onDelete: SetNull)
   completitudes       Completitud[]
   recuerdos           Recuerdo[]
   reaccionesRecuerdos ReaccionRecuerdo[]
@@ -57,16 +59,31 @@ model Participante {
   @@index([puntosTotales])
   @@index([activo, esStaff, puntosTotales])
   @@index([empresaId])
+  @@index([equipoId])
 }
 
 model CorreoAutorizado {
   id             String        @id @default(cuid())
   correo         String        @unique
   participanteId String?       @unique
+  equipoId       String?
   creadoEn       DateTime      @default(now())
   participante   Participante? @relation(fields: [participanteId], references: [id], onDelete: SetNull)
+  equipo         Equipo?       @relation(fields: [equipoId], references: [id], onDelete: SetNull)
 
   @@index([creadoEn])
+  @@index([equipoId])
+}
+
+model Equipo {
+  id              String              @id @default(cuid())
+  nombre          String              @unique
+  orden           Int
+  activo          Boolean             @default(true)
+  participantes   Participante[]
+  autorizaciones  CorreoAutorizado[]
+
+  @@index([orden])
 }
 
 model Empresa {

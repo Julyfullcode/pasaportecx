@@ -10,6 +10,7 @@ type ParticipantePasaporte = {
   urlFoto: string;
   codigoRecuperacion: string;
   empresa: { nombre: string };
+  equipo?: { nombre: string } | null;
 };
 
 export async function crearPasaporteParticipante(participante: ParticipantePasaporte, origenSolicitud: string) {
@@ -28,6 +29,7 @@ export async function crearPasaporteParticipante(participante: ParticipantePasap
   const pdf = await generarPasaportePdf({
     nombre: participante.nombre,
     empresa: participante.empresa.nombre,
+    equipo: participante.equipo?.nombre,
     evento: config.nombreEvento,
     codigo: participante.codigoRecuperacion,
     urlRecuperacion: `${baseAplicacion}/recuperar/${participante.codigoRecuperacion}`,
