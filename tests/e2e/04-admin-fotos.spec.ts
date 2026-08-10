@@ -263,7 +263,8 @@ test.describe("Administrador", () => {
     expect(guardado.configuracion).toMatchObject({ tipoEspecial: "PUNTUALIDAD", fechaHoraObjetivo: "2026-08-04T14:00", toleranciaMinutos: 5 });
     const tarjeta = page.locator("article").filter({ hasText: titulo });
     await expect(tarjeta.getByRole("link", { name: "Proyectar QR dinámico" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
-    await page.goto(`/admin/proyeccion/puntualidad/${guardado.id}`);
+    await page.goto(`/admin/proyeccion/desafios/${guardado.id}`);
+    await expect(page).toHaveURL(`/admin/proyeccion/puntualidad/${guardado.id}`);
     const qr = page.getByRole("img", { name: "Código QR dinámico para registrar la llegada a tiempo" });
     await expect(qr).toBeVisible();
     const primero = await qr.getAttribute("src");
@@ -488,7 +489,13 @@ test.describe("Fotos y carrusel", () => {
     await autenticarParticipante(page.context(), token);
     await page.goto("/d/" + desafio.codigoQr);
     await expect(page.getByLabel("Comentario (opcional)")).toBeVisible();
-    await expect(page.getByText("Puedes elegir la foto original; Pasaporte la optimiza automáticamente.")).toBeVisible();
+    const tomarFoto = page.getByRole("button", { name: "Abrir cámara" });
+    const galeria = page.getByLabel("Elegir de la galería");
+    await expect(tomarFoto).toBeVisible();
+    await expect(page.getByText("Abre la cámara del celular o la cámara web del computador.")).toBeVisible();
+    await expect(galeria).toHaveAttribute("accept", "image/*");
+    await expect(galeria).not.toHaveAttribute("capture", /.+/);
+    await expect(page.getByText("Puedes usar la foto original; Pasaporte la comprime y optimiza automáticamente.")).toBeVisible();
     const fotoPesada = await sharp(randomBytes(1_400 * 1_000 * 3), {
       raw: { width: 1_400, height: 1_000, channels: 3 },
     }).png({ compressionLevel: 0 }).toBuffer();

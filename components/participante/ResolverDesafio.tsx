@@ -12,6 +12,7 @@ import {
   type ResultadoPuntualidad,
 } from "@/lib/puntualidad";
 import { esConfiguracionMatricula, type ConfiguracionMatricula } from "@/lib/matricula";
+import { SelectorEvidenciaFoto } from "@/components/participante/SelectorEvidenciaFoto";
 
 type Configuracion = {
   opciones?: { id: string; texto: string; correcta: boolean }[];
@@ -43,6 +44,7 @@ export function ResolverDesafio({
   const completarAutomaticamente = tipo === "CHECK_IN" || (tipo === "PUNTUALIDAD" && Boolean(tokenLlegada));
   const [cargando, setCargando] = useState(completarAutomaticamente);
   const [error, setError] = useState("");
+  const [fotoEvidencia, setFotoEvidencia] = useState<File | null>(null);
   const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; completitudId?: string; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
   const puntualidad = esConfiguracionPuntualidad(configuracion) ? configuracion : null;
@@ -57,8 +59,15 @@ export function ResolverDesafio({
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
       if (tokenLlegada) formulario.set("tokenLlegada", tokenLlegada);
-      const foto = formulario.get("evidencia");
+      const foto = fotoEvidencia ?? formulario.get("evidencia");
+      if (tipo === "EVIDENCIA_FOTO" && (!(foto instanceof File) || !foto.size)) {
+        enviado.current = false;
+        setCargando(false);
+        setError("Toma una foto o elige una imagen de la galería para continuar.");
+        return;
+      }
       if (foto instanceof File && foto.size) {
+        formulario.set("evidencia", foto, foto.name || "evidencia");
         try {
           formulario.set("evidencia", await comprimirImagenHasta(foto, 1600, 650_000, 0.78), "evidencia.webp");
         } catch {
@@ -171,7 +180,7 @@ export function ResolverDesafio({
       {tipo === "EVIDENCIA_FOTO" && (
         <div className="space-y-4">
           <p className="mb-3 rounded-xl bg-sky-50 p-3 text-sm font-bold text-[var(--epm-azul-profundo)]">{configuracion.instruccion}</p>
-          <div><label className="etiqueta" htmlFor="evidencia">Foto de evidencia</label><input className="campo file:mr-3 file:rounded-full file:border-0 file:bg-sky-50 file:px-3 file:py-2 file:font-bold file:text-[var(--epm-azul)]" id="evidencia" name="evidencia" type="file" accept="image/*" capture="environment" required /><p className="mt-1 text-xs text-slate-500">Puedes elegir la foto original; Pasaporte la optimiza automáticamente.</p></div>
+          <SelectorEvidenciaFoto alSeleccionar={setFotoEvidencia} />
           <div><label className="etiqueta" htmlFor="comentario">Comentario (opcional)</label><textarea className="campo min-h-24" id="comentario" name="comentario" maxLength={140} placeholder="Cuéntanos algo sobre esta foto" /></div>
         </div>
       )}

@@ -77,7 +77,7 @@ export default async function AdminDesafios() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 p-3">
-              <a href={`/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> Ver avance</a>
+              <a href={esConfiguracionPuntualidad(desafio.configuracion) ? `/admin/proyeccion/puntualidad/${desafio.id}` : `/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> {esConfiguracionPuntualidad(desafio.configuracion) ? "Ver QR de llegada" : "Ver avance"}</a>
               <span className="text-slate-300">·</span>
               {desafio.codigoQr === CODIGO_DESAFIO_CIERRE && (
                 <>
