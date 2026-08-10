@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       estado: "PUBLICADO",
       ...filtroDia,
     },
-    orderBy: [{ dia: "asc" }, { creadoEn: "asc" }],
+    orderBy: [{ dia: "asc" }, { orden: "asc" }, { creadoEn: "asc" }],
   });
   const desafios = desafiosPublicados.filter(
     (desafio) => estadoTemporalDesafio(desafio) === "DISPONIBLE",

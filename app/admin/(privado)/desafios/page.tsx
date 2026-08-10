@@ -1,6 +1,6 @@
-import { Clock3, Copy, Download, FileDown, MonitorPlay, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Clock3, Copy, Download, FileDown, MonitorPlay, Pencil, Plus, Sprout, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
-import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesafio } from "@/app/admin/actions";
+import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesafio, moverDesafio } from "@/app/admin/actions";
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
@@ -79,6 +79,10 @@ export default async function AdminDesafios() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 p-3">
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1" aria-label={`Ordenar ${desafio.titulo}`}>
+                <form action={moverDesafio}><input type="hidden" name="id" value={desafio.id} /><input type="hidden" name="direccion" value="SUBIR" /><button title="Subir desafío" aria-label={`Subir ${desafio.titulo}`} className="grid h-7 w-7 place-items-center rounded-full text-slate-600 hover:bg-sky-50 hover:text-[var(--epm-azul)]"><ArrowUp size={16} /></button></form>
+                <form action={moverDesafio}><input type="hidden" name="id" value={desafio.id} /><input type="hidden" name="direccion" value="BAJAR" /><button title="Bajar desafío" aria-label={`Bajar ${desafio.titulo}`} className="grid h-7 w-7 place-items-center rounded-full text-slate-600 hover:bg-sky-50 hover:text-[var(--epm-azul)]"><ArrowDown size={16} /></button></form>
+              </span>
               <a href={esPuntualidad ? `/admin/proyeccion/puntualidad/${desafio.id}` : `/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> {esPuntualidad ? "Ver avance y QR" : "Ver avance"}</a>
               <span className="text-slate-300">·</span>
               {desafio.codigoQr === CODIGO_DESAFIO_CIERRE && (
@@ -115,7 +119,7 @@ export default async function AdminDesafios() {
 
 function cargarDatosDesafios() {
   return db.desafio.findMany({
-    orderBy: [{ dia: "asc" }, { creadoEn: "desc" }],
+    orderBy: [{ dia: "asc" }, { orden: "asc" }, { creadoEn: "desc" }],
     include: {
       _count: { select: { completitudes: true } },
       completitudes: { orderBy: { completadoEn: "desc" }, take: 5, select: { respuesta: true } },

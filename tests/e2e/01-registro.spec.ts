@@ -41,9 +41,10 @@ test.describe("Registro de participante", () => {
     await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
     const respuestaRegistro = await registroCompletado;
 
-    await expect(page.getByText("¡Tu pasaporte está listo!")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "¡Te damos la bienvenida al encuentro de experiencia y comunicaciones!" })).toBeVisible();
-    await expect(page.getByText("En este Encuentro de experiencia y comunicaciones, conecta con otras personas, participa en los desafíos, suma puntos y comparte los momentos que dejarán huella. Tu presencia hace especial este encuentro.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: `¡${marca} E2E, tu pasaporte está listo!` })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Encuentro de experiencia y comunicaciones" })).toBeVisible();
+    await expect(page.getByText("Te damos una cálida bienvenida.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Gracias por realizar tu registro y prepárate para vivir una gran experiencia.", { exact: true })).toBeVisible();
     await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toHaveCount(0);
     await expect(page.getByText("Código de recuperación", { exact: true })).toHaveCount(0);

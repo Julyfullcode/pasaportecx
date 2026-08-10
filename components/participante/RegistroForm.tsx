@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Check, Download, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import { Camera, Check, Download, LoaderCircle, RefreshCw, ShieldCheck } from "lucide-react";
 import { comprimirImagenHasta } from "@/lib/imagen";
 import { LogoBlanco } from "@/components/marca/Logo";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
@@ -81,18 +81,13 @@ export function RegistroForm({
             <LogoBlanco className="mx-auto h-8 w-auto" />
             <span className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-lg"><Check size={30} /></span>
             <p className="mt-4 text-xs font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">Tu experiencia comienza ahora</p>
-            <h2 className="mt-2 text-3xl font-extrabold leading-tight">¡Te damos la bienvenida al encuentro de experiencia y comunicaciones!</h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-white/85">En este Encuentro de experiencia y comunicaciones, conecta con otras personas, participa en los desafíos, suma puntos y comparte los momentos que dejarán huella. Tu presencia hace especial este encuentro.</p>
-            <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] font-extrabold">
-              <span className="rounded-xl bg-white/10 p-2"><ScanLine className="mx-auto mb-1" size={20} />Escanea</span>
-              <span className="rounded-xl bg-white/10 p-2"><Trophy className="mx-auto mb-1" size={20} />Participa</span>
-              <span className="rounded-xl bg-white/10 p-2"><Sparkles className="mx-auto mb-1" size={20} />Deja huella</span>
-            </div>
+            <h2 className="mt-2 text-3xl font-extrabold leading-tight">Encuentro de experiencia y comunicaciones</h2>
+            <p className="mx-auto mt-3 max-w-lg text-base font-bold leading-relaxed text-white/90">Te damos una cálida bienvenida.</p>
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-white/80">Gracias por realizar tu registro y prepárate para vivir una gran experiencia.</p>
           </div>
         </div>
         <div className="p-5 md:p-6">
-          <h3 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">¡Tu pasaporte está listo!</h3>
-          <p className="mt-1 text-slate-600">{registro.nombre}</p>
+          <h3 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">¡{registro.nombre}, tu pasaporte está listo!</h3>
           <a href={`/api/pasaporte?v=${encodeURIComponent(registro.versionPasaporte)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="boton-secundario mt-5 w-full"><Download size={19} /> Descargar Pasaporte</a>
           <button onClick={() => router.replace("/")} className="boton-primario mt-3 w-full">Entrar al encuentro</button>
         </div>

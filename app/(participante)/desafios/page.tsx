@@ -26,7 +26,7 @@ export default async function Desafios({
         { completitudes: { some: { participanteId: participante.id } } },
       ],
     },
-    orderBy: [{ dia: "asc" }, { creadoEn: "asc" }],
+    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
     include: {
       completitudes: { where: { participanteId: participante.id }, take: 1 },
     },

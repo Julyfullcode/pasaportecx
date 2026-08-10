@@ -29,6 +29,8 @@ type DatosPasaporte = {
   codigo: string;
   urlRecuperacion: string;
   urlAplicacion: string;
+  appleWalletUrl?: string;
+  googleWalletUrl?: string;
   logo?: Uint8Array;
   foto?: Uint8Array;
   fuenteRegular?: Uint8Array;
@@ -170,7 +172,7 @@ function agregarVinculo(
 export async function generarPasaportePdf(datos: DatosPasaporte) {
   const documento = await PDFDocument.create();
   documento.registerFontkit(fontkit);
-  documento.setTitle(`Pasaporte - ${datos.nombre}`);
+  documento.setTitle(`Encuentro experiencia y comunicaciones - ${datos.nombre}`);
   documento.setSubject(datos.evento);
   const pagina = documento.addPage([anchoPagina, 595]);
   const normal = datos.fuenteRegular
@@ -205,16 +207,13 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
     }
   }
 
-  const titulo = "Pasaporte";
-  pagina.drawText(titulo, { x: textoCentrado(titulo, negrita, 25), y: 489, size: 25, font: negrita, color: blanco });
-  const lineasEvento = lineas(datos.evento, normal, 10.5, 300).slice(0, 2);
-  lineasEvento.forEach((linea, indice) => pagina.drawText(linea, {
-    x: textoCentrado(linea, normal, 10.5),
-    y: 466 - indice * 14,
-    size: 10.5,
-    font: normal,
+  const tituloEncuentro = ["Encuentro experiencia", "y comunicaciones"];
+  tituloEncuentro.forEach((linea, indice) => pagina.drawText(linea, {
+    x: textoCentrado(linea, negrita, 24),
+    y: 491 - indice * 29,
+    size: 24,
+    font: negrita,
     color: blanco,
-    opacity: 0.88,
   }));
 
   pagina.drawCircle({ x: 210, y: 372, size: 70, color: azul, opacity: 0.16 });
@@ -263,18 +262,42 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
     errorCorrectionLevel: "H",
   });
   const qr = await documento.embedPng(qrBytes);
-  cajaRedondeada(pagina, 38, 30, 344, 124, 26, rgb(0.965, 0.982, 0.988));
-  pagina.drawImage(qr, { x: 53, y: 44, width: 96, height: 96 });
-  agregarVinculo(documento, pagina, datos.urlAplicacion, 53, 44, 96, 96);
-  pagina.drawLine({ start: { x: 168, y: 48 }, end: { x: 168, y: 136 }, thickness: 1, color: teal, opacity: 0.18 });
-  const centroInfo = 271;
+  const tieneWallet = Boolean(datos.appleWalletUrl || datos.googleWalletUrl);
+  const baseQr = tieneWallet ? 68 : 30;
+  const altoQr = tieneWallet ? 86 : 124;
+  const tamanoQr = tieneWallet ? 72 : 96;
+  const yImagenQr = tieneWallet ? 75 : 44;
+  cajaRedondeada(pagina, 38, baseQr, 344, altoQr, 26, rgb(0.965, 0.982, 0.988));
+  pagina.drawImage(qr, { x: 53, y: yImagenQr, width: tamanoQr, height: tamanoQr });
+  agregarVinculo(documento, pagina, datos.urlAplicacion, 53, yImagenQr, tamanoQr, tamanoQr);
+  const separadorX = tieneWallet ? 143 : 168;
+  pagina.drawLine({ start: { x: separadorX, y: baseQr + 10 }, end: { x: separadorX, y: baseQr + altoQr - 10 }, thickness: 1, color: teal, opacity: 0.18 });
+  const centroInfo = tieneWallet ? 262 : 271;
   const etiquetaCodigo = "Código de recuperación";
-  pagina.drawText(etiquetaCodigo, { x: centroInfo - normal.widthOfTextAtSize(etiquetaCodigo, 9.5) / 2, y: 119, size: 9.5, font: normal, color: gris });
-  pagina.drawText(datos.codigo, { x: centroInfo - normal.widthOfTextAtSize(datos.codigo, 20) / 2, y: 88, size: 20, font: normal, color: azul });
+  const yEtiqueta = tieneWallet ? 127 : 119;
+  const yCodigo = tieneWallet ? 101 : 88;
+  pagina.drawText(etiquetaCodigo, { x: centroInfo - normal.widthOfTextAtSize(etiquetaCodigo, 9.5) / 2, y: yEtiqueta, size: 9.5, font: normal, color: gris });
+  pagina.drawText(datos.codigo, { x: centroInfo - normal.widthOfTextAtSize(datos.codigo, 20) / 2, y: yCodigo, size: 20, font: normal, color: azul });
   const instruccion1 = "Escanéalo para recuperar tu perfil";
   const instruccion2 = "Toca el QR para abrir la aplicación";
-  pagina.drawText(instruccion1, { x: centroInfo - normal.widthOfTextAtSize(instruccion1, 8.2) / 2, y: 64, size: 8.2, font: normal, color: gris });
-  pagina.drawText(instruccion2, { x: centroInfo - normal.widthOfTextAtSize(instruccion2, 8.2) / 2, y: 51, size: 8.2, font: normal, color: gris });
+  pagina.drawText(instruccion1, { x: centroInfo - normal.widthOfTextAtSize(instruccion1, 8.2) / 2, y: tieneWallet ? 82 : 64, size: 8.2, font: normal, color: gris });
+  if (!tieneWallet) pagina.drawText(instruccion2, { x: centroInfo - normal.widthOfTextAtSize(instruccion2, 8.2) / 2, y: 51, size: 8.2, font: normal, color: gris });
+
+  const botonesWallet = [
+    datos.appleWalletUrl ? { url: datos.appleWalletUrl, inicial: "A", texto: "Añadir a Apple Wallet", color: rgb(0.08, 0.1, 0.13) } : null,
+    datos.googleWalletUrl ? { url: datos.googleWalletUrl, inicial: "G", texto: "Añadir a Google Wallet", color: azul } : null,
+  ].filter((boton): boton is { url: string; inicial: string; texto: string; color: RGB } => Boolean(boton));
+  botonesWallet.forEach((boton, indice) => {
+    const espacio = 10;
+    const anchoBoton = (344 - espacio * (botonesWallet.length - 1)) / botonesWallet.length;
+    const x = 38 + indice * (anchoBoton + espacio);
+    cajaRedondeada(pagina, x, 24, anchoBoton, 31, 10, boton.color);
+    pagina.drawCircle({ x: x + 17, y: 39.5, size: 8, color: blanco, opacity: 0.16 });
+    pagina.drawText(boton.inicial, { x: x + 14.2, y: 35.8, size: 8.5, font: negrita, color: blanco });
+    const tamano = tamanoQueCabe(boton.texto, negrita, 8.2, anchoBoton - 38, 6.5);
+    pagina.drawText(boton.texto, { x: x + 31, y: 36.2, size: tamano, font: negrita, color: blanco });
+    agregarVinculo(documento, pagina, boton.url, x, 24, anchoBoton, 31);
+  });
 
   const preferencias = documento.catalog.getOrCreateViewerPreferences();
   preferencias.setFitWindow(true);

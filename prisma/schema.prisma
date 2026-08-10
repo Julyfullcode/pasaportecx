@@ -138,11 +138,13 @@ model Desafio {
   limiteCompletitudes Int?
   configuracion       Json
   urlImagen           String?
+  orden               Int           @default(0)
   creadoEn            DateTime      @default(now())
   componente          Componente?   @relation(fields: [componenteId], references: [id])
   completitudes       Completitud[]
 
   @@index([estado, dia])
+  @@index([dia, orden])
   @@index([componenteId])
 }
 
