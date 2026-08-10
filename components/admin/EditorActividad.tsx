@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CheckCircle2, Plus, Save, Trash2 } from "lucide-react";
-import { idsRespuestasCorrectas, type ConfiguracionActividad, type PreguntaActividad } from "@/lib/actividad";
+import type { ConfiguracionActividad, PreguntaActividad } from "@/lib/actividad";
+import { idsRespuestasCorrectas } from "@/lib/actividad-cliente";
 import { guardarActividad } from "@/app/admin/(privado)/actividades/actions";
 
 type ActividadEditable = {
