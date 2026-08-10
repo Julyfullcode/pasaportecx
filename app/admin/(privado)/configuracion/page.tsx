@@ -5,6 +5,8 @@ import { AgendaConfig } from "@/components/admin/AgendaConfig";
 import { InputImagenOptimizada } from "@/components/admin/InputImagenOptimizada";
 import { EstadoAlmacenamiento } from "@/components/admin/EstadoAlmacenamiento";
 import { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
+import { Building2, CalendarCog, Images, MonitorPlay, ShieldAlert } from "lucide-react";
+import { EncabezadoConfiguracion } from "@/components/admin/EncabezadoConfiguracion";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +30,10 @@ export default async function Configuracion() {
   ]);
   return (
     <div className="p-4 md:p-7">
-      <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Todo editable, sin redespliegue</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Configuración</h1></div>
-      <form action={guardarConfiguracion} className="mt-6 space-y-4">
+      <h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Configuración</h1>
+      <form id="configuracion-general" action={guardarConfiguracion} className="mt-6 space-y-4">
         <details className="group overflow-hidden rounded-3xl bg-white shadow-soft">
-          <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Datos generales</small><strong className="text-xl">Evento y puntuación</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+          <EncabezadoConfiguracion icono={CalendarCog} etiqueta="Datos generales" titulo="Evento y puntuación" descripcion="Configura la identidad del encuentro, los puntos de registro, el podio y la disponibilidad del certificado." />
           <div className="grid gap-4 p-5 md:grid-cols-2">
         <div><label className="etiqueta">Nombre del evento</label><input className="campo" name="nombreEvento" defaultValue={config.nombreEvento} maxLength={140} required /></div>
         <div><label className="etiqueta">Descripción para la agenda</label><textarea className="campo min-h-24 resize-y" name="descripcionAgenda" defaultValue={config.descripcionAgenda} maxLength={800} placeholder="Una invitación breve que acompañará el nombre del evento" /></div>
@@ -45,7 +47,7 @@ export default async function Configuracion() {
           </div>
         </details>
         <details className="group overflow-hidden rounded-3xl bg-white shadow-soft">
-          <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Visualización en vivo</small><strong className="text-xl">Pantallas de proyección</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+          <EncabezadoConfiguracion icono={MonitorPlay} etiqueta="Visualización en vivo" titulo="Pantallas de proyección" descripcion="Define el modo de asistentes, los tiempos y la rotación automática de las vistas proyectadas." />
           <div className="grid gap-4 p-5 md:grid-cols-2">
         <div><label className="etiqueta">Modo asistentes</label><select className="campo" name="modoAsistentes" defaultValue={config.modoAsistentes}><option value="MOSAICO">Mosaico</option><option value="CARRUSEL">Carrusel</option><option value="DESTACADO">Destacado</option></select></div>
         <div><label className="etiqueta">Rotación (segundos)</label><input className="campo" type="number" min={3} name="intervaloAsistentesSegundos" defaultValue={config.intervaloAsistentesSegundos} /></div>
@@ -57,7 +59,7 @@ export default async function Configuracion() {
           </div>
         </details>
         <details className="group overflow-hidden rounded-3xl bg-white shadow-soft">
-          <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Fotos y reconocimientos</small><strong className="text-xl">Recuerdos</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+          <EncabezadoConfiguracion icono={Images} etiqueta="Fotos y reconocimientos" titulo="Recuerdos" descripcion="Configura los límites, la aprobación y los puntos asociados a las fotos compartidas." />
           <div className="grid gap-4 p-5 md:grid-cols-2">
         <div><label className="etiqueta">Puntos por recuerdo</label><input className="campo" type="number" min={0} name="puntosPorRecuerdo" defaultValue={config.puntosPorRecuerdo} /></div>
         <div><label className="etiqueta">Cantidad máxima de recuerdos que otorgan puntos</label><input className="campo" type="number" min={0} name="maxRecuerdosConPuntos" defaultValue={config.maxRecuerdosConPuntos} /></div>
@@ -71,21 +73,21 @@ export default async function Configuracion() {
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 font-bold text-emerald-900"><input type="checkbox" name="eliminarEvidenciasRechazadas" defaultChecked={config.eliminarEvidenciasRechazadas} /> Eliminar del almacenamiento las evidencias rechazadas</label>
           </div>
         </details>
-        <button className="boton-primario w-full">Guardar configuración</button>
       </form>
       <EstadoAlmacenamiento reporte={reporteAlmacenamiento} />
-      <AgendaConfig dias={diasAgenda} />
+      <AgendaConfig dias={diasAgenda} urlPdfPersonalizado={config.urlAgendaPdf} />
       <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
-        <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Listados editables</small><strong className="text-xl">Empresas y equipos</strong><span className="mt-1 block text-sm font-medium text-white/75">Edita, reordena o agrega registros disponibles en la aplicación.</span></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+        <EncabezadoConfiguracion icono={Building2} etiqueta="Listados editables" titulo="Empresas y equipos" descripcion="Edita, reordena o agrega las empresas y los equipos disponibles en la aplicación." />
         <div className="grid gap-5 p-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />
           <CatalogoEquipos items={equipos} />
         </div>
       </details>
       <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
-        <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Limpieza controlada</small><strong className="text-xl">Preparar aplicación para público real</strong><span className="mt-1 block text-sm font-medium text-white/75">Elimina los datos de prueba sin borrar la configuración.</span></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+        <EncabezadoConfiguracion icono={ShieldAlert} etiqueta="Limpieza controlada" titulo="Preparar aplicación para público real" descripcion="Elimina los datos de prueba sin borrar desafíos, agenda, empresas ni configuración." />
         <div className="border-2 border-t-0 border-red-200 bg-red-50 p-5"><p className="text-sm text-red-800">Puedes usarla al terminar cada ciclo de pruebas. Antes de abrir el registro al público, ejecútala una última vez.</p><PrepararPublico resumen={resumenDatos} /></div>
       </details>
+      <button form="configuracion-general" className="boton-primario mt-6 w-full">Guardar configuración</button>
     </div>
   );
 }

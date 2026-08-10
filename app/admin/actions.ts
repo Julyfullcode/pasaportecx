@@ -48,6 +48,10 @@ export type EstadoCorreosAutorizados = {
   tipo: "inicial" | "error" | "exito";
   mensaje: string;
 };
+export type EstadoPdfAgenda = {
+  tipo: "inicial" | "error" | "exito";
+  mensaje: string;
+};
 
 export async function iniciarSesionAdmin(
   _estado: EstadoLogin,
@@ -826,6 +830,52 @@ export async function limpiarArchivosHuerfanos(formulario: FormData) {
     reporte.huerfanos.map((ruta) => storage.eliminar(`/uploads/${ruta}`)),
   );
   revalidatePath("/admin/configuracion");
+}
+
+export async function guardarPdfAgenda(
+  _estado: EstadoPdfAgenda,
+  formulario: FormData,
+): Promise<EstadoPdfAgenda> {
+  await requerirAdmin();
+  const archivo = formulario.get("agendaPdf");
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    return { tipo: "error", mensaje: "Selecciona un archivo PDF." };
+  }
+  if (archivo.size > 4 * 1024 * 1024) {
+    return { tipo: "error", mensaje: "El PDF no puede superar 4 MB." };
+  }
+  const datos = new Uint8Array(await archivo.arrayBuffer());
+  if (new TextDecoder().decode(datos.slice(0, 5)) !== "%PDF-") {
+    return { tipo: "error", mensaje: "El archivo seleccionado no es un PDF válido." };
+  }
+
+  let urlNueva: string | null = null;
+  try {
+    urlNueva = await storage.guardar(datos, "pdf", "agenda");
+    await db.configuracionEvento.update({
+      where: { id: "evento" },
+      data: { urlAgendaPdf: urlNueva },
+    });
+  } catch (error) {
+    console.error("No se pudo guardar el PDF personalizado de la agenda", error);
+    return { tipo: "error", mensaje: "No pudimos guardar el PDF. Vuelve a intentarlo." };
+  }
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/api/agenda");
+  return { tipo: "exito", mensaje: "PDF de la agenda guardado y disponible para los participantes." };
+}
+
+export async function quitarPdfAgenda(formulario: FormData) {
+  await requerirAdmin();
+  if (String(formulario.get("confirmacion") ?? "") !== "QUITAR") return;
+  await db.configuracionEvento.update({
+    where: { id: "evento" },
+    data: { urlAgendaPdf: null },
+  });
+  anunciarCambio("agenda");
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/api/agenda");
 }
 
 export async function guardarDiaAgenda(formulario: FormData) {

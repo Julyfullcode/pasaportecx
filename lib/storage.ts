@@ -44,6 +44,7 @@ const TIPOS_CONTENIDO: Record<string, string> = {
   jpeg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",
+  pdf: "application/pdf",
 };
 
 function configuracionSupabase() {

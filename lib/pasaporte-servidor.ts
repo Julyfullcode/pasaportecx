@@ -34,8 +34,6 @@ export async function crearPasaporteParticipante(participante: ParticipantePasap
     codigo: participante.codigoRecuperacion,
     urlRecuperacion: `${baseAplicacion}/recuperar/${participante.codigoRecuperacion}`,
     urlAplicacion: `${baseAplicacion}/`,
-    appleWalletUrl: `${baseAplicacion}/wallet?plataforma=apple`,
-    googleWalletUrl: `${baseAplicacion}/wallet?plataforma=google`,
     logo,
     foto,
     fuenteRegular,

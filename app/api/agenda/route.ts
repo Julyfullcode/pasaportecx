@@ -71,11 +71,21 @@ async function cargarImagen(url: string, contexto: string) {
 export async function GET() {
   if (!(await participanteActual())) return Response.json({ error: "Debes iniciar sesión para descargar la agenda." }, { status: 401 });
   try {
-    const [config, dias, logo, fuenteRegular, fuenteSemibold] = await Promise.all([
-      db.configuracionEvento.findUniqueOrThrow({
-        where: { id: "evento" },
-        select: { nombreEvento: true, descripcionAgenda: true, organizadoresAgenda: true },
-      }),
+    const config = await db.configuracionEvento.findUniqueOrThrow({
+      where: { id: "evento" },
+      select: { nombreEvento: true, descripcionAgenda: true, organizadoresAgenda: true, urlAgendaPdf: true },
+    });
+    if (config.urlAgendaPdf) {
+      const pdfPersonalizado = await storage.leer(config.urlAgendaPdf);
+      return new Response(pdfPersonalizado, {
+        headers: {
+          "Cache-Control": "private, no-store",
+          "Content-Disposition": "inline; filename=agenda-encuentro.pdf",
+          "Content-Type": "application/pdf",
+        },
+      });
+    }
+    const [dias, logo, fuenteRegular, fuenteSemibold] = await Promise.all([
       db.diaAgenda.findMany({
         orderBy: { orden: "asc" },
         select: {
@@ -89,7 +99,11 @@ export async function GET() {
       readFile(join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf")).catch(() => undefined),
       readFile(join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf")).catch(() => undefined),
     ]);
-    const pdf = await pdfAgenda(config, dias, logo, fuenteRegular, fuenteSemibold);
+    const pdf = await pdfAgenda({
+      nombreEvento: config.nombreEvento,
+      descripcionAgenda: config.descripcionAgenda,
+      organizadoresAgenda: config.organizadoresAgenda,
+    }, dias, logo, fuenteRegular, fuenteSemibold);
     return new Response(Buffer.from(pdf), {
       headers: {
         "Cache-Control": "private, no-store",

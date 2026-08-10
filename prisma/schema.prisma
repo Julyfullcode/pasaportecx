@@ -316,6 +316,7 @@ model ConfiguracionEvento {
   nombreEvento                 String         @default("Pasaporte")
   descripcionAgenda            String         @default("")
   organizadoresAgenda          String         @default("Vicepresidencia Experiencia Usuario-Cliente")
+  urlAgendaPdf                 String?
   diplomaHabilitado            Boolean        @default(false)
   tamanoPodioIndividual        Int            @default(5)
   puntosPorRegistro            Int            @default(10)

@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, HardDrive, Images, Trash2 } from "lucide-react";
 import { limpiarArchivosHuerfanos } from "@/app/admin/actions";
 import type { obtenerReporteAlmacenamiento } from "@/lib/almacenamiento";
+import { EncabezadoConfiguracion } from "@/components/admin/EncabezadoConfiguracion";
 
 type Reporte = Awaited<ReturnType<typeof obtenerReporteAlmacenamiento>>;
 
@@ -11,6 +12,7 @@ function formatoBytes(bytes: number) {
 }
 
 const etiquetas: Record<string, string> = {
+  agenda: "Agenda PDF",
   "agenda-dias": "Fotos de agenda",
   empresas: "Logos de empresas",
   evidencias: "Evidencias",
@@ -24,7 +26,7 @@ export function EstadoAlmacenamiento({ reporte }: { reporte: Reporte }) {
   if (!reporte.disponible) {
     return (
       <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
-        <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between p-5 text-white"><span><small className="block font-extrabold text-[var(--epm-verde)]">Control de capacidad</small><strong className="flex items-center gap-2 text-xl"><HardDrive /> Almacenamiento</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+        <EncabezadoConfiguracion icono={HardDrive} etiqueta="Control de capacidad" titulo="Almacenamiento" descripcion="Consulta el espacio utilizado y detecta archivos que ya no están asociados a datos de la aplicación." />
         <p className="p-5 text-sm text-slate-600">{reporte.motivo}</p>
       </details>
     );
@@ -34,19 +36,7 @@ export function EstadoAlmacenamiento({ reporte }: { reporte: Reporte }) {
   const colorBarra = nivel === "critico" ? "bg-red-600" : nivel === "alto" ? "bg-orange-500" : nivel === "medio" ? "bg-amber-400" : "bg-emerald-500";
   return (
     <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
-      <summary className="marca-gradiente flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-white md:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="font-extrabold text-[var(--epm-verde)]">Control de capacidad</p>
-            <h2 className="flex items-center gap-2 text-2xl font-extrabold"><HardDrive /> Almacenamiento</h2>
-          </div>
-          <div className="rounded-2xl bg-white/12 px-4 py-3 text-right backdrop-blur">
-            <strong className="block text-2xl">{formatoBytes(reporte.bytesTotales)}</strong>
-            <span className="text-xs text-white/75">de {formatoBytes(reporte.limiteBytes)} · {reporte.archivos} archivos</span>
-          </div>
-        </div>
-        <span className="mt-2 text-2xl transition group-open:rotate-45">+</span>
-      </summary>
+      <EncabezadoConfiguracion icono={HardDrive} etiqueta="Control de capacidad" titulo="Almacenamiento" descripcion={`${formatoBytes(reporte.bytesTotales)} de ${formatoBytes(reporte.limiteBytes)} · ${reporte.archivos} archivos. Revisa el consumo y limpia archivos huérfanos.`} />
       <div className="px-5 pt-5">
         <div className="h-4 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full transition-all ${colorBarra}`} style={{ width: `${Math.max(1, reporte.porcentaje)}%` }} /></div>
         <div className="mt-2 flex items-center justify-between text-xs font-bold text-slate-600"><span>{reporte.porcentaje.toFixed(1)}% utilizado</span><span>{formatoBytes(Math.max(0, reporte.limiteBytes - reporte.bytesTotales))} disponibles</span></div>

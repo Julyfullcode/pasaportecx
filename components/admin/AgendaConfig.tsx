@@ -3,6 +3,8 @@
 import { CalendarDays, Camera, Clock3, ImagePlus, Plus, Save, Trash2, UserRound } from "lucide-react";
 import { agregarFotosDiaAgenda, eliminarDiaAgenda, eliminarFotoDiaAgenda, eliminarMomentoAgenda, guardarDiaAgenda, guardarMomentoAgenda } from "@/app/admin/actions";
 import { InputImagenOptimizada } from "@/components/admin/InputImagenOptimizada";
+import { EncabezadoConfiguracion } from "@/components/admin/EncabezadoConfiguracion";
+import { CargaPdfAgenda } from "@/components/admin/CargaPdfAgenda";
 
 type DiaAgenda = {
   id: string;
@@ -28,18 +30,13 @@ function fechaLegible(fecha: string | null) {
   return `${dia} de ${meses[mes - 1]} de ${ano}`;
 }
 
-export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
+export function AgendaConfig({ dias, urlPdfPersonalizado }: { dias: DiaAgenda[]; urlPdfPersonalizado: string | null }) {
   return (
     <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
-      <summary className="marca-gradiente relative flex cursor-pointer list-none items-center justify-between overflow-hidden p-5 text-white md:p-6">
-        <div className="relative z-10 flex items-start gap-3">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><CalendarDays /></span>
-          <div><p className="text-sm font-extrabold text-[var(--epm-verde)]">Programa descargable</p><h2 className="text-2xl font-extrabold">Agenda del encuentro</h2><p className="mt-1 max-w-3xl text-sm text-white/80">Crea los días y agrega sus momentos. El PDF se actualizará automáticamente para todos los participantes.</p></div>
-        </div>
-        <span className="relative z-10 ml-4 text-2xl transition group-open:rotate-45">+</span>
-      </summary>
+      <EncabezadoConfiguracion icono={CalendarDays} etiqueta="Programa descargable" titulo="Agenda del encuentro" descripcion="Crea los días y sus momentos o carga un PDF existente para entregarlo a los participantes." />
 
       <div className="space-y-4 p-4 md:p-6">
+        <CargaPdfAgenda urlActual={urlPdfPersonalizado} />
         {dias.length === 0 && <div className="rounded-2xl border-2 border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">Aún no hay días configurados. Crea el primero al final de esta sección.</div>}
         {dias.map((dia) => (
           <details key={dia.id} open className="overflow-hidden rounded-[1.75rem] border border-sky-100 bg-gradient-to-br from-sky-50 to-emerald-50/60 shadow-sm">

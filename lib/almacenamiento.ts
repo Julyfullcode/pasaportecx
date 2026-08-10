@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 
 const CARPETAS_GESTIONADAS = new Set([
   "agenda-dias",
+  "agenda",
   "empresas",
   "evidencias",
   "expositores",
@@ -24,6 +25,7 @@ type Referencias = {
   fotosAgenda: { urlFoto: string }[];
   momentosAgenda: { urlFotoExpositor: string | null }[];
   desafios: { urlImagen: string | null }[];
+  configuracion: { urlAgendaPdf: string | null }[];
 };
 
 function rutaStorage(url: string | null | undefined) {
@@ -50,6 +52,7 @@ export function analizarObjetosAlmacenamiento(
   referencias.fotosAgenda.forEach((item) => agregar(item.urlFoto));
   referencias.momentosAgenda.forEach((item) => agregar(item.urlFotoExpositor));
   referencias.desafios.forEach((item) => agregar(item.urlImagen));
+  referencias.configuracion.forEach((item) => agregar(item.urlAgendaPdf));
 
   const ahora = Date.now();
   const graciaMs = 24 * 60 * 60 * 1000;
@@ -95,7 +98,7 @@ export async function obtenerReporteAlmacenamiento() {
   }
 
   try {
-    const [objetos, participantes, recuerdos, completitudes, empresas, fotosAgenda, momentosAgenda, desafios] = await Promise.all([
+    const [objetos, participantes, recuerdos, completitudes, empresas, fotosAgenda, momentosAgenda, desafios, configuracion] = await Promise.all([
       db.$queryRawUnsafe<ObjetoStorage[]>(
         `SELECT name AS "nombre", COALESCE((metadata->>'size')::bigint, 0) AS "bytes", created_at AS "creadoEn"
          FROM storage.objects
@@ -110,11 +113,12 @@ export async function obtenerReporteAlmacenamiento() {
       db.fotoDiaAgenda.findMany({ select: { urlFoto: true } }),
       db.momentoAgenda.findMany({ select: { urlFotoExpositor: true } }),
       db.desafio.findMany({ select: { urlImagen: true } }),
+      db.configuracionEvento.findMany({ select: { urlAgendaPdf: true } }),
     ]);
     const limiteConfigurado = Number(process.env.SUPABASE_STORAGE_LIMIT_BYTES);
     return analizarObjetosAlmacenamiento(
       objetos,
-      { participantes, recuerdos, completitudes, empresas, fotosAgenda, momentosAgenda, desafios },
+      { participantes, recuerdos, completitudes, empresas, fotosAgenda, momentosAgenda, desafios, configuracion },
       Number.isFinite(limiteConfigurado) && limiteConfigurado > 0 ? limiteConfigurado : 1024 ** 3,
     );
   } catch (error) {

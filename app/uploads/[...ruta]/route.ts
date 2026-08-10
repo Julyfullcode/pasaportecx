@@ -8,6 +8,7 @@ const tipos: Record<string, string> = {
   png: "image/png",
   webp: "image/webp",
   svg: "image/svg+xml",
+  pdf: "application/pdf",
 };
 
 export async function GET(

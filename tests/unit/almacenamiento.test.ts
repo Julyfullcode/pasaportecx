@@ -20,6 +20,7 @@ describe("análisis de almacenamiento", () => {
         fotosAgenda: [],
         momentosAgenda: [],
         desafios: [],
+        configuracion: [],
       },
       2_000,
     );
