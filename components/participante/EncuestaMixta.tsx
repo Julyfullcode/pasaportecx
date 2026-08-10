@@ -18,7 +18,7 @@ export function EncuestaMixta({ preguntas }: { preguntas: PreguntaEncuestaMixta[
     <div className="space-y-5">
       {preguntas.map((pregunta, indice) => (
         <section key={pregunta.id} className="rounded-2xl border border-sky-100 bg-gradient-to-br from-white to-sky-50 p-4 shadow-sm">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--epm-teal)]">Pregunta {indice + 1}</p>
+          <p className="text-xs font-extrabold tracking-wider text-[var(--epm-teal)]">Pregunta {indice + 1}</p>
           <h2 className="mt-1 font-display text-lg font-extrabold leading-snug text-[var(--epm-azul-profundo)]">{pregunta.titulo}</h2>
           {pregunta.descripcion && <p className="mb-4 mt-2 text-sm text-slate-600">{pregunta.descripcion}</p>}
           {pregunta.tipo === "ESCALA_0_10" && (

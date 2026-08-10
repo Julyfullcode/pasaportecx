@@ -3,6 +3,7 @@ import { participanteActual } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { evaluarRespuestaActividad, idsRespuestasCorrectas, preguntasDe, respuestaActividadValida, type PreguntaActividad } from "@/lib/actividad";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
+import { calcularJuegoCxEx, DURACION_JUEGO_CX_EX, respuestasJuegoCxExValidas, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,11 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
   const empresas = actividad.requiereEmpresa
     ? await db.empresa.findMany({ where: { activa: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true, urlLogo: true } })
     : [];
+  const esJuegoCxEx = actividad.tipo === TIPO_JUEGO_CX_EX;
+  const [equipos, clasificacion] = esJuegoCxEx ? await Promise.all([
+    db.equipo.findMany({ where: { activo: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true } }),
+    db.resultadoJuegoActividad.findMany({ where: { actividadId: actividad.id }, orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } } } }),
+  ]) : [[], []];
   const etapa = actividad.estado === "CERRADA" || (actividad.tipo === "EVALUACION_WHATSAPP" && completada) || actividad.pasoActual > preguntas.length
     ? "CIERRE"
     : actividad.tipo === "EVALUACION_WHATSAPP" ? "FORMULARIO_COMPLETO"
@@ -56,6 +62,9 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
       requiereEmpresa: actividad.requiereEmpresa,
     },
     empresas,
+    equipos,
+    equipoParticipanteId: participante.equipoId,
+    clasificacion: clasificacion.map((item) => ({ equipoId: item.equipoId, equipo: item.equipo.nombre, nombreEquipo: item.nombreEquipo, puntaje: item.puntaje, segundos: item.segundos })),
     preguntas: actividad.tipo === "EVALUACION_WHATSAPP" ? preguntas.map(sinRespuestasCorrectas) : [],
     empresaEvaluadaId: actividad.respuestas.find((item) => item.empresaEvaluadaId)?.empresaEvaluadaId ?? null,
     pregunta: pregunta ? sinRespuestasCorrectas(pregunta) : null,
@@ -70,7 +79,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
   const participante = await participanteActual();
   if (!participante) return Response.json({ error: "Debes iniciar sesión." }, { status: 401 });
   const { id: codigoAcceso } = await contexto.params;
-  let cuerpo: { preguntaId?: string; respuesta?: unknown; respuestas?: { preguntaId?: string; respuesta?: unknown }[]; empresaEvaluadaId?: string };
+  let cuerpo: { preguntaId?: string; respuesta?: unknown; respuestas?: { preguntaId?: string; respuesta?: unknown }[]; empresaEvaluadaId?: string; equipoId?: string; nombreEquipo?: string; segundos?: number; reflexion?: string; juego?: unknown };
   try {
     cuerpo = await request.json();
   } catch {
@@ -81,6 +90,31 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
       const actividad = await tx.actividad.findUniqueOrThrow({ where: { codigoAcceso } });
       const id = actividad.id;
       const preguntas = preguntasDe(actividad.configuracion);
+      if (actividad.tipo === TIPO_JUEGO_CX_EX) {
+        if (actividad.estado !== "PUBLICADA") throw new Error("ETAPA_CAMBIO");
+        if (!respuestasJuegoCxExValidas(cuerpo.juego)) throw new Error("RESPUESTA_INVALIDA");
+        const equipo = await tx.equipo.findFirst({ where: { id: cuerpo.equipoId, activo: true }, select: { id: true, nombre: true } });
+        if (!equipo) throw new Error("EQUIPO_INVALIDO");
+        const existente = await tx.resultadoJuegoActividad.findUnique({ where: { actividadId_equipoId: { actividadId: id, equipoId: equipo.id } }, select: { participanteId: true } });
+        if (existente && existente.participanteId !== participante.id) throw new Error("EQUIPO_COMPLETADO");
+        const calculo = calcularJuegoCxEx(cuerpo.juego);
+        const segundos = Math.max(0, Math.min(DURACION_JUEGO_CX_EX, Math.trunc(Number(cuerpo.segundos) || DURACION_JUEGO_CX_EX)));
+        const nombreEquipo = String(cuerpo.nombreEquipo ?? "").trim().slice(0, 40) || null;
+        const reflexion = String(cuerpo.reflexion ?? "").trim().slice(0, 240);
+        await tx.resultadoJuegoActividad.upsert({
+          where: { actividadId_equipoId: { actividadId: id, equipoId: equipo.id } },
+          update: { participanteId: participante.id, nombreEquipo, puntaje: calculo.puntaje, segundos, desglose: calculo.desglose as Prisma.InputJsonValue, reflexion },
+          create: { actividadId: id, equipoId: equipo.id, participanteId: participante.id, nombreEquipo, puntaje: calculo.puntaje, segundos, desglose: calculo.desglose as Prisma.InputJsonValue, reflexion },
+        });
+        const puntosOtorgados = actividad.puntosHabilitados && !participante.esStaff ? actividad.puntos : 0;
+        await tx.participacionActividad.upsert({
+          where: { actividadId_participanteId: { actividadId: id, participanteId: participante.id } },
+          update: {},
+          create: { actividadId: id, participanteId: participante.id, puntosOtorgados },
+        });
+        await recalcularPuntosParticipante(tx, participante.id);
+        return { completada: true, puntosOtorgados, puntaje: calculo.puntaje, desglose: calculo.desglose, equipo: equipo.nombre, nombreEquipo, segundos };
+      }
       if (actividad.tipo === "EVALUACION_WHATSAPP") {
         if (actividad.estado !== "PUBLICADA") throw new Error("ETAPA_CAMBIO");
         const empresa = await tx.empresa.findFirst({ where: { id: cuerpo.empresaEvaluadaId, activa: true }, select: { id: true } });
@@ -139,6 +173,8 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
     if (error instanceof Error && error.message === "RESPUESTA_INVALIDA") return Response.json({ error: "Completa la respuesta antes de continuar." }, { status: 400 });
     if (error instanceof Error && error.message === "EMPRESA_INVALIDA") return Response.json({ error: "Selecciona la empresa que estás evaluando." }, { status: 400 });
     if (error instanceof Error && error.message === "EMPRESA_CAMBIO") return Response.json({ error: "La empresa evaluada debe ser la misma durante toda la actividad." }, { status: 409 });
+    if (error instanceof Error && error.message === "EQUIPO_INVALIDO") return Response.json({ error: "Selecciona un equipo válido." }, { status: 400 });
+    if (error instanceof Error && error.message === "EQUIPO_COMPLETADO") return Response.json({ error: "Este equipo ya registró su resultado. El moderador puede reiniciar la actividad para una nueva ronda." }, { status: 409 });
     console.error("[actividades/responder]", error);
     return Response.json({ error: "No pudimos guardar tu respuesta. Intenta nuevamente." }, { status: 500 });
   }

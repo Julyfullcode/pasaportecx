@@ -5,6 +5,7 @@ import { CheckCircle2, Plus, Save, Trash2 } from "lucide-react";
 import type { ConfiguracionActividad, PreguntaActividad } from "@/lib/actividad";
 import { idsRespuestasCorrectas } from "@/lib/actividad-cliente";
 import { guardarActividad } from "@/app/admin/(privado)/actividades/actions";
+import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 
 type ActividadEditable = {
   id: string;
@@ -46,7 +47,8 @@ export function EditorActividad({ actividad }: { actividad: ActividadEditable })
         <label className="flex items-center gap-3 rounded-2xl bg-sky-50 p-4 font-extrabold text-[var(--epm-azul-profundo)]"><input type="checkbox" name="puntosHabilitados" checked={puntosActivos} onChange={(evento) => setPuntosActivos(evento.target.checked)} className="h-5 w-5 accent-[var(--epm-azul)]" /> Dar puntos por completar</label>
         <label className={!puntosActivos ? "opacity-55" : ""}><span className="etiqueta">Cantidad de puntos</span><input className="campo" type="number" name="puntos" min="0" max="10000" defaultValue={actividad.puntos} readOnly={!puntosActivos} /></label>
       </section>
-      <div className="space-y-4">
+      {actividad.tipo === TIPO_JUEGO_CX_EX && <div className="rounded-3xl border border-sky-200 bg-sky-50 p-5"><h2 className="text-xl font-extrabold text-[var(--epm-azul-profundo)]">Dinámica fija del juego</h2><p className="mt-2 text-slate-600">Conserva los cinco momentos del archivo original: viaje, conexiones CX–EX, causas, solución y beneficios. Aquí puedes modificar los textos generales y decidir si la actividad entrega puntos en la aplicación.</p></div>}
+      {actividad.tipo !== TIPO_JUEGO_CX_EX && <div className="space-y-4">
         {preguntas.map((pregunta, indice) => (
           <details key={pregunta.id} className="tarjeta overflow-hidden" open={indice === 0}>
             <summary className="cursor-pointer list-none bg-gradient-to-r from-sky-50 to-emerald-50 p-5 font-extrabold text-[var(--epm-azul-profundo)]">Pregunta {indice + 1}: {pregunta.titulo}</summary>
@@ -64,7 +66,7 @@ export function EditorActividad({ actividad }: { actividad: ActividadEditable })
             </div>
           </details>
         ))}
-      </div>
+      </div>}
       <button className="boton-primario"><Save size={19} /> Guardar configuración</button>
       {actividad.tipo === "EVALUACION_WHATSAPP" && <button type="button" onClick={agregarPreguntaAbierta} className="boton-secundario"><Plus size={18} /> Agregar pregunta abierta</button>}
     </form>

@@ -12,7 +12,7 @@ type Analisis = {
 
 export function ResumenAnalisisActividad({ analisis, oscuro = false }: { analisis: Analisis; oscuro?: boolean }) {
   return <section className={oscuro ? "rounded-3xl border border-white/20 bg-white/10 p-6 text-white backdrop-blur" : "tarjeta p-6 md:p-7"}>
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className={`font-extrabold uppercase tracking-wider ${oscuro ? "text-[var(--epm-verde)]" : "text-[var(--epm-verde-medio)]"}`}>Análisis automático</p><h2 className="mt-1 text-2xl font-extrabold">Conclusión de las respuestas</h2></div><span className={`rounded-full px-4 py-2 text-sm font-extrabold ${oscuro ? "bg-white/15" : "bg-sky-50 text-[var(--epm-azul)]"}`}>{analisis.total} evaluaciones · {analisis.empresas} empresas</span></div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className={`font-extrabold tracking-wider ${oscuro ? "text-[var(--epm-verde)]" : "text-[var(--epm-verde-medio)]"}`}>Análisis automático</p><h2 className="mt-1 text-2xl font-extrabold">Conclusión de las respuestas</h2></div><span className={`rounded-full px-4 py-2 text-sm font-extrabold ${oscuro ? "bg-white/15" : "bg-sky-50 text-[var(--epm-azul)]"}`}>{analisis.total} evaluaciones · {analisis.empresas} empresas</span></div>
     <p className={`mt-4 text-lg leading-relaxed ${oscuro ? "text-white/90" : "text-slate-700"}`}>{analisis.conclusion}</p>
     {analisis.temas.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{analisis.temas.map((tema) => <span key={tema} className={`rounded-full px-3 py-1 text-sm font-bold ${oscuro ? "bg-white/15" : "bg-emerald-50 text-emerald-800"}`}>{tema}</span>)}</div>}
     <div className="mt-5 grid gap-4 lg:grid-cols-3">

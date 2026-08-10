@@ -80,7 +80,7 @@ export function RegistroForm({
           <div className="relative z-10">
             <LogoBlanco className="mx-auto h-8 w-auto" />
             <span className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-lg"><Check size={30} /></span>
-            <p className="mt-4 text-xs font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">Tu experiencia comienza ahora</p>
+            <p className="mt-4 text-xs font-extrabold tracking-[.2em] text-[var(--epm-verde)]">Tu experiencia comienza ahora</p>
             <h2 className="mt-2 text-3xl font-extrabold leading-tight">Encuentro de experiencia y comunicaciones</h2>
             <p className="mx-auto mt-3 max-w-lg text-base font-bold leading-relaxed text-white/90">Te damos una cálida bienvenida.</p>
             <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-white/80">Gracias por realizar tu registro y prepárate para vivir una gran experiencia.</p>

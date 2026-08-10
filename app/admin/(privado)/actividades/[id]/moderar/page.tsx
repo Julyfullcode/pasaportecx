@@ -9,13 +9,20 @@ import { ReiniciarActividad } from "@/components/admin/ReiniciarActividad";
 import { GraficaActividadEnVivo } from "@/components/admin/GraficaActividadEnVivo";
 import { ResumenAnalisisActividad } from "@/components/admin/ResumenAnalisisActividad";
 import { avanzarActividad, cerrarActividad, publicarActividad, retrocederActividad } from "@/app/admin/(privado)/actividades/actions";
+import { ModeradorJuegoCxEx } from "@/components/admin/ModeradorJuegoCxEx";
+import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 
 export const dynamic = "force-dynamic";
 
+function etiquetaEstado(estado: string) {
+  return estado === "PUBLICADA" ? "Publicada" : estado === "CERRADA" ? "Cerrada" : "Borrador";
+}
+
 export default async function ModerarActividad({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const actividad = await db.actividad.findUnique({ where: { id }, include: { respuestas: true, _count: { select: { respuestas: true, participaciones: true } } } });
+  const actividad = await db.actividad.findUnique({ where: { id }, include: { respuestas: true, resultadosJuego: { orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } }, participante: { select: { nombre: true } } } }, _count: { select: { respuestas: true, participaciones: true } } } });
   if (!actividad) notFound();
+  if (actividad.tipo === TIPO_JUEGO_CX_EX) return <ModeradorJuegoCxEx actividad={actividad} />;
   const preguntas = preguntasDe(actividad.configuracion);
   const esFormularioCompleto = actividad.tipo === "EVALUACION_WHATSAPP";
   const conteos = await db.respuestaActividad.groupBy({ by: ["preguntaId"], where: { actividadId: id }, _count: { _all: true } });
@@ -27,10 +34,10 @@ export default async function ModerarActividad({ params }: { params: Promise<{ i
 
   return <div className="fixed inset-0 z-[60] overflow-y-auto bg-[var(--epm-gris-fondo)] p-4 md:p-7"><ActualizacionModeracion />
     <Link href="/admin/actividades" className="inline-flex items-center gap-2 font-extrabold text-[var(--epm-azul)]"><ArrowLeft size={18} /> Volver</Link>
-    <div className="mt-4 flex flex-wrap items-end justify-between gap-3"><div><p className="font-extrabold text-[var(--epm-verde-medio)]">Control en vivo</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">{actividad.titulo}</h1></div><span className={`rounded-full px-4 py-2 text-sm font-extrabold ${actividad.estado === "PUBLICADA" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}><Radio className="mr-2 inline" size={16} />{actividad.estado}</span></div>
+    <div className="mt-4 flex flex-wrap items-end justify-between gap-3"><div><p className="font-extrabold text-[var(--epm-verde-medio)]">Control en vivo</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">{actividad.titulo}</h1></div><span className={`rounded-full px-4 py-2 text-sm font-extrabold ${actividad.estado === "PUBLICADA" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}><Radio className="mr-2 inline" size={16} />{etiquetaEstado(actividad.estado)}</span></div>
 
     <div className="mt-6 grid gap-5 xl:grid-cols-[1fr_280px]">
-      <section className="marca-gradiente overflow-hidden rounded-3xl p-6 text-white shadow-xl md:p-9"><p className="text-sm font-extrabold uppercase tracking-widest text-[var(--epm-verde)]">En pantalla ahora</p><h2 className="mt-3 text-3xl font-extrabold">{etapa}</h2><p className="mt-3 max-w-3xl text-lg text-white/90">{descripcionEtapa}</p>{actual && <div className="mt-4 w-full rounded-2xl bg-white/10 p-4"><p className="text-xs font-extrabold uppercase tracking-wider text-[var(--epm-verde)]">Descripción o contexto</p><p className="mt-2 whitespace-pre-line leading-relaxed text-white/85">{actual.contexto}</p></div>}<div className="mt-6 flex flex-wrap gap-3">
+      <section className="marca-gradiente overflow-hidden rounded-3xl p-6 text-white shadow-xl md:p-9"><p className="text-sm font-extrabold tracking-widest text-[var(--epm-verde)]">En pantalla ahora</p><h2 className="mt-3 text-3xl font-extrabold">{etapa}</h2><p className="mt-3 max-w-3xl text-lg text-white/90">{descripcionEtapa}</p>{actual && <div className="mt-4 w-full rounded-2xl bg-white/10 p-4"><p className="text-xs font-extrabold tracking-wider text-[var(--epm-verde)]">Descripción o contexto</p><p className="mt-2 whitespace-pre-line leading-relaxed text-white/85">{actual.contexto}</p></div>}<div className="mt-6 flex flex-wrap gap-3">
         {actividad.estado !== "PUBLICADA" ? <form action={publicarActividad}><input type="hidden" name="id" value={id} /><button className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[var(--epm-verde)] px-5 font-extrabold text-[var(--epm-azul-profundo)]"><Play /> {esFormularioCompleto ? "Publicar formulario" : "Publicar e iniciar invitación"}</button></form> : <>
           {!esFormularioCompleto && <><form action={retrocederActividad}><input type="hidden" name="id" value={id} /><button disabled={actividad.pasoActual === 0} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/40 px-5 font-extrabold disabled:opacity-40"><ChevronLeft /> Anterior</button></form><form action={avanzarActividad}><input type="hidden" name="id" value={id} /><button disabled={actividad.pasoActual > preguntas.length} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[var(--epm-verde)] px-5 font-extrabold text-[var(--epm-azul-profundo)] disabled:opacity-40">{actividad.pasoActual === 0 ? "Mostrar primera pregunta" : actividad.pasoActual === preguntas.length ? "Mostrar cierre" : "Siguiente pregunta"}<ArrowRight /></button></form></>}
           <form action={cerrarActividad}><input type="hidden" name="id" value={id} /><button className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/40 px-5 font-extrabold"><Square size={18} /> Cerrar actividad</button></form>

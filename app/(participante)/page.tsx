@@ -49,7 +49,7 @@ export default async function Inicio() {
       </MarcaHeader>
       <div className="contenedor relative z-20 -mt-3 space-y-4">
         <section className="tarjeta overflow-hidden p-5">
-          <p className="text-sm font-extrabold uppercase tracking-wider text-slate-500">{participante.esStaff ? "Perfil Staff" : "Tu puntaje total"}</p>
+          <p className="text-sm font-extrabold tracking-wide text-slate-500">{participante.esStaff ? "Perfil Staff" : "Tu puntaje total"}</p>
           <div className="mt-1 flex items-end justify-between">
             {participante.esStaff
               ? <p className="max-w-sm text-lg font-extrabold text-[var(--epm-azul-profundo)]">Participas en todas las actividades sin competir por puntos ni premios.</p>

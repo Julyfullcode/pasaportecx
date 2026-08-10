@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
+import { ACTIVIDAD_JUEGO_CX_EX_ID, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 
 export const ACTIVIDAD_CONOCIMIENTO_ID = "actividad-conocimiento-indicadores-mejora";
 export const ACTIVIDAD_WHATSAPP_ID = "actividad-evaluacion-canal-whatsapp";
@@ -149,6 +150,21 @@ export const ACTIVIDAD_WHATSAPP = {
   } satisfies ConfiguracionActividad,
 };
 
+export const ACTIVIDAD_JUEGO_CX_EX = {
+  titulo: "La experiencia detrás de la experiencia",
+  invitacion: "Un juego de doble impacto para descubrir cómo una falla en el pago digital conecta la experiencia del cliente con las condiciones de trabajo del empleado.",
+  cierre: "Toda experiencia visible tiene una experiencia interna que la hace posible. Diseñar mejor también implica transformar procesos, información, herramientas, roles y condiciones de trabajo.",
+  configuracion: {
+    preguntas: [
+      { id: "viaje", titulo: "Reconstruyan el viaje del cliente", contexto: "Ordenen la secuencia de hechos.", tipo: "RESPUESTA_ABIERTA" as const, insight: "La incertidumbre crece después del débito." },
+      { id: "conexiones", titulo: "Conecten las dos experiencias", contexto: "Relacionen cada vivencia del cliente con la condición del empleado.", tipo: "RESPUESTA_ABIERTA" as const, insight: "Cada fricción visible tiene una condición interna." },
+      { id: "causas", titulo: "Abran la caja negra", contexto: "Identifiquen las causas estructurales.", tipo: "RESPUESTA_ABIERTA" as const, insight: "La falla combina integración, conciliación, trazabilidad y gobierno." },
+      { id: "solucion", titulo: "Elijan una solución de doble impacto", contexto: "Intervengan la causa y no solo el síntoma.", tipo: "RESPUESTA_ABIERTA" as const, insight: "La solución debe mejorar CX, EX y operación." },
+      { id: "beneficios", titulo: "Comprueben el doble impacto", contexto: "Reconozcan los resultados para cliente y empleado.", tipo: "RESPUESTA_ABIERTA" as const, insight: "La experiencia digital depende de la operación que la sostiene." },
+    ],
+  } satisfies ConfiguracionActividad,
+};
+
 function textoValido(valor: unknown, maximo = 5000) {
   return typeof valor === "string" && valor.trim().length > 0 && valor.length <= maximo;
 }
@@ -210,8 +226,26 @@ export async function asegurarActividadWhatsapp() {
   return db.actividad.update({ where: { id: actividad.id }, data: { codigoAcceso: randomUUID().replace(/-/g, "") } });
 }
 
+export async function asegurarActividadJuegoCxEx() {
+  const actividad = await db.actividad.upsert({
+    where: { id: ACTIVIDAD_JUEGO_CX_EX_ID },
+    update: {},
+    create: {
+      id: ACTIVIDAD_JUEGO_CX_EX_ID,
+      tipo: TIPO_JUEGO_CX_EX,
+      codigoAcceso: randomUUID().replace(/-/g, ""),
+      titulo: ACTIVIDAD_JUEGO_CX_EX.titulo,
+      invitacion: ACTIVIDAD_JUEGO_CX_EX.invitacion,
+      cierre: ACTIVIDAD_JUEGO_CX_EX.cierre,
+      configuracion: ACTIVIDAD_JUEGO_CX_EX.configuracion as unknown as Prisma.InputJsonValue,
+    },
+  });
+  if (actividad.codigoAcceso) return actividad;
+  return db.actividad.update({ where: { id: actividad.id }, data: { codigoAcceso: randomUUID().replace(/-/g, "") } });
+}
+
 export async function asegurarActividadesBase() {
-  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp()]);
+  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp(), asegurarActividadJuegoCxEx()]);
 }
 
 export function preguntasDe(valor: unknown) {

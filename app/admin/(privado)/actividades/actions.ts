@@ -96,6 +96,7 @@ export async function reiniciarActividad(formulario: FormData) {
   const participaciones = await db.participacionActividad.findMany({ where: { actividadId: id }, select: { participanteId: true } });
   await db.$transaction(async (tx) => {
     await tx.respuestaActividad.deleteMany({ where: { actividadId: id } });
+    await tx.resultadoJuegoActividad.deleteMany({ where: { actividadId: id } });
     await tx.participacionActividad.deleteMany({ where: { actividadId: id } });
     await tx.actividad.update({ where: { id }, data: { estado: "BORRADOR", pasoActual: 0 } });
     for (const { participanteId } of participaciones) await recalcularPuntosParticipante(tx, participanteId);

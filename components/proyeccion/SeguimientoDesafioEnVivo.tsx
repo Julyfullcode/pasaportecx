@@ -79,7 +79,7 @@ export function SeguimientoDesafioEnVivo({ inicial, compacto = false }: { inicia
       <div className={`grid shrink-0 grid-cols-4 ${compacto ? "gap-2" : "gap-[clamp(8px,1vw,16px)]"}`}>
         {metricas.map(({ etiqueta, valor, Icono, clase }) => (
           <section key={etiqueta} className="rounded-[clamp(14px,1.4vw,22px)] border border-white/15 bg-white/10 p-[clamp(10px,1.2vw,18px)] shadow-xl backdrop-blur">
-            <div className="flex items-center gap-2 text-white/65"><Icono className={clase} size={20} /><span className="text-[clamp(10px,.9vw,14px)] font-extrabold uppercase tracking-wide">{etiqueta}</span></div>
+            <div className="flex items-center gap-2 text-white/65"><Icono className={clase} size={20} /><span className="text-[clamp(10px,.9vw,14px)] font-extrabold tracking-wide">{etiqueta}</span></div>
             <strong className={`mt-2 block truncate font-display text-[clamp(22px,2.6vw,42px)] leading-none ${clase}`}>{valor}</strong>
           </section>
         ))}
@@ -106,7 +106,7 @@ export function SeguimientoDesafioEnVivo({ inicial, compacto = false }: { inicia
                     <h2 className="truncate text-[clamp(12px,1.1vw,18px)] font-extrabold">{persona.nombre}</h2>
                     {persona.esStaff && <ShieldCheck className="shrink-0 text-violet-200" size={15} aria-label="Staff" />}
                   </div>
-                  <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-[clamp(8px,.72vw,11px)] font-extrabold uppercase tracking-wide ${claseEstado(persona)}`}>{textoEstado(persona)}</span>
+                  <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-[clamp(8px,.72vw,11px)] font-extrabold tracking-wide ${claseEstado(persona)}`}>{textoEstado(persona)}</span>
                 </div>
                 <strong className={`shrink-0 text-[clamp(13px,1.25vw,20px)] ${persona.puntosOtorgados > 0 ? "text-[var(--epm-verde)]" : "text-white/45"}`}>{persona.respondio ? `+${persona.puntosOtorgados}` : "—"}<small className="ml-1 text-[.65em]">pts</small></strong>
               </article>

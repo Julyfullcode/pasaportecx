@@ -39,7 +39,7 @@ export function Podio({ inicial, tamano }: { inicial: PersonaPodio[]; tamano: nu
             <article key={persona.id} className={`relative flex h-full min-h-0 flex-col overflow-hidden rounded-[clamp(20px,2vw,34px)] p-[clamp(14px,1.7vw,28px)] shadow-2xl backdrop-blur-md ${estilo}`}>
               {primero && <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-amber-200/25 blur-2xl" />}
               <div className="relative z-10 flex shrink-0 items-center justify-between gap-3">
-                <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[clamp(10px,1vw,16px)] font-extrabold uppercase tracking-wide ${primero ? "bg-amber-300 text-amber-950 shadow-lg" : "bg-white/15 text-white/85"}`}>
+                <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[clamp(10px,1vw,16px)] font-extrabold tracking-wide ${primero ? "bg-amber-300 text-amber-950 shadow-lg" : "bg-white/15 text-white/85"}`}>
                   {primero ? <Crown size={20} fill="currentColor" /> : <Medal size={18} />}
                   {nombresPuesto[puesto - 1]}
                 </span>

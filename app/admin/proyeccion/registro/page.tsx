@@ -29,7 +29,7 @@ export default async function InvitacionRegistro() {
 
         <section className="grid min-h-0 flex-1 items-center gap-[clamp(24px,3vw,52px)] py-[clamp(24px,4vh,46px)] lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
           <div className="max-w-5xl">
-            <p className="text-[clamp(14px,1.4vw,21px)] font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">Únete al encuentro</p>
+            <p className="text-[clamp(14px,1.4vw,21px)] font-extrabold tracking-wide text-[var(--epm-verde)]">Únete al encuentro</p>
             <h1 className="mt-4 font-display text-[clamp(44px,6.4vw,92px)] font-extrabold leading-[.96]">
               Vive la <span className="block text-[var(--epm-verde)]">experiencia</span>
             </h1>

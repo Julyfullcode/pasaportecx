@@ -29,7 +29,7 @@ export function RecuperarSesion() {
             router.refresh();
           }}
         >
-          <input name="codigo" className="campo uppercase tracking-widest" maxLength={6} required placeholder="ABC123" aria-label="Código de recuperación" />
+          <input name="codigo" className="campo tracking-widest" maxLength={6} required placeholder="ABC123" aria-label="Código de recuperación" />
           <button className="boton-primario">Recuperar</button>
         </form>
       )}

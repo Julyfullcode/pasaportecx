@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock3, Lightbulb, LoaderCircle, Send, Sparkles, XCircle } from "lucide-react";
 import { usePollingVisible } from "@/lib/usePollingVisible";
+import { JuegoCxEx } from "@/components/participante/JuegoCxEx";
+import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 
 type PreguntaVisible = {
   id: string;
@@ -32,6 +34,9 @@ type DatosActividad = {
     requiereEmpresa: boolean;
   };
   empresas: { id: string; nombre: string; urlLogo: string | null }[];
+  equipos: { id: string; nombre: string }[];
+  equipoParticipanteId: string | null;
+  clasificacion: { equipoId: string; equipo: string; nombreEquipo: string | null; puntaje: number; segundos: number }[];
   preguntas: PreguntaVisible[];
   empresaEvaluadaId: string | null;
   pregunta: PreguntaVisible | null;
@@ -117,6 +122,9 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
   if (!datos) return <div className="tarjeta p-7 text-center text-red-700"><p className="font-extrabold">{error}</p><button onClick={() => void cargar()} className="boton-secundario mt-4">Intentar de nuevo</button></div>;
 
   const { actividad, pregunta } = datos;
+  if (actividad.tipo === TIPO_JUEGO_CX_EX && actividad.etapa !== "CIERRE") {
+    return <JuegoCxEx codigo={codigo} titulo={actividad.titulo} invitacion={actividad.invitacion} cierre={actividad.cierre} equipos={datos.equipos} equipoParticipanteId={datos.equipoParticipanteId} clasificacionInicial={datos.clasificacion} puntos={actividad.puntosHabilitados ? actividad.puntos : 0} />;
+  }
   if (actividad.etapa === "FORMULARIO_COMPLETO") {
     const listo = Boolean(empresaEvaluadaId) && datos.preguntas.every((item) => (respuestasAbiertas[item.id] ?? "").trim().length >= 2);
     return <section className="tarjeta entrada-suave overflow-hidden">

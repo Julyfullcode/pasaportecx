@@ -60,6 +60,7 @@ model Participante {
   correoAutorizado    CorreoAutorizado?
   respuestasActividad RespuestaActividad[]
   actividadesCompletadas ParticipacionActividad[]
+  resultadosJuego     ResultadoJuegoActividad[]
 
   @@index([puntosTotales])
   @@index([activo, esStaff, puntosTotales])
@@ -87,6 +88,7 @@ model Equipo {
   activo          Boolean             @default(true)
   participantes   Participante[]
   autorizaciones  CorreoAutorizado[]
+  resultadosJuego ResultadoJuegoActividad[]
 
   @@index([orden])
 }
@@ -187,6 +189,7 @@ model Actividad {
   actualizadoEn      DateTime                @updatedAt
   respuestas         RespuestaActividad[]
   participaciones    ParticipacionActividad[]
+  resultadosJuego    ResultadoJuegoActividad[]
 
   @@index([estado, creadoEn])
 }
@@ -218,6 +221,27 @@ model ParticipacionActividad {
   participante    Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
 
   @@unique([actividadId, participanteId])
+  @@index([participanteId])
+}
+
+model ResultadoJuegoActividad {
+  id              String       @id @default(cuid())
+  actividadId     String
+  equipoId        String
+  participanteId String
+  nombreEquipo    String?
+  puntaje         Int
+  segundos        Int
+  desglose        Json
+  reflexion       String
+  creadoEn        DateTime     @default(now())
+  actualizadoEn   DateTime     @updatedAt
+  actividad       Actividad    @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  equipo          Equipo       @relation(fields: [equipoId], references: [id], onDelete: Cascade)
+  participante    Participante @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadId, equipoId])
+  @@index([actividadId, puntaje, segundos])
   @@index([participanteId])
 }
 

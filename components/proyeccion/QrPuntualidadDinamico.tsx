@@ -64,7 +64,7 @@ export function QrPuntualidadDinamico({
         <p className="mt-2 text-[clamp(10px,.85vw,13px)] font-bold text-slate-500">Cambia automáticamente cada 15 segundos</p>
       </div>
       <div className="mt-3 rounded-2xl border border-white/15 bg-white/10 p-3 text-center backdrop-blur">
-        <p className="text-[clamp(10px,.82vw,13px)] font-extrabold uppercase tracking-wider text-[var(--epm-verde)]">Hora configurada</p>
+        <p className="text-[clamp(10px,.82vw,13px)] font-extrabold tracking-wider text-[var(--epm-verde)]">Hora configurada</p>
         <p className="mt-1 text-[clamp(12px,1vw,16px)] font-extrabold text-white">{hora}</p>
       </div>
     </section>
@@ -73,7 +73,7 @@ export function QrPuntualidadDinamico({
   return (
     <section className="grid h-full min-h-0 items-center gap-[clamp(18px,3vw,54px)] py-[clamp(18px,3vh,42px)] lg:grid-cols-[minmax(0,1fr)_minmax(360px,.72fr)]">
       <div className="min-w-0">
-        <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[clamp(12px,1.1vw,17px)] font-extrabold uppercase tracking-[.15em] text-[var(--epm-verde)]"><Clock3 size={20} /> Llegada a tiempo</p>
+        <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[clamp(12px,1.1vw,17px)] font-extrabold tracking-wide text-[var(--epm-verde)]"><Clock3 size={20} /> Llegada a tiempo</p>
         <h2 className="mt-5 font-display text-[clamp(38px,5.6vw,82px)] font-extrabold leading-[.98]">Escanea y registra <span className="block text-[var(--epm-verde)]">tu llegada</span></h2>
         <p className="mt-6 max-w-3xl text-[clamp(16px,1.65vw,25px)] leading-relaxed text-white/80">Abre el desafío en tu celular, permite el uso de la cámara y apunta al código que está en pantalla.</p>
         <div className="mt-7 flex flex-wrap gap-3 text-[clamp(12px,1.1vw,17px)] font-bold">

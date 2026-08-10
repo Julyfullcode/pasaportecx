@@ -158,7 +158,7 @@ export function ResolverDesafio({
       {tipo === "PUNTUALIDAD" && puntualidad && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
           <Clock3 className="mx-auto text-amber-600" size={34} />
-          <p className="mt-3 text-sm font-bold uppercase tracking-wider text-amber-800">Hora de llegada</p>
+          <p className="mt-3 text-sm font-bold tracking-wider text-amber-800">Hora de llegada</p>
           <p className="mt-1 text-lg font-extrabold text-[var(--epm-azul-profundo)]">{fechaHoraPuntualidadLegible(puntualidad)}</p>
           <p className="mt-2 text-sm text-slate-600">Solo puedes registrarte desde {puntualidad.toleranciaMinutos} minutos antes hasta {puntualidad.toleranciaMinutos} minutos después. La hora se validará en el servidor.</p>
         </div>

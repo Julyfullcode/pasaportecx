@@ -2,6 +2,7 @@ import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { crearExcel } from "@/lib/excel";
 import { preguntasDe } from "@/lib/actividad";
+import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 
 function textoRespuesta(valor: unknown) {
   if (typeof valor === "string") return valor;
@@ -21,9 +22,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         orderBy: { respondidoEn: "asc" },
         include: { participante: { include: { correoAutorizado: true } } },
       },
+      resultadosJuego: { orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } }, participante: { select: { nombre: true } } } },
     },
   });
   if (!actividad) return Response.json({ error: "Actividad no encontrada." }, { status: 404 });
+  if (actividad.tipo === TIPO_JUEGO_CX_EX) {
+    const filas = [["Posición", "Equipo", "Nombre creativo", "Puntaje", "Tiempo (segundos)", "Viaje", "Conexiones CX-EX", "Causas", "Solución", "Beneficios", "Reflexión", "Registró", "Fecha"], ...actividad.resultadosJuego.map((item, indice) => {
+      const desglose = item.desglose as Record<string, number>;
+      return [indice + 1, item.equipo.nombre, item.nombreEquipo ?? "", item.puntaje, item.segundos, desglose.viaje ?? 0, desglose.conexiones ?? 0, desglose.causas ?? 0, desglose.solucion ?? 0, desglose.beneficios ?? 0, item.reflexion, item.participante.nombre, item.actualizadoEn.toLocaleString("es-CO")];
+    })];
+    const archivo = await crearExcel(filas, "Clasificación");
+    return new Response(archivo, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="resultados-juego-cx-ex.xlsx"`, "Cache-Control": "private, no-store" } });
+  }
   const preguntas = preguntasDe(actividad.configuracion);
   const empresas = await db.empresa.findMany({ select: { id: true, nombre: true } });
   const nombreEmpresa = new Map(empresas.map((empresa) => [empresa.id, empresa.nombre]));
