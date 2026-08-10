@@ -38,7 +38,7 @@ function tiempoRestante(cierraEn: string | null, ahora: number, estado: string) 
   return `${minutos}m ${String(segundosRestantes).padStart(2, "0")}s`;
 }
 
-export function SeguimientoDesafioEnVivo({ inicial }: { inicial: SeguimientoDesafio }) {
+export function SeguimientoDesafioEnVivo({ inicial, compacto = false }: { inicial: SeguimientoDesafio; compacto?: boolean }) {
   const [seguimiento, setSeguimiento] = useState(inicial);
   const [pagina, setPagina] = useState(0);
   const [ahora, setAhora] = useState(() => Date.now());
@@ -76,7 +76,7 @@ export function SeguimientoDesafioEnVivo({ inicial }: { inicial: SeguimientoDesa
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-[clamp(10px,1.5vh,18px)] py-[clamp(12px,1.8vh,22px)]">
-      <div className="grid shrink-0 grid-cols-4 gap-[clamp(8px,1vw,16px)]">
+      <div className={`grid shrink-0 grid-cols-4 ${compacto ? "gap-2" : "gap-[clamp(8px,1vw,16px)]"}`}>
         {metricas.map(({ etiqueta, valor, Icono, clase }) => (
           <section key={etiqueta} className="rounded-[clamp(14px,1.4vw,22px)] border border-white/15 bg-white/10 p-[clamp(10px,1.2vw,18px)] shadow-xl backdrop-blur">
             <div className="flex items-center gap-2 text-white/65"><Icono className={clase} size={20} /><span className="text-[clamp(10px,.9vw,14px)] font-extrabold uppercase tracking-wide">{etiqueta}</span></div>
@@ -97,7 +97,7 @@ export function SeguimientoDesafioEnVivo({ inicial }: { inicial: SeguimientoDesa
 
       <div className="min-h-0 flex-1">
         {visibles.length ? (
-          <div className="grid h-full auto-rows-fr grid-cols-4 gap-[clamp(7px,.8vw,13px)]">
+          <div className={`grid h-full auto-rows-fr gap-[clamp(7px,.8vw,13px)] ${compacto ? "grid-cols-3" : "grid-cols-4"}`}>
             {visibles.map((persona) => (
               <article key={persona.id} className={`flex min-h-0 items-center gap-3 overflow-hidden rounded-[clamp(13px,1.2vw,20px)] border p-[clamp(8px,.9vw,14px)] backdrop-blur ${persona.respondio ? "border-white/20 bg-white/13" : "border-white/8 bg-slate-950/12"}`}>
                 <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(42px,4.2vw,68px)] w-[clamp(42px,4.2vw,68px)] shrink-0 border-2" />

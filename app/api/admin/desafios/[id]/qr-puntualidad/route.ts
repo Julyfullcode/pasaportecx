@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 import { adminActual } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import { configuracionPuntualidadDesafio } from "@/lib/puntualidad";
 import { datosQrPuntualidad } from "@/lib/puntualidad-qr";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +9,15 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await adminActual()) return Response.json({ error: "Debes iniciar sesión como administrador." }, { status: 401 });
   const { id } = await params;
-  const desafio = await db.desafio.findUnique({ where: { id }, select: { codigoQr: true, configuracion: true } });
-  if (!desafio || !esConfiguracionPuntualidad(desafio.configuracion)) {
+  const desafio = await db.desafio.findUnique({
+    where: { id },
+    select: {
+      codigoQr: true,
+      configuracion: true,
+      completitudes: { orderBy: { completadoEn: "desc" }, take: 5, select: { respuesta: true } },
+    },
+  });
+  if (!desafio || !configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes)) {
     return Response.json({ error: "Este desafío no es de puntualidad." }, { status: 404 });
   }
   const origen = (process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin).replace(/\/$/, "");

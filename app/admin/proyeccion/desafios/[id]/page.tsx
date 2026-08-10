@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import { configuracionPuntualidadDesafio } from "@/lib/puntualidad";
 import { obtenerSeguimientoDesafio } from "@/lib/seguimiento-desafio";
 import { MarcoProyeccion } from "@/components/proyeccion/MarcoProyeccion";
 import { SeguimientoDesafioEnVivo } from "@/components/proyeccion/SeguimientoDesafioEnVivo";
@@ -15,9 +15,15 @@ export default async function ProyeccionSeguimientoDesafio({
 }) {
   await requerirAdmin();
   const { id } = await params;
-  const desafio = await db.desafio.findUnique({ where: { id }, select: { configuracion: true } });
+  const desafio = await db.desafio.findUnique({
+    where: { id },
+    select: {
+      configuracion: true,
+      completitudes: { orderBy: { completadoEn: "desc" }, take: 5, select: { respuesta: true } },
+    },
+  });
   if (!desafio) notFound();
-  if (esConfiguracionPuntualidad(desafio.configuracion)) redirect(`/admin/proyeccion/puntualidad/${id}`);
+  if (configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes)) redirect(`/admin/proyeccion/puntualidad/${id}`);
   const seguimiento = await obtenerSeguimientoDesafio(id);
   if (!seguimiento) notFound();
 

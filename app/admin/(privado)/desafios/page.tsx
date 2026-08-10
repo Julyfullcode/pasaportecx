@@ -4,7 +4,7 @@ import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesa
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
-import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import { configuracionPuntualidadDesafio } from "@/lib/puntualidad";
 import { descripcionDuracionDesafio, estadoTemporalDesafio } from "@/lib/duracion-desafio";
 
 export const dynamic = "force-dynamic";
@@ -62,12 +62,14 @@ export default async function AdminDesafios() {
         </form>
       </details>
       <div className="mt-6 space-y-3">
-        {desafios.map((desafio) => (
+        {desafios.map((desafio) => {
+          const esPuntualidad = Boolean(configuracionPuntualidadDesafio(desafio.configuracion, desafio.completitudes));
+          return (
           <article id={desafio.codigoQr === CODIGO_DESAFIO_CIERRE ? CODIGO_DESAFIO_CIERRE : undefined} key={desafio.id} className="tarjeta scroll-mt-5 overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 p-4">
               <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${desafio.estado === "PUBLICADO" ? "bg-emerald-50 text-emerald-700" : desafio.estado === "CERRADO" ? "bg-slate-200 text-slate-700" : "bg-amber-50 text-amber-700"}`}>{desafio.estado}</span>
-              <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{esConfiguracionPuntualidad(desafio.configuracion) ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
-              {esConfiguracionPuntualidad(desafio.configuracion) ? (
+              <div className="min-w-[200px] flex-1"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{desafio.titulo}</h2><p className="text-xs text-slate-500">{etiquetaDiaDesafio(desafio.dia)}{esPuntualidad ? " · Puntualidad" : ""} · {desafio.puntos} pts · {desafio._count.completitudes} completitudes</p></div>
+              {esPuntualidad ? (
                 <a href={`/admin/proyeccion/puntualidad/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="boton-primario !min-h-10 !px-3 text-sm"><MonitorPlay size={17} /> Proyectar QR dinámico</a>
               ) : (
                 <>
@@ -77,7 +79,7 @@ export default async function AdminDesafios() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 p-3">
-              <a href={esConfiguracionPuntualidad(desafio.configuracion) ? `/admin/proyeccion/puntualidad/${desafio.id}` : `/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> {esConfiguracionPuntualidad(desafio.configuracion) ? "Ver QR de llegada" : "Ver avance"}</a>
+              <a href={esPuntualidad ? `/admin/proyeccion/puntualidad/${desafio.id}` : `/admin/proyeccion/desafios/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 text-sm font-extrabold text-[var(--epm-teal)]"><MonitorPlay size={16} /> {esPuntualidad ? "Ver avance y QR" : "Ver avance"}</a>
               <span className="text-slate-300">·</span>
               {desafio.codigoQr === CODIGO_DESAFIO_CIERRE && (
                 <>
@@ -104,12 +106,19 @@ export default async function AdminDesafios() {
               {desafio.estado === "PUBLICADO" && estadoTemporalDesafio(desafio) === "FINALIZADO" && <span className="ml-auto rounded-full bg-amber-100 px-2 py-1 text-amber-800">Tiempo finalizado</span>}
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
 function cargarDatosDesafios() {
-  return db.desafio.findMany({ orderBy: [{ dia: "asc" }, { creadoEn: "desc" }], include: { _count: { select: { completitudes: true } } } });
+  return db.desafio.findMany({
+    orderBy: [{ dia: "asc" }, { creadoEn: "desc" }],
+    include: {
+      _count: { select: { completitudes: true } },
+      completitudes: { orderBy: { completadoEn: "desc" }, take: 5, select: { respuesta: true } },
+    },
+  });
 }

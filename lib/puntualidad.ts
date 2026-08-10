@@ -63,6 +63,22 @@ export function esConfiguracionPuntualidad(valor: unknown): valor is Configuraci
   return configuracionPuntualidadDesdeValor(valor) !== null;
 }
 
+export function configuracionPuntualidadDesafio(
+  configuracion: unknown,
+  completitudes: unknown[] = [],
+): ConfiguracionPuntualidad | null {
+  const guardada = configuracionPuntualidadDesdeValor(configuracion);
+  if (guardada) return guardada;
+  for (const completitud of completitudes) {
+    const candidata = completitud && typeof completitud === "object" && "respuesta" in completitud
+      ? (completitud as { respuesta?: unknown }).respuesta
+      : completitud;
+    const recuperada = configuracionPuntualidadDesdeValor(candidata);
+    if (recuperada) return recuperada;
+  }
+  return null;
+}
+
 export function crearConfiguracionPuntualidad(fechaHoraObjetivo: string, toleranciaMinutos: number): ConfiguracionPuntualidad {
   const configuracion = {
     tipoEspecial: TIPO_ESPECIAL_PUNTUALIDAD,

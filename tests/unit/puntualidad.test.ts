@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  configuracionPuntualidadDesafio,
   configuracionPuntualidadDesdeValor,
   crearConfiguracionPuntualidad,
   evaluarPuntualidad,
@@ -39,6 +40,12 @@ describe("desafíos de puntualidad", () => {
     expect(configuracionPuntualidadDesdeValor(JSON.stringify({
       puntualidad: { fechaHora: "2026-08-04T14:00", minutosTolerancia: 5 },
     }))).toEqual(configuracion);
+  });
+
+  it("recupera la configuración desde una completitud si una edición reemplazó la configuración del desafío", () => {
+    expect(configuracionPuntualidadDesafio({}, [
+      { respuesta: { ...configuracion, estadoVentana: "DENTRO", obtuvoPuntos: true, minutosAntes: 0, minutosTarde: 1 } },
+    ])).toEqual(configuracion);
   });
 });
 

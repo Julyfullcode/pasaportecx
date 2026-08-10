@@ -12,10 +12,12 @@ export function QrPuntualidadDinamico({
   desafioId,
   inicial,
   hora,
+  compacto = false,
 }: {
   desafioId: string;
   inicial: DatosQr;
   hora: string;
+  compacto?: boolean;
 }) {
   const [datos, setDatos] = useState(inicial);
   const [venceLocal, setVenceLocal] = useState(() => Date.now() + inicial.vigenciaMs);
@@ -47,6 +49,26 @@ export function QrPuntualidadDinamico({
     }, 250);
     return () => window.clearInterval(intervalo);
   }, [venceLocal]);
+
+  if (compacto) return (
+    <section className="flex h-full min-h-0 flex-col justify-center py-[clamp(10px,1.5vh,20px)]">
+      <div className="rounded-[clamp(20px,2vw,32px)] bg-white p-[clamp(12px,1.4vw,20px)] text-center text-[var(--epm-azul-profundo)] shadow-2xl">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <span className="inline-flex items-center gap-2 font-display text-[clamp(15px,1.35vw,22px)] font-extrabold"><ScanLine size={22} /> Escanea ahora</span>
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-sky-50 font-display text-lg font-extrabold text-[var(--epm-azul)]">{segundos}</span>
+        </div>
+        <div className="relative mx-auto mt-2 aspect-square w-full max-w-[min(43vh,430px)] overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-inner">
+          <img src={datos.qr} alt="Código QR dinámico para registrar la llegada a tiempo" className="h-full w-full object-contain" />
+          {error && <div className="absolute inset-x-2 bottom-2 rounded-lg bg-amber-50 p-2 text-xs font-bold text-amber-800">{error}</div>}
+        </div>
+        <p className="mt-2 text-[clamp(10px,.85vw,13px)] font-bold text-slate-500">Cambia automáticamente cada 15 segundos</p>
+      </div>
+      <div className="mt-3 rounded-2xl border border-white/15 bg-white/10 p-3 text-center backdrop-blur">
+        <p className="text-[clamp(10px,.82vw,13px)] font-extrabold uppercase tracking-wider text-[var(--epm-verde)]">Hora configurada</p>
+        <p className="mt-1 text-[clamp(12px,1vw,16px)] font-extrabold text-white">{hora}</p>
+      </div>
+    </section>
+  );
 
   return (
     <section className="grid h-full min-h-0 items-center gap-[clamp(18px,3vw,54px)] py-[clamp(18px,3vh,42px)] lg:grid-cols-[minmax(0,1fr)_minmax(360px,.72fr)]">
