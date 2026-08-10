@@ -122,7 +122,7 @@ export default async function AdminDesafios() {
 
 function cargarDatosDesafios() {
   return db.desafio.findMany({
-    orderBy: [{ dia: "asc" }, { orden: "asc" }, { creadoEn: "desc" }],
+    orderBy: [{ orden: "asc" }, { dia: "asc" }, { creadoEn: "desc" }],
     include: {
       _count: { select: { completitudes: true } },
       completitudes: { orderBy: { completadoEn: "desc" }, take: 5, select: { respuesta: true } },

@@ -265,7 +265,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
   await db.$transaction(async (tx) => {
     const siguienteOrden = id
       ? null
-      : ((await tx.desafio.aggregate({ where: { dia: datos.dia }, _max: { orden: true } }))._max.orden ?? 0) + 1;
+      : ((await tx.desafio.aggregate({ _max: { orden: true } }))._max.orden ?? 0) + 1;
     const guardado = id
       ? await tx.desafio.update({ where: { id }, data: controlaCambios ? cambiosSolicitados : comun })
       : await tx.desafio.create({ data: { ...comun, codigoQr: crearCodigoQr(datos.titulo), orden: siguienteOrden ?? 1 } });
@@ -364,11 +364,10 @@ export async function moverDesafio(formulario: FormData) {
   const id = String(formulario.get("id") ?? "");
   const direccion = String(formulario.get("direccion") ?? "");
   if (!id || (direccion !== "SUBIR" && direccion !== "BAJAR")) return;
-  const actual = await db.desafio.findUnique({ where: { id }, select: { id: true, dia: true } });
+  const actual = await db.desafio.findUnique({ where: { id }, select: { id: true } });
   if (!actual) return;
   const desafios = await db.desafio.findMany({
-    where: { dia: actual.dia },
-    orderBy: [{ orden: "asc" }, { creadoEn: "desc" }],
+    orderBy: [{ orden: "asc" }, { dia: "asc" }, { creadoEn: "desc" }],
     select: { id: true },
   });
   const posicion = desafios.findIndex((desafio) => desafio.id === id);
@@ -390,7 +389,7 @@ export async function duplicarDesafio(formulario: FormData) {
   void _id;
   void _creadoEn;
   void _orden;
-  const ultimo = await db.desafio.aggregate({ where: { dia: original.dia }, _max: { orden: true } });
+  const ultimo = await db.desafio.aggregate({ _max: { orden: true } });
   await db.desafio.create({
     data: {
       ...datos,
