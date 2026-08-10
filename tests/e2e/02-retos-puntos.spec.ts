@@ -25,7 +25,7 @@ test.describe("Retos y puntos", () => {
     await expect(page.getByText("¡Desafío completado!")).toBeVisible();
     await expect(page.getByText("+100")).toBeVisible();
     await expect(page.getByText(`Nuevo total: ${PUNTOS_REGISTRO + 100} puntos`)).toBeVisible();
-    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(125);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO + 100);
   });
 
   test("un código QR mal formado no rompe la app y muestra un error claro", async ({ context, page }) => {
@@ -51,7 +51,7 @@ test.describe("Retos y puntos", () => {
 
     await expect(page.getByText("Ya completaste este desafío")).toBeVisible();
     expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: "desafio-e2e-100" } })).toBe(1);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(125);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO + 100);
   });
 
   test("los puntos obtenidos se reflejan en el perfil del participante", async ({ playwright, context, page }) => {
@@ -63,7 +63,7 @@ test.describe("Retos y puntos", () => {
     await page.goto("/");
 
     const tarjeta = page.locator("section").filter({ hasText: "Tu puntaje total" }).first();
-    await expect(tarjeta.getByText("125", { exact: true })).toBeVisible();
+    await expect(tarjeta.getByText(String(PUNTOS_REGISTRO + 100), { exact: true })).toBeVisible();
   });
 
   test("Staff completa desafíos pero no recibe puntos ni participa por premios", async ({ playwright, context, page }) => {

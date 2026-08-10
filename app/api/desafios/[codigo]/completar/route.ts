@@ -23,6 +23,7 @@ import {
 } from "@/lib/encuesta-mixta";
 import { esConfiguracionMatricula } from "@/lib/matricula";
 import { validarTokenQrPuntualidad } from "@/lib/puntualidad-qr";
+import { ejecutarTransaccionSerializable } from "@/lib/transaccion";
 
 type Configuracion = {
   opciones?: Opcion[];
@@ -96,9 +97,6 @@ export async function POST(
         noRegistrado: true,
       }, { status: 409 });
     }
-  }
-  if (!existente && desafio.limiteCompletitudes && desafio._count.completitudes >= desafio.limiteCompletitudes) {
-    return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
   }
 
   // Un check-in no lleva campos. Evitar parsear multipart vacío también hace el
@@ -190,7 +188,11 @@ export async function POST(
   const puntosOtorgados = participante.esStaff ? 0 : puntos;
 
   try {
-    const resultado = await db.$transaction(async (tx) => {
+    const resultado = await ejecutarTransaccionSerializable(async (tx) => {
+      if (!existente && desafio.limiteCompletitudes) {
+        const completadas = await tx.completitud.count({ where: { desafioId: desafio.id } });
+        if (completadas >= desafio.limiteCompletitudes) throw new Error("LIMITE_COMPLETITUDES");
+      }
       const completitud = existente && (esMatricula || (esCosecha && !esRespuestasCosecha(existente.respuesta)))
         ? await tx.completitud.update({
           where: { id: existente.id },
@@ -208,7 +210,7 @@ export async function POST(
         });
       const nuevoTotal = await recalcularPuntosParticipante(tx, participante.id);
       return { completitud, nuevoTotal };
-    }, { maxWait: 15_000, timeout: 20_000 });
+    });
     anunciarCambio("puntos");
     return Response.json({
       completitudId: resultado.completitud.id,
@@ -223,6 +225,9 @@ export async function POST(
     });
   } catch (error) {
     if (urlEvidencia) await storage.eliminar(urlEvidencia).catch(() => undefined);
+    if (error instanceof Error && error.message === "LIMITE_COMPLETITUDES") {
+      return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const existente = await db.completitud.findUniqueOrThrow({
         where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },

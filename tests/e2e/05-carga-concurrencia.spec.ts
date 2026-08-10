@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { db } from "@/lib/db";
-import { contextoApiParticipante, crearParticipanteConToken, registrarPorApi } from "./ayudas";
+import { contextoApiParticipante, crearParticipanteConToken, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
 
 test.describe("Rendimiento y concurrencia", () => {
   test("60 usuarios virtuales interactúan simultáneamente sin pérdida de datos", async ({ playwright }) => {
@@ -27,7 +27,7 @@ test.describe("Rendimiento y concurrencia", () => {
     expect(await db.participante.count({ where: { nombre: { startsWith: `Carga registro ${marca}-` } } })).toBe(5);
     expect(await db.completitud.count({ where: { desafioId: "desafio-e2e-carga", participanteId: { in: participantesEscaneo.map(({ participante }) => participante.id) } } })).toBe(10);
     const puntajes = await db.participante.findMany({ where: { id: { in: participantesEscaneo.map(({ participante }) => participante.id) } }, select: { puntosTotales: true } });
-    expect(puntajes.every(({ puntosTotales }) => puntosTotales === 125)).toBe(true);
+    expect(puntajes.every(({ puntosTotales }) => puntosTotales === PUNTOS_REGISTRO + 100)).toBe(true);
     await Promise.all([...contextosRegistro, ...contextosEscaneo].map((api) => api.dispose()));
   });
 
@@ -40,7 +40,40 @@ test.describe("Rendimiento y concurrencia", () => {
 
     expect(respuestas.every((respuesta) => respuesta.status() === 200)).toBe(true);
     expect(await db.completitud.count({ where: { participanteId: participante.id, desafioId: "desafio-e2e-idempotente" } })).toBe(1);
-    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(125);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(PUNTOS_REGISTRO + 100);
+    await api.dispose();
+  });
+
+  test("retos distintos concurrentes para una misma persona conservan el total exacto", async ({ playwright }) => {
+    const marca = Date.now();
+    const cantidad = 6;
+    const puntosPorReto = 17;
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Carrera multireto ${marca}` });
+    const desafios = Array.from({ length: cantidad }, (_, indice) => ({
+      codigoQr: `reto-multirace-${marca}-${indice}`,
+      titulo: `Reto concurrente distinto ${indice}`,
+      descripcion: "Valida escrituras simultáneas para la misma persona.",
+      tipo: "CHECK_IN" as const,
+      puntos: puntosPorReto,
+      dia: 0,
+      ubicacion: "",
+      estado: "PUBLICADO" as const,
+      publicadoEn: new Date(),
+      duracionMinutos: 60,
+      configuracion: {},
+    }));
+    await db.desafio.createMany({ data: desafios });
+    const api = await contextoApiParticipante(playwright.request, token);
+    const respuestas = await Promise.all(
+      desafios.map((desafio) => api.post(`/api/desafios/${desafio.codigoQr}/completar`)),
+    );
+
+    expect(respuestas.every((respuesta) => respuesta.status() === 200)).toBe(true);
+    expect(await db.completitud.count({
+      where: { participanteId: participante.id, desafio: { codigoQr: { startsWith: `reto-multirace-${marca}-` } } },
+    })).toBe(cantidad);
+    expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales)
+      .toBe(PUNTOS_REGISTRO + cantidad * puntosPorReto);
     await api.dispose();
   });
 });
