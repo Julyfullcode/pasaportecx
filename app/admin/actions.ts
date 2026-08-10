@@ -168,6 +168,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
     : null;
   const esCierre = existente?.codigoQr === CODIGO_DESAFIO_CIERRE;
   const estado = String(formulario.get("estado") ?? "BORRADOR") as "BORRADOR" | "PUBLICADO" | "CERRADO";
+  const esPuntualidad = datos.tipo === "PUNTUALIDAD";
   const tipoPersistido = datos.tipo === "PUNTUALIDAD"
     ? "CHECK_IN" as const
     : datos.tipo === "ENCUESTA_MIXTA" || datos.tipo === "MATRICULA" ? "ENCUESTA" as const : datos.tipo;
@@ -194,7 +195,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
     }
     configuracionMatricula = { formato: FORMATO_MATRICULA, opciones: opciones as ConfiguracionMatricula["opciones"] };
   }
-  const modoDuracion = String(formulario.get("modoDuracion") ?? "MINUTOS");
+  const modoDuracion = esPuntualidad ? "PUNTUALIDAD" : String(formulario.get("modoDuracion") ?? "MINUTOS");
   const minutosIngresados = Number(formulario.get("duracionMinutos"));
   const duracionMinutos = modoDuracion === "MINUTOS"
     && Number.isInteger(minutosIngresados)
@@ -240,7 +241,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
   if (modificados.has("descripcion")) incluir("descripcion");
   if (modificados.has("puntos")) incluir("puntos");
   if (modificados.has("dia") || modificados.has("componenteId")) incluir("dia", "componenteId", "ubicacion");
-  if (modificados.has("tipo")) incluir("tipo", "configuracion");
+  if (modificados.has("tipo")) incluir("tipo", "configuracion", "duracionMinutos", "disponibleHasta");
   if ([
     "opciones", "multiple", "puntajeParcial", "respuestasAceptadas", "instruccion",
     "publicarEnRecuerdos", "pregunta", "formato", "fechaHoraObjetivo", "toleranciaMinutos",
@@ -250,6 +251,7 @@ async function guardarDesafioEnBase(formulario: FormData) {
   if (["modoDuracion", "duracionMinutos", "fechaHoraCierre"].some((campo) => modificados.has(campo))) {
     incluir("duracionMinutos", "disponibleHasta");
   }
+  if (esPuntualidad) incluir("duracionMinutos", "disponibleHasta");
   if (modificados.has("estado")) incluir("estado", "publicadoEn");
   if (modificados.has("limiteCompletitudes")) incluir("limiteCompletitudes");
   if (modificados.has("esSecreto")) incluir("esSecreto");
@@ -410,6 +412,56 @@ export async function eliminarDesafio(formulario: FormData) {
   }
   anunciarCambio("desafio");
   revalidatePath("/admin/desafios");
+}
+
+export async function reiniciarDesafio(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("id") ?? "");
+  if (!id) return;
+  const resultado = await db.$transaction(async (tx) => {
+    const desafio = await tx.desafio.findUnique({ where: { id }, select: { id: true } });
+    if (!desafio) return { respuestas: 0, archivos: [] as string[] };
+    const completitudes = await tx.completitud.findMany({
+      where: { desafioId: id },
+      select: { id: true, participanteId: true, urlEvidencia: true },
+    });
+    const clavesRecuerdos = completitudes.map((item) => claveRecuerdoEvidencia(item.id));
+    const recuerdos = clavesRecuerdos.length
+      ? await tx.recuerdo.findMany({
+        where: { claveIdempotencia: { in: clavesRecuerdos } },
+        select: { participanteId: true, urlFoto: true, urlMiniatura: true },
+      })
+      : [];
+    if (clavesRecuerdos.length) {
+      await tx.recuerdo.deleteMany({ where: { claveIdempotencia: { in: clavesRecuerdos } } });
+    }
+    await tx.completitud.deleteMany({ where: { desafioId: id } });
+    await actualizarPremioFotoMasReaccionada(tx);
+    const participantes = new Set([
+      ...completitudes.map((item) => item.participanteId),
+      ...recuerdos.map((item) => item.participanteId),
+    ]);
+    for (const participanteId of participantes) {
+      await recalcularPuntosParticipante(tx, participanteId);
+    }
+    return {
+      respuestas: completitudes.length,
+      archivos: [
+        ...completitudes.flatMap((item) => item.urlEvidencia ? [item.urlEvidencia] : []),
+        ...recuerdos.flatMap((item) => [item.urlFoto, item.urlMiniatura]),
+      ],
+    };
+  });
+  await Promise.allSettled([...new Set(resultado.archivos)].map((url) => storage.eliminar(url)));
+  anunciarCambio("desafio");
+  anunciarCambio("puntos");
+  anunciarCambio("recuerdo");
+  revalidatePath("/admin/desafios");
+  revalidatePath("/admin/participantes");
+  revalidatePath("/desafios");
+  revalidatePath("/ranking");
+  revalidatePath("/recuerdos");
+  revalidatePath("/admin/proyeccion/podio");
 }
 
 export async function ajustarPuntos(formulario: FormData) {

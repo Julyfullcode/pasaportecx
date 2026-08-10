@@ -29,8 +29,10 @@ export default async function Configuracion() {
   return (
     <div className="p-4 md:p-7">
       <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Todo editable, sin redespliegue</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Configuración</h1></div>
-      <form action={guardarConfiguracion} className="tarjeta mt-6 grid gap-4 p-5 md:grid-cols-2">
-        <h2 className="text-xl font-extrabold md:col-span-2">Evento y puntuación</h2>
+      <form action={guardarConfiguracion} className="mt-6 space-y-4">
+        <details className="group overflow-hidden rounded-3xl bg-white shadow-soft">
+          <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Datos generales</small><strong className="text-xl">Evento y puntuación</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+          <div className="grid gap-4 p-5 md:grid-cols-2">
         <div><label className="etiqueta">Nombre del evento</label><input className="campo" name="nombreEvento" defaultValue={config.nombreEvento} maxLength={140} required /></div>
         <div><label className="etiqueta">Descripción para la agenda</label><textarea className="campo min-h-24 resize-y" name="descripcionAgenda" defaultValue={config.descripcionAgenda} maxLength={800} placeholder="Una invitación breve que acompañará el nombre del evento" /></div>
         <div className="md:col-span-2"><label className="etiqueta">Organizadores</label><input className="campo" name="organizadoresAgenda" defaultValue={config.organizadoresAgenda} maxLength={300} placeholder="Ejemplo: Vicepresidencia Experiencia Usuario-Cliente" /><p className="mt-1 text-xs text-slate-500">Este texto aparecerá en el pie de todas las páginas de la agenda.</p></div>
@@ -40,7 +42,11 @@ export default async function Configuracion() {
         </label>
         <div><label className="etiqueta">Podio individual</label><input className="campo" type="number" min={3} max={20} name="tamanoPodioIndividual" defaultValue={config.tamanoPodioIndividual} /></div>
         <div className="md:col-span-2"><label className="etiqueta">Puntos por registrarse</label><input className="campo" type="number" min={0} max={10000} name="puntosPorRegistro" defaultValue={config.puntosPorRegistro} required /><p className="mt-1 text-xs text-slate-500">Se otorgan una sola vez al crear el pasaporte. Los cambios aplicarán únicamente a participantes nuevos.</p></div>
-        <h2 className="mt-3 text-xl font-extrabold md:col-span-2">Pantallas de proyección</h2>
+          </div>
+        </details>
+        <details className="group overflow-hidden rounded-3xl bg-white shadow-soft">
+          <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Visualización en vivo</small><strong className="text-xl">Pantallas de proyección</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+          <div className="grid gap-4 p-5 md:grid-cols-2">
         <div><label className="etiqueta">Modo asistentes</label><select className="campo" name="modoAsistentes" defaultValue={config.modoAsistentes}><option value="MOSAICO">Mosaico</option><option value="CARRUSEL">Carrusel</option><option value="DESTACADO">Destacado</option></select></div>
         <div><label className="etiqueta">Rotación (segundos)</label><input className="campo" type="number" min={3} name="intervaloAsistentesSegundos" defaultValue={config.intervaloAsistentesSegundos} /></div>
         <div className="md:col-span-2"><label className="etiqueta">Ciclo mixto</label><input className="campo" name="cicloMixto" defaultValue={config.cicloMixto} /><p className="mt-1 text-xs text-slate-500">Formato: asistentes:60,recuerdos:45,podio:30. La presentación de cierre se abre únicamente desde su desafío.</p></div>
@@ -48,7 +54,11 @@ export default async function Configuracion() {
           <input type="checkbox" name="rotacionAutomaticaProyeccion" defaultChecked={config.rotacionAutomaticaProyeccion} className="mt-1" />
           <span><strong className="block">Rotación automática entre vistas</strong><small className="mt-1 block font-medium text-sky-800">Si se desactiva, la proyección mixta permanecerá en la primera vista configurada.</small></span>
         </label>
-        <h2 className="mt-3 text-xl font-extrabold md:col-span-2">Recuerdos</h2>
+          </div>
+        </details>
+        <details className="group overflow-hidden rounded-3xl bg-white shadow-soft">
+          <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Fotos y reconocimientos</small><strong className="text-xl">Recuerdos</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+          <div className="grid gap-4 p-5 md:grid-cols-2">
         <div><label className="etiqueta">Puntos por recuerdo</label><input className="campo" type="number" min={0} name="puntosPorRecuerdo" defaultValue={config.puntosPorRecuerdo} /></div>
         <div><label className="etiqueta">Cantidad máxima de recuerdos que otorgan puntos</label><input className="campo" type="number" min={0} name="maxRecuerdosConPuntos" defaultValue={config.maxRecuerdosConPuntos} /></div>
         <div className="md:col-span-2"><label className="etiqueta">Máximo de recuerdos por participante</label><input className="campo" type="number" min={1} max={50} name="maxRecuerdosPorParticipante" defaultValue={config.maxRecuerdosPorParticipante} /><p className="mt-1 text-xs text-slate-500">Recomendado para el plan gratuito: 10 por persona.</p></div>
@@ -59,21 +69,23 @@ export default async function Configuracion() {
         </div>
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="recuerdosRequierenAprobacion" defaultChecked={config.recuerdosRequierenAprobacion} /> Los recuerdos requieren aprobación previa</label>
         <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 font-bold text-emerald-900"><input type="checkbox" name="eliminarEvidenciasRechazadas" defaultChecked={config.eliminarEvidenciasRechazadas} /> Eliminar del almacenamiento las evidencias rechazadas</label>
-        <button className="boton-primario md:col-span-2">Guardar configuración</button>
+          </div>
+        </details>
+        <button className="boton-primario w-full">Guardar configuración</button>
       </form>
       <EstadoAlmacenamiento reporte={reporteAlmacenamiento} />
       <AgendaConfig dias={diasAgenda} />
-      <section className="mt-6"><h2 className="text-2xl font-extrabold">Catálogos</h2><p className="text-sm text-slate-600">Edite, reordene o agregue registros; estarán disponibles de inmediato.</p>
-        <div className="mt-4 grid gap-5 xl:grid-cols-2">
+      <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
+        <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Listados editables</small><strong className="text-xl">Empresas y equipos</strong><span className="mt-1 block text-sm font-medium text-white/75">Edita, reordena o agrega registros disponibles en la aplicación.</span></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+        <div className="grid gap-5 p-5 xl:grid-cols-2">
           <CatalogoEmpresas items={empresas} />
           <CatalogoEquipos items={equipos} />
         </div>
-      </section>
-      <section className="mt-6 rounded-2xl border-2 border-red-300 bg-red-50 p-5">
-        <h2 className="text-xl font-extrabold text-red-900">Preparar aplicación para público real</h2>
-        <p className="mt-1 text-sm text-red-800">Puedes usarla al terminar cada ciclo de pruebas. Antes de abrir el registro al público, ejecútala una última vez.</p>
-        <PrepararPublico resumen={resumenDatos} />
-      </section>
+      </details>
+      <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
+        <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-white md:p-6"><span><small className="block font-extrabold text-[var(--epm-verde)]">Limpieza controlada</small><strong className="text-xl">Preparar aplicación para público real</strong><span className="mt-1 block text-sm font-medium text-white/75">Elimina los datos de prueba sin borrar la configuración.</span></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+        <div className="border-2 border-t-0 border-red-200 bg-red-50 p-5"><p className="text-sm text-red-800">Puedes usarla al terminar cada ciclo de pruebas. Antes de abrir el registro al público, ejecútala una última vez.</p><PrepararPublico resumen={resumenDatos} /></div>
+      </details>
     </div>
   );
 }

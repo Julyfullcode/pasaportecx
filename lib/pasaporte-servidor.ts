@@ -13,12 +13,6 @@ type ParticipantePasaporte = {
   equipo?: { nombre: string } | null;
 };
 
-function enlaceWallet(plantilla: string | undefined, codigo: string) {
-  if (!plantilla) return undefined;
-  const enlace = plantilla.replaceAll("{codigo}", encodeURIComponent(codigo));
-  return enlace.startsWith("https://") ? enlace : undefined;
-}
-
 export async function crearPasaporteParticipante(participante: ParticipantePasaporte, origenSolicitud: string) {
   const config = await db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } });
   const [logo, foto, fuenteRegular, fuenteSemibold] = await Promise.all([
@@ -40,8 +34,8 @@ export async function crearPasaporteParticipante(participante: ParticipantePasap
     codigo: participante.codigoRecuperacion,
     urlRecuperacion: `${baseAplicacion}/recuperar/${participante.codigoRecuperacion}`,
     urlAplicacion: `${baseAplicacion}/`,
-    appleWalletUrl: enlaceWallet(process.env.APPLE_WALLET_URL_TEMPLATE, participante.codigoRecuperacion),
-    googleWalletUrl: enlaceWallet(process.env.GOOGLE_WALLET_URL_TEMPLATE, participante.codigoRecuperacion),
+    appleWalletUrl: `${baseAplicacion}/wallet?plataforma=apple`,
+    googleWalletUrl: `${baseAplicacion}/wallet?plataforma=google`,
     logo,
     foto,
     fuenteRegular,

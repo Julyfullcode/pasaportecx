@@ -155,7 +155,7 @@ export function FormularioDesafio({ desafio }: { desafio?: Desafio }) {
           )}
         </>
       )}
-      <div className="md:col-span-2 grid gap-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 md:grid-cols-2">
+      {tipo !== "PUNTUALIDAD" && <div className="md:col-span-2 grid gap-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 md:grid-cols-2">
         <div>
           <label className="etiqueta">Duración del desafío</label>
           <select className="campo bg-white" name="modoDuracion" value={modoDuracion} onChange={(evento) => setModoDuracion(evento.target.value as "MINUTOS" | "FECHA_HORA")}>
@@ -175,7 +175,7 @@ export function FormularioDesafio({ desafio }: { desafio?: Desafio }) {
           </div>
         )}
         <p className="text-xs text-sky-900 md:col-span-2">{modoDuracion === "MINUTOS" ? "El conteo empieza cada vez que publiques o vuelvas a publicar el desafío." : "La fecha y hora se interpretan en Colombia. Al llegar ese momento ya no se aceptarán respuestas."}</p>
-      </div>
+      </div>}
       <div><label className="etiqueta">Estado inicial</label><select className="campo" name="estado" defaultValue={desafio?.estado ?? "BORRADOR"}><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="CERRADO">Cerrado</option></select></div>
       <div><label className="etiqueta">Límite de completitudes (opcional)</label><input className="campo" type="number" min={1} name="limiteCompletitudes" defaultValue={desafio?.limiteCompletitudes ?? ""} /></div>
       <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="esSecreto" defaultChecked={desafio?.esSecreto} /> Reto secreto: ocultar hasta escanear</label>

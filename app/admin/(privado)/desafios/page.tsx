@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Clock3, Copy, Download, FileDown, MonitorPlay, Penc
 import { db } from "@/lib/db";
 import { cambiarEstadoDesafio, crearDesafioCierre, duplicarDesafio, eliminarDesafio, moverDesafio } from "@/app/admin/actions";
 import { FormularioDesafio } from "@/components/admin/FormularioDesafio";
+import { ReiniciarDesafio } from "@/components/admin/ReiniciarDesafio";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { esDesafioPuntualidad } from "@/lib/puntualidad";
@@ -97,6 +98,8 @@ export default async function AdminDesafios() {
               <span className="text-slate-300">·</span>
               <form action={duplicarDesafio}><input type="hidden" name="id" value={desafio.id} /><button className="flex items-center gap-1 text-sm font-extrabold text-slate-600"><Copy size={15} /> Duplicar</button></form>
               <span className="text-slate-300">·</span>
+              <ReiniciarDesafio id={desafio.id} respuestas={desafio._count.completitudes} />
+              <span className="text-slate-300">·</span>
               <details className="group self-center">
                 <summary className="relative -top-[10px] inline-flex h-6 cursor-pointer list-none items-center gap-1 align-middle text-sm font-extrabold leading-none text-slate-600"><Pencil size={15} /> Editar</summary>
                 <div className="mt-4 rounded-xl bg-white p-4"><FormularioDesafio desafio={desafio} /></div>
@@ -104,11 +107,11 @@ export default async function AdminDesafios() {
               <span className="text-slate-300">·</span>
               <form action={eliminarDesafio}><input type="hidden" name="id" value={desafio.id} /><button className="flex items-center gap-1 text-sm font-extrabold text-red-700"><Trash2 size={15} /> {desafio._count.completitudes ? "Cerrar (tiene datos)" : "Eliminar"}</button></form>
             </div>
-            <div className="flex items-center gap-2 border-t border-sky-100 bg-sky-50/70 px-4 py-2 text-xs font-bold text-sky-900">
+            {!esPuntualidad && <div className="flex items-center gap-2 border-t border-sky-100 bg-sky-50/70 px-4 py-2 text-xs font-bold text-sky-900">
               <Clock3 size={15} />
               <span>{descripcionDuracionDesafio(desafio)}</span>
               {desafio.estado === "PUBLICADO" && estadoTemporalDesafio(desafio) === "FINALIZADO" && <span className="ml-auto rounded-full bg-amber-100 px-2 py-1 text-amber-800">Tiempo finalizado</span>}
-            </div>
+            </div>}
           </article>
           );
         })}

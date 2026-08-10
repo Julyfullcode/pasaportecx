@@ -2,6 +2,7 @@ import { PDFDocument } from "pdf-lib";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
+import { esDesafioPuntualidad } from "@/lib/puntualidad";
 import { qrPdf } from "@/lib/qr";
 
 export async function GET(request: Request) {
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     orderBy: [{ dia: "asc" }, { orden: "asc" }, { creadoEn: "asc" }],
   });
   const desafios = desafiosPublicados.filter(
-    (desafio) => estadoTemporalDesafio(desafio) === "DISPONIBLE",
+    (desafio) => !esDesafioPuntualidad(desafio) && estadoTemporalDesafio(desafio) === "DISPONIBLE",
   );
   const destino = await PDFDocument.create();
   for (const desafio of desafios) {

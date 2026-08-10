@@ -30,13 +30,14 @@ function fechaLegible(fecha: string | null) {
 
 export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
   return (
-    <section className="tarjeta mt-6 overflow-hidden">
-      <div className="marca-gradiente relative overflow-hidden p-5 text-white md:p-6">
+    <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
+      <summary className="marca-gradiente relative flex cursor-pointer list-none items-center justify-between overflow-hidden p-5 text-white md:p-6">
         <div className="relative z-10 flex items-start gap-3">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><CalendarDays /></span>
           <div><p className="text-sm font-extrabold text-[var(--epm-verde)]">Programa descargable</p><h2 className="text-2xl font-extrabold">Agenda del encuentro</h2><p className="mt-1 max-w-3xl text-sm text-white/80">Crea los días y agrega sus momentos. El PDF se actualizará automáticamente para todos los participantes.</p></div>
         </div>
-      </div>
+        <span className="relative z-10 ml-4 text-2xl transition group-open:rotate-45">+</span>
+      </summary>
 
       <div className="space-y-4 p-4 md:p-6">
         {dias.length === 0 && <div className="rounded-2xl border-2 border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">Aún no hay días configurados. Crea el primero al final de esta sección.</div>}
@@ -100,6 +101,6 @@ export function AgendaConfig({ dias }: { dias: DiaAgenda[] }) {
         </form>
         <p className="flex items-center gap-2 text-xs text-slate-500"><Clock3 size={15} /> Los momentos se mostrarán automáticamente ordenados por su hora de inicio.</p>
       </div>
-    </section>
+    </details>
   );
 }

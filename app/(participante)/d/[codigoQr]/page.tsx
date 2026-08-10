@@ -52,8 +52,8 @@ export default async function DetalleDesafio({
   const estaCompletado = Boolean(
     completitud && !esMatricula && (!esCosecha || esRespuestasCosecha(completitud.respuesta)),
   );
-  const estadoTemporal = estadoTemporalDesafio(desafio);
-  const fechaCierre = fechaCierreDesafio(desafio);
+  const estadoTemporal = esPuntualidad ? "DISPONIBLE" as const : estadoTemporalDesafio(desafio);
+  const fechaCierre = esPuntualidad ? null : fechaCierreDesafio(desafio);
   return (
     <div>
       <header className="marca-gradiente relative overflow-hidden px-4 pb-28 pt-5 text-white md:pb-32">

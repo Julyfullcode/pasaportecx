@@ -56,8 +56,8 @@ export async function POST(
   const ahora = new Date();
   if (desafio.estado !== "PUBLICADO") return Response.json({ error: "El desafío no está disponible." }, { status: 409 });
   const estadoTemporal = estadoTemporalDesafio(desafio, ahora);
-  if (estadoTemporal === "PROGRAMADO") return Response.json({ error: "Este desafío aún no comienza." }, { status: 409 });
-  if (estadoTemporal === "FINALIZADO") return Response.json({ error: "El tiempo de este desafío ya finalizó." }, { status: 409 });
+  if (!esPuntualidad && estadoTemporal === "PROGRAMADO") return Response.json({ error: "Este desafío aún no comienza." }, { status: 409 });
+  if (!esPuntualidad && estadoTemporal === "FINALIZADO") return Response.json({ error: "El tiempo de este desafío ya finalizó." }, { status: 409 });
   if (existente && !cosechaIncompleta && !esMatricula) {
     const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
     return Response.json({

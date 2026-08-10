@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { esDesafioCosecha, esRespuestasCosecha } from "@/lib/cosecha-config";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio } from "@/lib/duracion-desafio";
+import { esDesafioPuntualidad } from "@/lib/puntualidad";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function Desafios({
   };
   const ahora = new Date();
   const desafios = desafiosBase.filter((desafio) => (
-    estaCompletado(desafio) || estadoTemporalDesafio(desafio, ahora) === "DISPONIBLE"
+    estaCompletado(desafio) || esDesafioPuntualidad(desafio) || estadoTemporalDesafio(desafio, ahora) === "DISPONIBLE"
   ));
   const completados = desafios.filter(estaCompletado);
   const pendientes = desafios.filter((desafio) => !estaCompletado(desafio));

@@ -23,18 +23,18 @@ const etiquetas: Record<string, string> = {
 export function EstadoAlmacenamiento({ reporte }: { reporte: Reporte }) {
   if (!reporte.disponible) {
     return (
-      <section className="tarjeta mt-6 p-5">
-        <h2 className="flex items-center gap-2 text-xl font-extrabold"><HardDrive /> Almacenamiento</h2>
-        <p className="mt-2 text-sm text-slate-600">{reporte.motivo}</p>
-      </section>
+      <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
+        <summary className="marca-gradiente flex cursor-pointer list-none items-center justify-between p-5 text-white"><span><small className="block font-extrabold text-[var(--epm-verde)]">Control de capacidad</small><strong className="flex items-center gap-2 text-xl"><HardDrive /> Almacenamiento</strong></span><span className="text-2xl transition group-open:rotate-45">+</span></summary>
+        <p className="p-5 text-sm text-slate-600">{reporte.motivo}</p>
+      </details>
     );
   }
 
   const nivel = reporte.porcentaje >= 95 ? "critico" : reporte.porcentaje >= 85 ? "alto" : reporte.porcentaje >= 70 ? "medio" : "bien";
   const colorBarra = nivel === "critico" ? "bg-red-600" : nivel === "alto" ? "bg-orange-500" : nivel === "medio" ? "bg-amber-400" : "bg-emerald-500";
   return (
-    <section className="tarjeta mt-6 overflow-hidden">
-      <div className="marca-gradiente p-5 text-white md:p-6">
+    <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
+      <summary className="marca-gradiente flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-white md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="font-extrabold text-[var(--epm-verde)]">Control de capacidad</p>
@@ -45,20 +45,13 @@ export function EstadoAlmacenamiento({ reporte }: { reporte: Reporte }) {
             <span className="text-xs text-white/75">de {formatoBytes(reporte.limiteBytes)} · {reporte.archivos} archivos</span>
           </div>
         </div>
-        <div className="mt-5 h-4 overflow-hidden rounded-full bg-white/20">
-          <div className={`h-full rounded-full transition-all ${colorBarra}`} style={{ width: `${Math.max(1, reporte.porcentaje)}%` }} />
-        </div>
-        <div className="mt-2 flex items-center justify-between text-xs font-bold">
-          <span>{reporte.porcentaje.toFixed(1)}% utilizado</span>
-          <span>{formatoBytes(Math.max(0, reporte.limiteBytes - reporte.bytesTotales))} disponibles</span>
-        </div>
-        {nivel !== "bien" && (
-          <p className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 p-3 text-sm font-bold">
-            <AlertTriangle size={18} /> {nivel === "critico" ? "Capacidad crítica: elimina archivos antes de nuevas cargas." : nivel === "alto" ? "Capacidad alta: conviene realizar una limpieza." : "El almacenamiento llegó al 70%; revisa las categorías con mayor consumo."}
-          </p>
-        )}
+        <span className="mt-2 text-2xl transition group-open:rotate-45">+</span>
+      </summary>
+      <div className="px-5 pt-5">
+        <div className="h-4 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full transition-all ${colorBarra}`} style={{ width: `${Math.max(1, reporte.porcentaje)}%` }} /></div>
+        <div className="mt-2 flex items-center justify-between text-xs font-bold text-slate-600"><span>{reporte.porcentaje.toFixed(1)}% utilizado</span><span>{formatoBytes(Math.max(0, reporte.limiteBytes - reporte.bytesTotales))} disponibles</span></div>
+        {nivel !== "bien" && <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-900"><AlertTriangle size={18} /> {nivel === "critico" ? "Capacidad crítica: elimina archivos antes de nuevas cargas." : nivel === "alto" ? "Capacidad alta: conviene realizar una limpieza." : "El almacenamiento llegó al 70%; revisa las categorías con mayor consumo."}</p>}
       </div>
-
       <div className="grid gap-5 p-5 lg:grid-cols-[1.3fr_.7fr]">
         <div>
           <h3 className="flex items-center gap-2 font-extrabold text-[var(--epm-azul-profundo)]"><Images size={19} /> Consumo por categoría</h3>
@@ -87,6 +80,6 @@ export function EstadoAlmacenamiento({ reporte }: { reporte: Reporte }) {
           )}
         </div>
       </div>
-    </section>
+    </details>
   );
 }
