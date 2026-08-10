@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { db } from "@/lib/db";
-import { BASE_URL, EMPRESA_ID, fotoPng, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
+import { autenticarParticipante, BASE_URL, crearParticipanteConToken, EMPRESA_ID, fotoPng, PUNTOS_REGISTRO, registrarPorApi } from "./ayudas";
 
 async function completarCamposBasicos(page: Page, sufijo: string) {
   const correo = `ui-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
@@ -137,6 +137,22 @@ test.describe("Registro de participante", () => {
     expect((await segunda.json()).error).toBe("Este correo ya fue registrado en Pasaporte.");
     expect(await db.correoAutorizado.count({ where: { correo, participanteId: { not: null } } })).toBe(1);
     await api.dispose();
+  });
+
+  test("el participante edita nombre, apellidos y empresa desde el inicio", async ({ context, page }) => {
+    const marca = Date.now();
+    const persona = await crearParticipanteConToken({ nombre: `Nombre anterior ${marca}` });
+    const empresa = await db.empresa.create({ data: { nombre: `Empresa perfil ${marca}`, orden: 90, activa: true } });
+    await autenticarParticipante(context, persona.token);
+    await page.goto("/");
+    await page.getByRole("button", { name: /Editar mis datos/ }).click();
+    await page.getByLabel("Nombre", { exact: true }).fill("Nuevo Nombre");
+    await page.getByLabel("Apellidos", { exact: true }).fill("Nuevos Apellidos");
+    await page.getByLabel("Empresa del Grupo").selectOption(empresa.id);
+    await page.getByRole("button", { name: "Guardar mis datos" }).click();
+    await expect(page.getByRole("status")).toContainText("Tus datos quedaron actualizados");
+    const actualizado = await db.participante.findUniqueOrThrow({ where: { id: persona.participante.id } });
+    expect(actualizado).toMatchObject({ nombre: "Nuevo Nombre Nuevos Apellidos", nombres: "Nuevo Nombre", apellidos: "Nuevos Apellidos", empresaId: empresa.id });
   });
 
   test("dos altas con el mismo nombre crean pasaportes distintos", async ({ playwright }) => {

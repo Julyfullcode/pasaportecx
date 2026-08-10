@@ -8,6 +8,11 @@ if (!url || !url.startsWith("postgres")) {
 const db = new PrismaClient({ datasources: { db: { url } } });
 try {
   await db.$executeRawUnsafe(
+    'ALTER TABLE "Participante" '
+    + 'ADD COLUMN IF NOT EXISTS "nombres" TEXT, '
+    + 'ADD COLUMN IF NOT EXISTS "apellidos" TEXT',
+  );
+  await db.$executeRawUnsafe(
     'CREATE TABLE IF NOT EXISTS "Equipo" ('
     + '"id" TEXT NOT NULL PRIMARY KEY, "nombre" TEXT NOT NULL, '
     + '"orden" INTEGER NOT NULL, "activo" BOOLEAN NOT NULL DEFAULT true)'
@@ -55,6 +60,12 @@ try {
     + 'ADD COLUMN IF NOT EXISTS "codigoAcceso" TEXT, '
     + 'ADD COLUMN IF NOT EXISTS "anonima" BOOLEAN NOT NULL DEFAULT false, '
     + 'ADD COLUMN IF NOT EXISTS "requiereEmpresa" BOOLEAN NOT NULL DEFAULT false'
+  );
+  await db.$executeRawUnsafe(
+    'UPDATE "Actividad" SET "invitacion" = '
+    + '\'Te invitamos a recorrer cinco momentos para conectar la voz de clientes y empleados con las decisiones que transforman la experiencia. Responde y al finalizar cada pregunta descubrirás una idea clave para conversar en equipo.\' '
+    + 'WHERE "id" = \'actividad-conocimiento-indicadores-mejora\' '
+    + 'AND "invitacion" = \'Te invitamos a recorrer cinco momentos para conectar la voz de clientes y empleados con las decisiones que transforman la experiencia. Responde desde tu experiencia; al finalizar cada pregunta descubrirás una idea clave para conversar en equipo.\'',
   );
   await db.$executeRawUnsafe(
     'ALTER TABLE "RespuestaActividad" ADD COLUMN IF NOT EXISTS "empresaEvaluadaId" TEXT'

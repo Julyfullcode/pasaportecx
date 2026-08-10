@@ -7,7 +7,7 @@ import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import { EncuestaMixta } from "@/components/participante/EncuestaMixta";
 import { esConfiguracionEncuestaMixta, type PreguntaEncuestaMixta } from "@/lib/encuesta-mixta";
 import {
-  esConfiguracionPuntualidad,
+  configuracionPuntualidadDesdeValor,
   fechaHoraPuntualidadLegible,
   type ResultadoPuntualidad,
 } from "@/lib/puntualidad";
@@ -47,7 +47,7 @@ export function ResolverDesafio({
   const [fotoEvidencia, setFotoEvidencia] = useState<File | null>(null);
   const [resultado, setResultado] = useState<{ estado: string; puntosGanados: number; nuevoTotal: number; completitudId?: string; yaCompletado?: boolean; noRegistrado?: boolean; puntualidad?: ResultadoPuntualidad | null; mensaje?: string }>();
   const enviado = useRef(false);
-  const puntualidad = esConfiguracionPuntualidad(configuracion) ? configuracion : null;
+  const puntualidad = configuracionPuntualidadDesdeValor(configuracion);
   const matricula = esConfiguracionMatricula(configuracion) ? configuracion as ConfiguracionMatricula : null;
 
   async function completar(formulario = new FormData()) {

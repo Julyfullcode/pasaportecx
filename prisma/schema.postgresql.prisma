@@ -39,6 +39,8 @@ enum ModoAsistentes {
 model Participante {
   id                  String               @id @default(cuid())
   nombre              String
+  nombres             String?
+  apellidos           String?
   empresaId           String
   equipoId            String?
   urlFoto             String

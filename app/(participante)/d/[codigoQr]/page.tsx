@@ -11,7 +11,7 @@ import { LogoBlanco } from "@/components/marca/Logo";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { estadoTemporalDesafio, fechaCierreDesafio } from "@/lib/duracion-desafio";
 import {
-  esConfiguracionPuntualidad,
+  configuracionPuntualidadDesdeValor,
   mensajePuntualidad,
   resultadoPuntualidadDesdeRespuesta,
   type ResultadoPuntualidad,
@@ -41,7 +41,8 @@ export default async function DetalleDesafio({
   if (!desafio) notFound();
   const esCosecha = esDesafioCosecha(desafio.codigoQr, desafio.configuracion);
   const configuracion = desafio.configuracion as Record<string, unknown>;
-  const esPuntualidad = esConfiguracionPuntualidad(configuracion);
+  const puntualidad = configuracionPuntualidadDesdeValor(configuracion);
+  const esPuntualidad = Boolean(puntualidad);
   const tokenLlegada = esPuntualidad && llegada && validarTokenQrPuntualidad(codigoQr, llegada)
     ? llegada
     : undefined;
@@ -102,7 +103,7 @@ export default async function DetalleDesafio({
             codigo={desafio.codigoQr}
             tipo={esCosecha ? "ENCUESTA" : esPuntualidad ? "PUNTUALIDAD" : desafio.tipo}
             puntos={participante.esStaff ? 0 : desafio.puntos}
-            configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : configuracion) as never}
+            configuracion={(esCosecha ? { ...configuracion, formato: FORMATO_COSECHA } : puntualidad ? { ...configuracion, ...puntualidad } : configuracion) as never}
             respuestaInicial={esMatricula ? respuestaMatricula(completitud?.respuesta) : null}
             tokenLlegada={tokenLlegada}
           />

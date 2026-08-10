@@ -261,8 +261,14 @@ test.describe("Administrador", () => {
     const guardado = await db.desafio.findFirstOrThrow({ where: { titulo } });
     expect(guardado.tipo).toBe("CHECK_IN");
     expect(guardado.configuracion).toMatchObject({ tipoEspecial: "PUNTUALIDAD", fechaHoraObjetivo: "2026-08-04T14:00", toleranciaMinutos: 5 });
+    await db.desafio.update({
+      where: { id: guardado.id },
+      data: { configuracion: { tipo: "puntualidad", fechaHoraObjetivo: "2026-08-04T14:00:00", toleranciaMinutos: "5" } },
+    });
+    await page.goto("/admin/desafios");
     const tarjeta = page.locator("article").filter({ hasText: titulo });
     await expect(tarjeta.getByRole("link", { name: "Proyectar QR dinámico" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
+    await expect(tarjeta.getByRole("link", { name: "Ver QR de llegada" })).toHaveAttribute("href", `/admin/proyeccion/puntualidad/${guardado.id}`);
     await page.goto(`/admin/proyeccion/desafios/${guardado.id}`);
     await expect(page).toHaveURL(`/admin/proyeccion/puntualidad/${guardado.id}`);
     const qr = page.getByRole("img", { name: "Código QR dinámico para registrar la llegada a tiempo" });

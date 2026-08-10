@@ -48,6 +48,12 @@ export const registroSchema = z.object({
   }),
 });
 
+export const actualizarPerfilSchema = z.object({
+  nombres: z.string().trim().min(2, "Escribe tu nombre").max(60),
+  apellidos: z.string().trim().min(2, "Escribe tus apellidos").max(60),
+  empresaId: z.string().trim().min(1, "Selecciona una empresa"),
+});
+
 export const desafioSchema = z
   .object({
     titulo: z.string().trim().min(3).max(100),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  configuracionPuntualidadDesdeValor,
   crearConfiguracionPuntualidad,
   evaluarPuntualidad,
   mensajePuntualidad,
@@ -27,6 +28,17 @@ describe("desafíos de puntualidad", () => {
     expect(() => crearConfiguracionPuntualidad("", 5)).toThrow(/fecha, hora y tolerancia/);
     expect(() => crearConfiguracionPuntualidad("2026-08-04T14:00", -1)).toThrow(/fecha, hora y tolerancia/);
     expect(() => crearConfiguracionPuntualidad("2026-02-31T14:00", 5)).toThrow(/fecha, hora y tolerancia/);
+  });
+
+  it("recupera configuraciones antiguas sin perder la hora ni la tolerancia", () => {
+    expect(configuracionPuntualidadDesdeValor({
+      tipo: "puntualidad",
+      fechaHoraObjetivo: "2026-08-04T14:00:00",
+      toleranciaMinutos: "5",
+    })).toEqual(configuracion);
+    expect(configuracionPuntualidadDesdeValor(JSON.stringify({
+      puntualidad: { fechaHora: "2026-08-04T14:00", minutosTolerancia: 5 },
+    }))).toEqual(configuracion);
   });
 });
 

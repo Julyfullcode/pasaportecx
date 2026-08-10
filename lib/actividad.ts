@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 
 export const ACTIVIDAD_CONOCIMIENTO_ID = "actividad-conocimiento-indicadores-mejora";
 export const ACTIVIDAD_WHATSAPP_ID = "actividad-evaluacion-canal-whatsapp";
+export const INVITACION_ACTIVIDAD_CONOCIMIENTO =
+  "Te invitamos a recorrer cinco momentos para conectar la voz de clientes y empleados con las decisiones que transforman la experiencia. Responde y al finalizar cada pregunta descubrirás una idea clave para conversar en equipo.";
 
 export type OpcionActividad = { id: string; texto: string };
 export type AfirmacionActividad = { id: string; texto: string; correcta: boolean };
@@ -23,8 +25,7 @@ export type ConfiguracionActividad = { preguntas: PreguntaActividad[] };
 
 export const ACTIVIDAD_CONOCIMIENTO = {
   titulo: "Conocer, medir, conectar y actuar",
-  invitacion:
-    "Te invitamos a recorrer cinco momentos para conectar la voz de clientes y empleados con las decisiones que transforman la experiencia. Responde desde tu experiencia; al finalizar cada pregunta descubrirás una idea clave para conversar en equipo.",
+  invitacion: INVITACION_ACTIVIDAD_CONOCIMIENTO,
   cierre:
     "No medimos para tener un indicador. Escuchamos y medimos para comprender; comprendemos para conectar; conectamos para actuar; y actuamos para que la experiencia realmente evolucione.",
   configuracion: {

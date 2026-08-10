@@ -65,6 +65,8 @@ export async function POST(request: Request) {
       const creado = await tx.participante.create({
         data: {
           nombre: nombreCompleto,
+          nombres: datos.nombres,
+          apellidos: datos.apellidos,
           empresaId: datos.empresaId,
           equipoId: autorizacion.equipoId,
           urlFoto: urlFoto!,

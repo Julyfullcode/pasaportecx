@@ -6,7 +6,7 @@ import { Eye } from "lucide-react";
 import type { Desafio } from "@prisma/client";
 import { guardarDesafio, type EstadoGuardarDesafio } from "@/app/admin/actions";
 import { FORMATO_COSECHA, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
-import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
+import { configuracionPuntualidadDesdeValor } from "@/lib/puntualidad";
 import { EditorEncuestaMixta } from "@/components/admin/EditorEncuestaMixta";
 import { EditorMatricula } from "@/components/admin/EditorMatricula";
 import { esConfiguracionMatricula } from "@/lib/matricula";
@@ -40,7 +40,7 @@ const ESTADO_INICIAL_GUARDADO: EstadoGuardarDesafio = { tipo: "inicial", mensaje
 
 export function FormularioDesafio({ desafio }: { desafio?: Desafio }) {
   const config = (desafio?.configuracion ?? {}) as Config;
-  const puntualidad = esConfiguracionPuntualidad(config) ? config : null;
+  const puntualidad = configuracionPuntualidadDesdeValor(config);
   const encuestaMixta = esConfiguracionEncuestaMixta(config) ? config : null;
   const matricula = esConfiguracionMatricula(config) ? config : null;
   const [tipo, setTipo] = useState<string>(puntualidad ? "PUNTUALIDAD" : encuestaMixta ? "ENCUESTA_MIXTA" : matricula ? "MATRICULA" : (desafio?.tipo ?? "CHECK_IN"));

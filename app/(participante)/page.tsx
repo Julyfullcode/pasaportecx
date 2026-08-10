@@ -3,6 +3,7 @@ import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKey
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
+import { EditarPerfil } from "@/components/participante/EditarPerfil";
 import { MarcaHeader } from "@/components/ui/MarcaHeader";
 import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Inicio() {
   const participante = await requerirParticipante("/");
-  const [ranking, completados, totalPublicados, configuracion, cosechaCompletada] = await Promise.all([
+  const [ranking, completados, totalPublicados, configuracion, cosechaCompletada, empresas] = await Promise.all([
     db.participante.findMany({
       where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
@@ -23,10 +24,19 @@ export default async function Inicio() {
       where: { participanteId: participante.id, desafio: { codigoQr: CODIGO_DESAFIO_CIERRE } },
       select: { id: true, respuesta: true },
     }),
+    db.empresa.findMany({
+      where: { OR: [{ activa: true }, { id: participante.empresaId }] },
+      orderBy: { orden: "asc" },
+      select: { id: true, nombre: true },
+    }),
   ]);
   const tieneCosecha = esRespuestasCosecha(cosechaCompletada?.respuesta);
   const completadosValidos = completados - (cosechaCompletada && !tieneCosecha ? 1 : 0);
   const posicion = participante.esStaff ? null : ranking.findIndex((p) => p.id === participante.id) + 1;
+  const partesNombre = participante.nombre.trim().split(/\s+/);
+  const corteNombre = partesNombre.length >= 4 ? 2 : 1;
+  const nombres = participante.nombres?.trim() || partesNombre.slice(0, corteNombre).join(" ");
+  const apellidos = participante.apellidos?.trim() || partesNombre.slice(corteNombre).join(" ");
   return (
     <>
       <MarcaHeader tituloVerde="Hola," tituloClaro={participante.nombre.split(" ")[0]} compacto lateral>
@@ -53,6 +63,7 @@ export default async function Inicio() {
             </div>
           </div>
         </section>
+        <EditarPerfil nombres={nombres} apellidos={apellidos} empresaId={participante.empresaId} empresas={empresas} />
         <section className="grid grid-cols-2 gap-3">
           <Link href="/desafios" className="tarjeta p-4">
             <span className="text-sm font-bold text-slate-500">Tu recorrido</span>
@@ -69,7 +80,7 @@ export default async function Inicio() {
           <Camera size={24} /> Escanear QR
         </Link>
         <Link href="/recuerdos?subir=1" className="boton-secundario w-full"><ImagePlus size={20} /> Subir recuerdo</Link>
-        <a href={`/api/pasaporte?v=${encodeURIComponent(`${participante.id}-${participante.urlFoto}`)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
+        <a href={`/api/pasaporte?v=${encodeURIComponent(`${participante.id}-${participante.urlFoto}-${participante.nombre}-${participante.empresaId}`)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
           <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
         </a>

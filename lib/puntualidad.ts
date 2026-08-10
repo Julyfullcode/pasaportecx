@@ -29,15 +29,38 @@ function esFechaHoraReal(valor: string) {
     && comprobacion.getUTCMinutes() === minutos;
 }
 
-export function esConfiguracionPuntualidad(valor: unknown): valor is ConfiguracionPuntualidad {
-  if (!valor || typeof valor !== "object") return false;
+export function configuracionPuntualidadDesdeValor(valor: unknown): ConfiguracionPuntualidad | null {
+  if (typeof valor === "string") {
+    try {
+      return configuracionPuntualidadDesdeValor(JSON.parse(valor));
+    } catch {
+      return null;
+    }
+  }
+  if (!valor || typeof valor !== "object") return null;
   const config = valor as Record<string, unknown>;
-  return config.tipoEspecial === TIPO_ESPECIAL_PUNTUALIDAD
-    && typeof config.fechaHoraObjetivo === "string"
-    && esFechaHoraReal(config.fechaHoraObjetivo)
-    && Number.isInteger(config.toleranciaMinutos)
-    && Number(config.toleranciaMinutos) >= 0
-    && Number(config.toleranciaMinutos) <= 1440;
+  const anidada = config.puntualidad ?? config.configuracionPuntualidad;
+  if (anidada && anidada !== valor) {
+    const normalizada = configuracionPuntualidadDesdeValor(anidada);
+    if (normalizada) return normalizada;
+  }
+  const tipoEspecial = String(config.tipoEspecial ?? config.tipo ?? config.tipoDesafio ?? "").trim().toUpperCase();
+  const fechaGuardada = config.fechaHoraObjetivo ?? config.fechaHora ?? config.fechaObjetivo;
+  const fechaOriginal = typeof fechaGuardada === "string" ? fechaGuardada.trim() : "";
+  const fechaHoraObjetivo = fechaOriginal.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)?.[0] ?? "";
+  const toleranciaGuardada = config.toleranciaMinutos ?? config.minutosTolerancia ?? config.tolerancia;
+  const toleranciaMinutos = Number(toleranciaGuardada);
+  const tieneCamposDePuntualidad = Boolean(fechaOriginal) && toleranciaGuardada !== undefined;
+  if ((tipoEspecial !== TIPO_ESPECIAL_PUNTUALIDAD && !tieneCamposDePuntualidad)
+    || !esFechaHoraReal(fechaHoraObjetivo)
+    || !Number.isInteger(toleranciaMinutos)
+    || toleranciaMinutos < 0
+    || toleranciaMinutos > 1440) return null;
+  return { tipoEspecial: TIPO_ESPECIAL_PUNTUALIDAD, fechaHoraObjetivo, toleranciaMinutos };
+}
+
+export function esConfiguracionPuntualidad(valor: unknown): valor is ConfiguracionPuntualidad {
+  return configuracionPuntualidadDesdeValor(valor) !== null;
 }
 
 export function crearConfiguracionPuntualidad(fechaHoraObjetivo: string, toleranciaMinutos: number): ConfiguracionPuntualidad {
@@ -83,7 +106,8 @@ export function evaluarPuntualidad(configuracion: ConfiguracionPuntualidad, ahor
 export function resultadoPuntualidadDesdeRespuesta(valor: unknown): ResultadoPuntualidad | null {
   if (!valor || typeof valor !== "object") return null;
   const respuestaCompleta = valor as Record<string, unknown>;
-  if (!esConfiguracionPuntualidad(valor)) return null;
+  const configuracion = configuracionPuntualidadDesdeValor(valor);
+  if (!configuracion) return null;
   if (typeof respuestaCompleta.obtuvoPuntos !== "boolean" || !Number.isInteger(respuestaCompleta.minutosTarde)) return null;
   const estadoGuardado = respuestaCompleta.estadoVentana;
   const estadoVentana = estadoGuardado === "ANTES" || estadoGuardado === "DENTRO" || estadoGuardado === "DESPUES"
@@ -91,8 +115,8 @@ export function resultadoPuntualidadDesdeRespuesta(valor: unknown): ResultadoPun
     : respuestaCompleta.obtuvoPuntos ? "DENTRO" : "DESPUES";
   return {
     tipoEspecial: TIPO_ESPECIAL_PUNTUALIDAD,
-    fechaHoraObjetivo: valor.fechaHoraObjetivo,
-    toleranciaMinutos: valor.toleranciaMinutos,
+    fechaHoraObjetivo: configuracion.fechaHoraObjetivo,
+    toleranciaMinutos: configuracion.toleranciaMinutos,
     estadoVentana,
     obtuvoPuntos: respuestaCompleta.obtuvoPuntos,
     minutosAntes: Number.isInteger(respuestaCompleta.minutosAntes) ? Number(respuestaCompleta.minutosAntes) : 0,

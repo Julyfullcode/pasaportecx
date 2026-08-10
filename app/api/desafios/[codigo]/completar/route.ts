@@ -8,7 +8,7 @@ import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { esDesafioCosecha, esRespuestasCosecha, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import {
-  esConfiguracionPuntualidad,
+  configuracionPuntualidadDesdeValor,
   evaluarPuntualidad,
   mensajePuntualidad,
   resultadoPuntualidadDesdeRespuesta,
@@ -47,7 +47,8 @@ export async function POST(
   if (!desafio) return Response.json({ error: "Este código no corresponde a un desafío." }, { status: 404 });
   const configuracion = desafio.configuracion as Configuracion;
   const esCosecha = esDesafioCosecha(desafio.codigoQr, configuracion);
-  const esPuntualidad = esConfiguracionPuntualidad(configuracion);
+  const puntualidad = configuracionPuntualidadDesdeValor(configuracion);
+  const esPuntualidad = Boolean(puntualidad);
   const esMatricula = esConfiguracionMatricula(configuracion);
   const existente = desafio.completitudes[0];
   const cosechaIncompleta = Boolean(existente && esCosecha && !esRespuestasCosecha(existente.respuesta));
@@ -70,7 +71,7 @@ export async function POST(
         : puntualidad ? mensajePuntualidad(puntualidad, desafio.puntos) : undefined,
     });
   }
-  const evaluacionPuntualidad = esPuntualidad ? evaluarPuntualidad(configuracion, ahora) : null;
+  const evaluacionPuntualidad = puntualidad ? evaluarPuntualidad(puntualidad, ahora) : null;
   if (evaluacionPuntualidad && evaluacionPuntualidad.estadoVentana !== "DENTRO") {
     const mensaje = mensajePuntualidad(evaluacionPuntualidad, desafio.puntos);
     return Response.json({
