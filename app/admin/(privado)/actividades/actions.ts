@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { anunciarCambio } from "@/lib/eventos";
-import { leerConfiguracionActividad, preguntasDe } from "@/lib/actividad";
+import { idsRespuestasCorrectas, leerConfiguracionActividad, preguntasDe } from "@/lib/actividad";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 
 function refrescar(id: string) {
@@ -33,6 +33,9 @@ export async function guardarActividad(formulario: FormData) {
   }
   const configuracionValida = leerConfiguracionActividad(configuracion);
   if (!id || !titulo || !invitacion || !cierre || !configuracionValida) throw new Error("Completa todos los campos de la actividad.");
+  if (configuracionValida.preguntas.some((pregunta) => pregunta.tipo === "OPCION_UNICA" && idsRespuestasCorrectas(pregunta).length === 0)) {
+    throw new Error("Marca al menos una respuesta correcta en cada pregunta de opciones.");
+  }
   if (!Number.isInteger(puntos) || puntos < 0 || puntos > 10000) throw new Error("Configura una cantidad de puntos válida.");
   const actividad = await db.actividad.findUniqueOrThrow({ where: { id }, select: { estado: true, _count: { select: { respuestas: true } } } });
   if (actividad.estado === "PUBLICADA") throw new Error("Pausa la actividad antes de modificarla.");

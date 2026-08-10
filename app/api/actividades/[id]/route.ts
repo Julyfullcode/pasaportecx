@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { participanteActual } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { preguntasDe, respuestaActividadValida, type PreguntaActividad } from "@/lib/actividad";
+import { evaluarRespuestaActividad, idsRespuestasCorrectas, preguntasDe, respuestaActividadValida, type PreguntaActividad } from "@/lib/actividad";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +14,7 @@ function sinRespuestasCorrectas(pregunta: PreguntaActividad) {
     tipo: pregunta.tipo,
     opciones: pregunta.opciones,
     afirmaciones: pregunta.afirmaciones?.map(({ id, texto }) => ({ id, texto })),
+    seleccionMultiple: pregunta.tipo === "OPCION_UNICA" && idsRespuestasCorrectas(pregunta).length > 1,
   };
 }
 
@@ -61,6 +62,7 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
     respondida: Boolean(respuesta),
     respuesta: respuesta?.respuesta ?? null,
     insight: respuesta ? pregunta?.insight ?? null : null,
+    retroalimentacion: respuesta && pregunta ? evaluarRespuestaActividad(pregunta, respuesta.respuesta) : null,
   }, { headers: { "Cache-Control": "no-store, max-age=0" } });
 }
 
@@ -129,7 +131,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
         });
         await recalcularPuntosParticipante(tx, participante.id);
       }
-      return { insight: pregunta.insight, completada: respondidas >= preguntas.length, puntosOtorgados };
+      return { insight: pregunta.insight, retroalimentacion: evaluarRespuestaActividad(pregunta, cuerpo.respuesta), completada: respondidas >= preguntas.length, puntosOtorgados };
     });
     return Response.json(resultado, { headers: { "Cache-Control": "no-store, max-age=0" } });
   } catch (error) {

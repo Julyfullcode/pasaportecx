@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Save, Trash2 } from "lucide-react";
-import type { ConfiguracionActividad, PreguntaActividad } from "@/lib/actividad";
+import { CheckCircle2, Plus, Save, Trash2 } from "lucide-react";
+import { idsRespuestasCorrectas, type ConfiguracionActividad, type PreguntaActividad } from "@/lib/actividad";
 import { guardarActividad } from "@/app/admin/(privado)/actividades/actions";
 
 type ActividadEditable = {
@@ -54,7 +54,7 @@ export function EditorActividad({ actividad }: { actividad: ActividadEditable })
               <label><span className="etiqueta">Pregunta</span><input className="campo" value={pregunta.titulo} onChange={(e) => actualizarPregunta(indice, { titulo: e.target.value })} /></label>
               <label><span className="etiqueta">Descripción o contexto</span><textarea className="campo min-h-28" value={pregunta.contexto} onChange={(e) => actualizarPregunta(indice, { contexto: e.target.value })} /></label>
               {pregunta.tipo === "OPCION_UNICA" && (
-                <div><span className="etiqueta">Opciones</span><div className="space-y-2">{pregunta.opciones?.map((opcion, posicion) => <div key={opcion.id} className="flex items-center gap-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky-50 font-extrabold text-[var(--epm-azul)]">{opcion.id.toUpperCase()}</span><input className="campo" value={opcion.texto} onChange={(e) => actualizarPregunta(indice, { opciones: pregunta.opciones?.map((actual, p) => p === posicion ? { ...actual, texto: e.target.value } : actual) })} /></div>)}</div></div>
+                <div><span className="etiqueta">Opciones y respuestas correctas</span><p className="mb-3 text-sm text-slate-600">Marca una o varias opciones. Si marcas varias, el participante podrá seleccionarlas todas.</p><div className="space-y-2">{pregunta.opciones?.map((opcion, posicion) => { const correctas = idsRespuestasCorrectas(pregunta); const marcada = correctas.includes(opcion.id); return <div key={opcion.id} className={`grid items-center gap-2 rounded-xl border p-2 md:grid-cols-[42px_1fr_180px] ${marcada ? "border-emerald-300 bg-emerald-50" : "border-slate-200"}`}><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky-50 font-extrabold text-[var(--epm-azul)]">{opcion.id.toUpperCase()}</span><input className="campo bg-white" value={opcion.texto} onChange={(e) => actualizarPregunta(indice, { opciones: pregunta.opciones?.map((actual, p) => p === posicion ? { ...actual, texto: e.target.value } : actual) })} /><label className="flex cursor-pointer items-center gap-2 rounded-lg bg-white p-3 text-sm font-extrabold text-emerald-800"><input type="checkbox" checked={marcada} onChange={(evento) => { const nuevas = evento.target.checked ? [...correctas, opcion.id] : correctas.filter((id) => id !== opcion.id); actualizarPregunta(indice, { respuestaCorrecta: nuevas.length === 1 ? nuevas[0] : nuevas }); }} /><CheckCircle2 size={17} /> Respuesta correcta</label></div>; })}</div></div>
               )}
               {pregunta.tipo === "VERDADERO_FALSO" && (
                 <div><span className="etiqueta">Afirmaciones</span><div className="space-y-3">{pregunta.afirmaciones?.map((afirmacion, posicion) => <div key={afirmacion.id} className="grid gap-2 rounded-xl border p-3 md:grid-cols-[1fr_150px]"><textarea className="campo min-h-20" value={afirmacion.texto} onChange={(e) => actualizarPregunta(indice, { afirmaciones: pregunta.afirmaciones?.map((actual, p) => p === posicion ? { ...actual, texto: e.target.value } : actual) })} /><select className="campo" value={String(afirmacion.correcta)} onChange={(e) => actualizarPregunta(indice, { afirmaciones: pregunta.afirmaciones?.map((actual, p) => p === posicion ? { ...actual, correcta: e.target.value === "true" } : actual) })}><option value="true">Verdadera</option><option value="false">Falsa</option></select></div>)}</div></div>

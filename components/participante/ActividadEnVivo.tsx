@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock3, Lightbulb, LoaderCircle, Send, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock3, Lightbulb, LoaderCircle, Send, Sparkles, XCircle } from "lucide-react";
 import { usePollingVisible } from "@/lib/usePollingVisible";
 
 type PreguntaVisible = {
@@ -11,7 +11,10 @@ type PreguntaVisible = {
   tipo: "OPCION_UNICA" | "VERDADERO_FALSO" | "RESPUESTA_ABIERTA";
   opciones?: { id: string; texto: string }[];
   afirmaciones?: { id: string; texto: string }[];
+  seleccionMultiple?: boolean;
 };
+
+type Retroalimentacion = { esCorrecta: boolean; respuestaCorrecta: string; mensaje: string };
 
 type DatosActividad = {
   actividad: {
@@ -35,13 +38,14 @@ type DatosActividad = {
   respondida: boolean;
   respuesta: unknown;
   insight: string | null;
+  retroalimentacion: Retroalimentacion | null;
 };
 
 export function ActividadEnVivo({ codigo }: { codigo: string }) {
   const [datos, setDatos] = useState<DatosActividad | null>(null);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [opcion, setOpcion] = useState("");
+  const [opcionesSeleccionadas, setOpcionesSeleccionadas] = useState<string[]>([]);
   const [afirmaciones, setAfirmaciones] = useState<Record<string, boolean>>({});
   const [respuestaAbierta, setRespuestaAbierta] = useState("");
   const [empresaEvaluadaId, setEmpresaEvaluadaId] = useState("");
@@ -56,21 +60,23 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
   }, [codigo]);
 
   useEffect(() => { void cargar().catch((e) => setError(e instanceof Error ? e.message : "No pudimos cargar la actividad.")); }, [cargar]);
-  useEffect(() => { setOpcion(""); setAfirmaciones({}); setRespuestaAbierta(""); setError(""); }, [datos?.pregunta?.id]);
+  useEffect(() => { setOpcionesSeleccionadas([]); setAfirmaciones({}); setRespuestaAbierta(""); setError(""); }, [datos?.pregunta?.id]);
   usePollingVisible(cargar, 2000);
 
   const completa = useMemo(() => {
     if (!datos?.pregunta) return false;
-    if (datos.pregunta.tipo === "OPCION_UNICA") return Boolean(opcion);
+    if (datos.pregunta.tipo === "OPCION_UNICA") return opcionesSeleccionadas.length > 0;
     if (datos.pregunta.tipo === "RESPUESTA_ABIERTA") return respuestaAbierta.trim().length >= 2 && (!datos.actividad.requiereEmpresa || Boolean(empresaEvaluadaId));
     return Boolean(datos.pregunta.afirmaciones?.every((item) => typeof afirmaciones[item.id] === "boolean"));
-  }, [datos?.pregunta, datos?.actividad.requiereEmpresa, opcion, afirmaciones, respuestaAbierta, empresaEvaluadaId]);
+  }, [datos?.pregunta, datos?.actividad.requiereEmpresa, opcionesSeleccionadas, afirmaciones, respuestaAbierta, empresaEvaluadaId]);
 
   async function responder() {
     if (!datos?.pregunta || !completa || enviando) return;
     setEnviando(true);
     setError("");
-    const respuestaElegida = datos.pregunta.tipo === "OPCION_UNICA" ? opcion : datos.pregunta.tipo === "RESPUESTA_ABIERTA" ? respuestaAbierta.trim() : afirmaciones;
+    const respuestaElegida = datos.pregunta.tipo === "OPCION_UNICA"
+      ? datos.pregunta.seleccionMultiple ? opcionesSeleccionadas : opcionesSeleccionadas[0]
+      : datos.pregunta.tipo === "RESPUESTA_ABIERTA" ? respuestaAbierta.trim() : afirmaciones;
     try {
       const respuesta = await fetch(`/api/actividades/${encodeURIComponent(codigo)}`, {
         method: "POST",
@@ -166,7 +172,15 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
       </div>
       {datos.respondida ? (
         <div className="p-5 sm:p-7">
-          <div className="rounded-2xl border border-lime-200 bg-lime-50 p-5">
+          {datos.retroalimentacion && (
+            <div className={`rounded-2xl border p-5 ${datos.retroalimentacion.esCorrecta ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+              <div className={`flex items-start gap-3 font-extrabold ${datos.retroalimentacion.esCorrecta ? "text-emerald-800" : "text-amber-900"}`}>
+                {datos.retroalimentacion.esCorrecta ? <CheckCircle2 className="shrink-0" /> : <XCircle className="shrink-0" />}
+                <span>{datos.retroalimentacion.mensaje}</span>
+              </div>
+            </div>
+          )}
+          <div className={`${datos.retroalimentacion ? "mt-4" : ""} rounded-2xl border border-lime-200 bg-lime-50 p-5`}>
             <div className="flex items-center gap-2 font-extrabold text-[var(--epm-azul-profundo)]"><Lightbulb className="text-[var(--epm-verde-medio)]" /> Insight</div>
             <p className="mt-3 text-lg leading-relaxed text-slate-700">{datos.insight}</p>
           </div>
@@ -175,11 +189,12 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
       ) : (
         <div className="space-y-4 p-5 sm:p-7">
           {pregunta.tipo === "OPCION_UNICA" && pregunta.opciones?.map((item) => (
-            <label key={item.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-4 transition ${opcion === item.id ? "border-[var(--epm-azul)] bg-sky-50" : "border-slate-200 bg-white"}`}>
-              <input className="mt-1 h-5 w-5 accent-[var(--epm-azul)]" type="radio" name="opcion" value={item.id} checked={opcion === item.id} onChange={() => setOpcion(item.id)} />
+            <label key={item.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-4 transition ${opcionesSeleccionadas.includes(item.id) ? "border-[var(--epm-azul)] bg-sky-50" : "border-slate-200 bg-white"}`}>
+              <input className="mt-1 h-5 w-5 accent-[var(--epm-azul)]" type={pregunta.seleccionMultiple ? "checkbox" : "radio"} name="opcion" value={item.id} checked={opcionesSeleccionadas.includes(item.id)} onChange={() => setOpcionesSeleccionadas((actuales) => pregunta.seleccionMultiple ? actuales.includes(item.id) ? actuales.filter((id) => id !== item.id) : [...actuales, item.id] : [item.id])} />
               <span className="leading-relaxed"><strong className="mr-2 text-[var(--epm-azul)]">{item.id.toUpperCase()}.</strong>{item.texto}</span>
             </label>
           ))}
+          {pregunta.tipo === "OPCION_UNICA" && pregunta.seleccionMultiple && <p className="rounded-xl bg-sky-50 p-3 text-sm font-bold text-[var(--epm-azul-profundo)]">Esta pregunta tiene varias respuestas correctas. Selecciona todas las que correspondan.</p>}
           {pregunta.tipo === "VERDADERO_FALSO" && pregunta.afirmaciones?.map((item) => (
             <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
               <p className="leading-relaxed text-slate-700">{item.texto}</p>

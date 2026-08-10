@@ -17,7 +17,7 @@ export type PreguntaActividad = {
   tipo: "OPCION_UNICA" | "VERDADERO_FALSO" | "RESPUESTA_ABIERTA";
   opciones?: OpcionActividad[];
   afirmaciones?: AfirmacionActividad[];
-  respuestaCorrecta?: string;
+  respuestaCorrecta?: string | string[];
   insight: string;
 };
 
@@ -218,9 +218,69 @@ export function preguntasDe(valor: unknown) {
   return leerConfiguracionActividad(valor)?.preguntas ?? [];
 }
 
+export function idsRespuestasCorrectas(pregunta: PreguntaActividad) {
+  if (pregunta.tipo !== "OPCION_UNICA") return [];
+  const valores = Array.isArray(pregunta.respuestaCorrecta)
+    ? pregunta.respuestaCorrecta
+    : pregunta.respuestaCorrecta ? [pregunta.respuestaCorrecta] : [];
+  const validas = new Set((pregunta.opciones ?? []).map((opcion) => opcion.id));
+  return [...new Set(valores.filter((id) => validas.has(id)))];
+}
+
+export function descripcionRespuestaCorrecta(pregunta: PreguntaActividad) {
+  if (pregunta.tipo === "OPCION_UNICA") {
+    const ids = idsRespuestasCorrectas(pregunta);
+    return ids.map((id) => {
+      const opcion = pregunta.opciones?.find((item) => item.id === id);
+      return opcion ? `${id.toUpperCase()}. ${opcion.texto}` : id.toUpperCase();
+    }).join(" · ");
+  }
+  if (pregunta.tipo === "VERDADERO_FALSO") {
+    return (pregunta.afirmaciones ?? [])
+      .map((afirmacion) => `${afirmacion.id.toUpperCase()}. ${afirmacion.correcta ? "Verdadero" : "Falso"}`)
+      .join(" · ");
+  }
+  return "";
+}
+
+export function evaluarRespuestaActividad(pregunta: PreguntaActividad, respuesta: unknown) {
+  const descripcion = descripcionRespuestaCorrecta(pregunta);
+  if (!descripcion) return null;
+  let esCorrecta = false;
+  let cantidadCorrectas = 1;
+  if (pregunta.tipo === "OPCION_UNICA") {
+    const correctas = idsRespuestasCorrectas(pregunta);
+    const seleccionadas = Array.isArray(respuesta)
+      ? respuesta.filter((item): item is string => typeof item === "string")
+      : typeof respuesta === "string" ? [respuesta] : [];
+    cantidadCorrectas = correctas.length;
+    esCorrecta = seleccionadas.length === correctas.length
+      && correctas.every((id) => seleccionadas.includes(id));
+  } else if (pregunta.tipo === "VERDADERO_FALSO" && respuesta && typeof respuesta === "object" && !Array.isArray(respuesta)) {
+    const mapa = respuesta as Record<string, unknown>;
+    cantidadCorrectas = pregunta.afirmaciones?.length ?? 1;
+    esCorrecta = Boolean(pregunta.afirmaciones?.every((afirmacion) => mapa[afirmacion.id] === afirmacion.correcta));
+  }
+  return {
+    esCorrecta,
+    respuestaCorrecta: descripcion,
+    mensaje: esCorrecta
+      ? "¡Acertaste! Tu respuesta es correcta."
+      : `Esta vez no acertaste, ${cantidadCorrectas > 1 ? "las respuestas correctas son" : "la respuesta correcta es"} ${descripcion}.`,
+  };
+}
+
 export function respuestaActividadValida(pregunta: PreguntaActividad, respuesta: unknown) {
   if (pregunta.tipo === "OPCION_UNICA") {
-    return typeof respuesta === "string" && Boolean(pregunta.opciones?.some((opcion) => opcion.id === respuesta));
+    const idsValidos = new Set((pregunta.opciones ?? []).map((opcion) => opcion.id));
+    const seleccionMultiple = idsRespuestasCorrectas(pregunta).length > 1;
+    if (seleccionMultiple) {
+      return Array.isArray(respuesta)
+        && respuesta.length > 0
+        && new Set(respuesta).size === respuesta.length
+        && respuesta.every((id) => typeof id === "string" && idsValidos.has(id));
+    }
+    return typeof respuesta === "string" && idsValidos.has(respuesta);
   }
   if (pregunta.tipo === "RESPUESTA_ABIERTA") {
     return typeof respuesta === "string" && respuesta.trim().length >= 2 && respuesta.length <= 4000;
