@@ -249,6 +249,9 @@ export async function POST(
       });
     }
     console.error(error);
-    return Response.json({ error: "La respuesta no pudo guardarse. Puedes reintentar sin perderla." }, { status: 500 });
+    const diagnostico = process.env.VERCEL_ENV === "preview" && process.env.VERCEL_GIT_COMMIT_REF === "load-test-staging"
+      ? error instanceof Prisma.PrismaClientKnownRequestError ? `${error.code}: ${error.message.slice(0, 240)}` : error instanceof Error ? `${error.name}: ${error.message.slice(0, 240)}` : "Error desconocido"
+      : undefined;
+    return Response.json({ error: "La respuesta no pudo guardarse. Puedes reintentar sin perderla.", ...(diagnostico ? { diagnostico } : {}) }, { status: 500 });
   }
 }
