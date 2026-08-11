@@ -173,7 +173,10 @@ export async function POST(request: Request) {
       const existente = await db.recuerdo.findUnique({ where: { claveIdempotencia: clave } });
       return Response.json({ recuerdo: existente, repetido: true });
     }
-    return Response.json({ error: "No se pudo guardar esta foto. Reintenta solo esta carga." }, { status: 500 });
+    const diagnostico = process.env.VERCEL_ENV === "preview" && process.env.VERCEL_GIT_COMMIT_REF === "load-test-staging"
+      ? error instanceof Prisma.PrismaClientKnownRequestError ? `${error.code}: ${error.message.slice(0, 240)}` : error instanceof Error ? `${error.name}: ${error.message.slice(0, 240)}` : "Error desconocido"
+      : undefined;
+    return Response.json({ error: "No se pudo guardar esta foto. Reintenta solo esta carga.", ...(diagnostico ? { diagnostico } : {}) }, { status: 500 });
   }
 }
 
