@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
 import { crearExcel } from "@/lib/excel";
+import { detallarRespuestasEncuesta } from "@/lib/reporte-encuestas";
 
 export async function GET(
   _request: Request,
@@ -10,7 +11,7 @@ export async function GET(
 ) {
   await requerirAdmin();
   const { tipo } = await params;
-  let filas: (string | number | null | undefined)[][];
+  let filas: (string | number | boolean | null | undefined)[][];
   if (tipo === "participantes" || tipo === "ranking-individual") {
     const esRanking = tipo === "ranking-individual";
     const datos = await db.participante.findMany({
@@ -27,7 +28,21 @@ export async function GET(
     filas = [["Participante", "Staff", "Desafío", "Tipo", "Día", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.participante.esStaff ? "Sí" : "No", c.desafio.titulo, esConfiguracionPuntualidad(c.desafio.configuracion) ? "PUNTUALIDAD" : c.desafio.tipo, etiquetaDiaDesafio(c.desafio.dia), c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];
   } else if (tipo === "encuestas") {
     const datos = await db.completitud.findMany({ where: { desafio: { tipo: "ENCUESTA" } }, include: { participante: true, desafio: true } });
-    filas = [["Participante", "Staff", "Encuesta", "Respuesta", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.participante.esStaff ? "Sí" : "No", c.desafio.titulo, JSON.stringify(c.respuesta), c.completadoEn.toISOString()])];
+    filas = [
+      ["Participante", "Staff", "Encuesta", "Pregunta", "Descripción o contexto", "Elemento evaluado", "Respuesta", "Puntos", "Estado", "Fecha"],
+      ...datos.flatMap((completitud) => detallarRespuestasEncuesta(completitud.desafio.configuracion, completitud.respuesta).map((detalle) => [
+        completitud.participante.nombre,
+        completitud.participante.esStaff ? "Sí" : "No",
+        completitud.desafio.titulo,
+        detalle.pregunta,
+        detalle.descripcion,
+        detalle.elemento,
+        detalle.respuesta,
+        completitud.puntosOtorgados,
+        completitud.estado,
+        completitud.completadoEn.toISOString(),
+      ])),
+    ];
   } else if (tipo === "actividades") {
     const datos = await db.respuestaActividad.findMany({
       include: { participante: true, actividad: true },

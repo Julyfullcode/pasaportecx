@@ -501,6 +501,24 @@ await expect.poll(async () => Boolean(
     });
     expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(65);
 
+    const reporteEncuestas = await page.evaluate(async () => {
+      const respuesta = await fetch("/api/reportes/encuestas");
+      return {
+        tipo: respuesta.headers.get("content-type"),
+        bytes: Array.from(new Uint8Array(await respuesta.arrayBuffer())),
+      };
+    });
+    expect(reporteEncuestas.tipo).toContain("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    const excelEncuestas = await JSZip.loadAsync(Uint8Array.from(reporteEncuestas.bytes));
+    const hojaEncuestas = await excelEncuestas.file("xl/worksheets/sheet1.xml")!.async("string");
+    expect(hojaEncuestas).toContain(participante.nombre);
+    for (const pregunta of preguntas) {
+      expect(hojaEncuestas).toContain(pregunta.titulo);
+      for (const elemento of pregunta.elementos) expect(hojaEncuestas).toContain(elemento.texto);
+    }
+    expect(hojaEncuestas).toContain("Las conversaciones y aprendizajes compartidos.");
+    expect(hojaEncuestas).toContain("Dejar más tiempo para la conversación final.");
+
     await page.goto("/admin/desafios");
     const tarjeta = page.locator("article").filter({ hasText: titulo });
     await tarjeta.getByText("Editar", { exact: true }).click();
