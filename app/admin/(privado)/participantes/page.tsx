@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Clock3, FileText, Mail, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
+import { Building2, Clock3, FileText, Mail, MonitorPlay, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
 import { db } from "@/lib/db";
 import { ajustarPuntos, alternarParticipante, alternarStaff, asignarDependencia, asignarEquipo, eliminarCorreoAutorizado, eliminarParticipante } from "@/app/admin/actions";
 import { FotoCircular } from "@/components/marca/FotoCircular";
@@ -52,7 +52,10 @@ export default async function AdminParticipantes({
   const totalPendientes = totalAutorizados - totalAutorizadosRegistrados;
   return (
     <div className="p-4 md:p-7">
-      <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Personas y puntajes</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Participantes</h1></div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Personas y puntajes</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Participantes</h1></div>
+        <Link href="/admin/proyeccion/equipos" target="_blank" rel="noopener noreferrer" className="boton-primario"><MonitorPlay size={19} /> Presentar equipos</Link>
+      </div>
       <GestionCorreosAutorizados equipos={equipos.filter((equipo) => equipo.activo)} dependencias={dependencias.filter((dependencia) => dependencia.activa)} />
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <Resumen icono={<Mail size={20} />} etiqueta="Correos autorizados" valor={totalAutorizados} />

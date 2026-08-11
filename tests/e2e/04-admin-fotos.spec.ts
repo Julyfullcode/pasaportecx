@@ -15,23 +15,50 @@ test.describe("Administrador", () => {
     await expect(page.getByRole("button", { name: "Ingresar" })).toBeVisible();
     expect((await request.get("/api/proyeccion/datos")).status()).toBe(401);
     expect((await request.get("/api/proyeccion/cierre")).status()).toBe(401);
+    expect((await request.get("/api/proyeccion/equipos")).status()).toBe(401);
     expect((await request.get("/api/proyeccion/desafios/desafio-e2e-100")).status()).toBe(401);
     const anonimo = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
     expect((await anonimo.get("/api/ranking")).status()).toBe(401);
     await anonimo.dispose();
   });
 
-  test("la aplicación no expone selección, navegación ni ranking de equipos", async ({ page }) => {
+  test("la aplicación no expone selección de equipo al participante ni ranking por equipos", async ({ page }) => {
     await page.goto("/registro");
     await expect(page.getByText("Tu equipo", { exact: true })).toHaveCount(0);
     await iniciarAdmin(page);
-    await expect(page.getByRole("link", { name: "Equipos", exact: true })).toHaveCount(0);
     const ranking = await page.evaluate(async () => (await fetch("/api/ranking")).json());
     expect(ranking).not.toHaveProperty("equipos");
-    const retirada = await page.goto("/admin/proyeccion/equipos");
-    expect(retirada?.status()).toBe(404);
   });
 
+  test("la vista de participantes presenta los equipos y sus integrantes", async ({ page }) => {
+    const marca = Date.now();
+    const [equipoUno, equipoDos] = await Promise.all([
+      db.equipo.create({ data: { nombre: `Equipo conexión ${marca}`, orden: 1, activo: true } }),
+      db.equipo.create({ data: { nombre: `Equipo experiencia ${marca}`, orden: 2, activo: true } }),
+    ]);
+    const [{ participante: personaUno }, { participante: personaDos }] = await Promise.all([
+      crearParticipanteConToken({ nombre: `Ana equipo ${marca}` }),
+      crearParticipanteConToken({ nombre: `Luis equipo ${marca}` }),
+    ]);
+    await Promise.all([
+      db.participante.update({ where: { id: personaUno.id }, data: { equipoId: equipoUno.id } }),
+      db.participante.update({ where: { id: personaDos.id }, data: { equipoId: equipoDos.id } }),
+    ]);
+
+    await iniciarAdmin(page);
+    await page.goto("/admin/participantes");
+    const presentar = page.getByRole("link", { name: "Presentar equipos" });
+    await expect(presentar).toHaveAttribute("href", "/admin/proyeccion/equipos");
+    await expect(presentar).toHaveAttribute("target", "_blank");
+
+    await page.goto("/admin/proyeccion/equipos");
+    await expect(page.getByRole("heading", { name: "Equipos que nos conectan" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: equipoUno.nombre })).toBeVisible();
+    await expect(page.getByRole("heading", { name: equipoDos.nombre })).toBeVisible();
+    await expect(page.getByText(personaUno.nombre, { exact: true })).toBeVisible();
+    await expect(page.getByText(personaDos.nombre, { exact: true })).toBeVisible();
+    await expect(page.getByText("2 equipos · 2 integrantes", { exact: true })).toBeVisible();
+  });
   test("la barra lateral abre la invitación de registro en modo presentación", async ({ page }) => {
     await iniciarAdmin(page);
     await expect(page.getByRole("img", { name: "Grupo EPM" })).toHaveAttribute("src", /logo-grupo-epm-blanco/);
