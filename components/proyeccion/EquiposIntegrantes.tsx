@@ -34,7 +34,7 @@ export function EquiposIntegrantes({ inicial }: { inicial: EquipoProyeccion[] })
   const [ciclo, setCiclo] = useState(0);
   const [reinicioAutomatico, setReinicioAutomatico] = useState(0);
   const equiposPorTanda = Math.min(4, Math.max(1, equipos.length));
-  const limiteIntegrantes = equipos.length === 1 ? 36 : 24;
+  const limiteIntegrantes = 6;
   const necesitaRotar = equipos.length > equiposPorTanda
     || equipos.some((equipo) => equipo.participantes.length > limiteIntegrantes);
 
@@ -122,15 +122,15 @@ export function EquiposIntegrantes({ inicial }: { inicial: EquipoProyeccion[] })
                 <Users className="shrink-0 text-white/45" size={28} />
               </header>
               {integrantes.length ? (
-                <div className={`grid min-h-0 flex-1 content-start gap-[clamp(5px,.7vw,10px)] overflow-hidden p-[clamp(10px,1.1vw,18px)] ${visibles.length === 1 ? "grid-cols-3" : "grid-cols-2"}`}>
+                <div className="grid min-h-0 flex-1 grid-cols-1 gap-[clamp(6px,.6vw,9px)] overflow-hidden p-[clamp(10px,.9vw,16px)]" style={{ gridTemplateRows: `repeat(${integrantes.length}, minmax(0, 1fr))` }}>
                   {integrantes.map((persona) => (
-                    <div key={`${persona.id}-${ciclo}`} data-integrante-id={persona.id} data-tiene-licencia={persona.tieneLicencia ? "true" : "false"} className={`flex min-w-0 items-center gap-3 rounded-xl border px-[clamp(8px,.75vw,13px)] py-[clamp(7px,.7vh,11px)] ${persona.tieneLicencia ? "border-[var(--epm-verde)]/70 bg-[var(--epm-verde)]/20 shadow-[0_0_0_1px_rgba(143,207,46,.25)]" : "border-white/10 bg-slate-950/15"}`}>
-                      <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className={`h-[clamp(38px,2.8vw,50px)] w-[clamp(38px,2.8vw,50px)] shrink-0 border-[3px] ${persona.tieneLicencia ? "border-[var(--epm-verde)]" : ""}`} />
+                    <div key={`${persona.id}-${ciclo}`} data-integrante-id={persona.id} data-tiene-licencia={persona.tieneLicencia ? "true" : "false"} className={`flex min-h-0 min-w-0 items-center gap-[clamp(12px,1vw,18px)] rounded-2xl border px-[clamp(12px,1vw,18px)] py-[clamp(4px,.45vh,7px)] ${persona.tieneLicencia ? "border-[var(--epm-verde)]/70 bg-[var(--epm-verde)]/20 shadow-[0_0_0_1px_rgba(143,207,46,.25)]" : "border-white/10 bg-slate-950/15"}`}>
+                      <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className={`h-[clamp(60px,3.6vw,72px)] w-[clamp(60px,3.6vw,72px)] shrink-0 border-[3px] ${persona.tieneLicencia ? "border-[var(--epm-verde)]" : ""}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[clamp(10px,.82vw,14px)] font-extrabold leading-tight">{persona.nombre}</p>
+                        <p className="whitespace-normal text-[clamp(15px,1.05vw,19px)] font-extrabold leading-tight text-white">{persona.nombre}</p>
                         <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                          <p className="min-w-0 flex-1 truncate text-[clamp(8px,.68vw,11px)] text-white/55">{persona.empresa.nombre}</p>
-                          {persona.tieneLicencia && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--epm-verde)] px-1.5 py-0.5 text-[clamp(7px,.58vw,10px)] font-extrabold text-[var(--epm-azul-profundo)]"><BadgeCheck size={11} /> Licencia</span>}
+                          <p className="min-w-0 flex-1 truncate text-[clamp(11px,.78vw,14px)] font-semibold text-white/65">{persona.empresa.nombre}</p>
+                          {persona.tieneLicencia && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--epm-verde)] px-1.5 py-0.5 text-[clamp(9px,.65vw,11px)] font-extrabold text-[var(--epm-azul-profundo)]"><BadgeCheck size={11} /> Licencia</span>}
                         </div>
                       </div>
                     </div>
