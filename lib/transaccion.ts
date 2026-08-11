@@ -17,8 +17,11 @@ export async function ejecutarTransaccionRobusta<T>(
       if (serializable) opciones.isolationLevel = Prisma.TransactionIsolationLevel.Serializable;
       return await db.$transaction(operacion, opciones);
     } catch (error) {
+      const codigoPostgres = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2010"
+        ? String(error.meta?.code ?? "")
+        : "";
       const reintentable = error instanceof Prisma.PrismaClientKnownRequestError
-        && (error.code === "P2034" || error.code === "P2024");
+        && (error.code === "P2034" || error.code === "P2024" || codigoPostgres === "40001" || codigoPostgres === "40P01");
       if (!reintentable || intento === intentos - 1) throw error;
       const esperaMs = Math.min(1_500, 50 * (2 ** intento)) + Math.floor(Math.random() * 120);
       await new Promise((resolver) => setTimeout(resolver, esperaMs));
