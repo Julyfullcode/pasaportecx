@@ -16,7 +16,7 @@ function fechaHoraColombia(fecha: Date) {
   return `${partes.year}-${partes.month}-${partes.day}T${partes.hour}:${partes.minute}`;
 }
 
-test.describe("Retos y puntos", () => {
+test.describe("Desafíos y puntos", () => {
   test("un QR válido suma los puntos correctos", async ({ context, page }) => {
     const { participante, token } = await crearParticipanteConToken({ nombre: `QR válido ${Date.now()}` });
     await autenticarParticipante(context, token);
@@ -42,7 +42,7 @@ test.describe("Retos y puntos", () => {
     await expect(page).toHaveURL(/\/escanear$/);
   });
 
-  test("el mismo reto no puede sumar dos veces al mismo participante", async ({ context, page }) => {
+  test("el mismo desafío no puede sumar dos veces al mismo participante", async ({ context, page }) => {
     const { participante, token } = await crearParticipanteConToken({ nombre: `Idempotente UI ${Date.now()}` });
     await autenticarParticipante(context, token);
     await page.goto("/d/reto-e2e-100");

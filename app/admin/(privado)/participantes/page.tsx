@@ -70,7 +70,7 @@ export default async function AdminParticipantes({
               <Link href={`/admin/participantes/${persona.id}`} className="min-w-[180px] flex-1">
                 <div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{persona.nombre}</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-emerald-700">Registrado</span>{persona.esStaff && <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-violet-700"><ShieldCheck size={12} /> Staff</span>}</div>
                 <p className="mt-0.5 text-xs font-bold text-[var(--epm-azul)]">{persona.correoAutorizado?.correo ?? "Correo no asociado"}</p>
-                <p className="text-xs text-slate-500">{persona.empresa.nombre} · {persona.equipo?.nombre ?? "Sin equipo"} · {persona._count.completitudes} retos · {persona._count.recuerdos} recuerdos</p>
+                <p className="text-xs text-slate-500">{persona.empresa.nombre} · {persona.equipo?.nombre ?? "Sin equipo"} · {persona._count.completitudes} desafíos · {persona._count.recuerdos} recuerdos</p>
               </Link>
               <Link href={`/admin/participantes/${persona.id}#detalle-puntos`} className="rounded-xl px-3 py-2 text-right font-display text-2xl text-[var(--epm-azul-profundo)] transition hover:bg-sky-50 hover:text-[var(--epm-azul)]" title="Ver detalle de puntos">{persona.esStaff ? "Staff" : `${persona.puntosTotales} pts`}<span className="block font-sans text-[10px] font-extrabold tracking-wide text-slate-400">{persona.esStaff ? "Fuera de ranking" : "Ver detalle"}</span></Link>
             </div>

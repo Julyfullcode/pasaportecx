@@ -41,8 +41,10 @@ test.describe("Administrador", () => {
 
     await page.goto("/admin/proyeccion/registro");
     await expect(page.getByRole("img", { name: "Grupo EPM" })).toHaveAttribute("src", /logo-grupo-epm-blanco/);
-    await expect(page.getByRole("heading", { name: "Vive la experiencia" })).toBeVisible();
-    await expect(page.getByText("Escanea el código QR y comienza tu recorrido para conectar, descubrir y sumar en el Encuentro de experiencia y comunicaciones.")).toBeVisible();
+    await expect(page.getByText("Únete al", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Encuentro de experiencia y comunicaciones" })).toBeVisible();
+    await expect(page.getByText("Vive el encuentro", { exact: true })).toBeVisible();
+    await expect(page.getByText("Escanea el código QR y comienza tu recorrido para conectar, descubrir y sumar.")).toBeVisible();
     await expect(page.getByText("Pasaporte CX", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Vicepresidencia Experiencia Usuario-Cliente", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Escanea para registrarte", { exact: true })).toBeVisible();
@@ -127,9 +129,9 @@ test.describe("Administrador", () => {
     ).puntosTotales).toBe(700);
   });
 
-  test("un reto permanente aparece únicamente en la categoría Permanentes", async ({ page, browser }) => {
-    const titulo = `Reto en caliente ${Date.now()}`;
-    const { token } = await crearParticipanteConToken({ nombre: `Participante reto caliente ${Date.now()}` });
+  test("un desafío permanente aparece únicamente en la categoría Permanentes", async ({ page, browser }) => {
+    const titulo = `Desafío en caliente ${Date.now()}`;
+    const { token } = await crearParticipanteConToken({ nombre: `Participante desafío caliente ${Date.now()}` });
     await iniciarAdmin(page);
     await page.goto("/admin/desafios");
     const creador = page.locator("details").first();

@@ -29,17 +29,17 @@ export default async function InvitacionRegistro() {
 
         <section className="grid min-h-0 flex-1 items-center gap-[clamp(24px,3vw,52px)] py-[clamp(24px,4vh,46px)] lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
           <div className="max-w-5xl">
-            <p className="text-[clamp(14px,1.4vw,21px)] font-extrabold tracking-wide text-[var(--epm-verde)]">Únete al encuentro</p>
-            <h1 className="mt-4 font-display text-[clamp(44px,6.4vw,92px)] font-extrabold leading-[.96]">
-              Vive la <span className="block text-[var(--epm-verde)]">experiencia</span>
+            <p className="text-[clamp(14px,1.4vw,21px)] font-extrabold tracking-wide text-[var(--epm-verde)]">Únete al</p>
+            <h1 className="mt-4 font-display text-[clamp(38px,5vw,74px)] font-extrabold leading-[.96]">
+              Encuentro de <span className="block text-[var(--epm-verde)]">experiencia y comunicaciones</span>
             </h1>
             <p className="mt-6 max-w-4xl text-[clamp(17px,1.7vw,26px)] leading-relaxed text-white/85">
-              Escanea el código QR y comienza tu recorrido para conectar, descubrir y sumar en el Encuentro de experiencia y comunicaciones.
+              Escanea el código QR y comienza tu recorrido para conectar, descubrir y sumar.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 text-[clamp(13px,1.1vw,17px)] font-extrabold">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3"><ScanLine size={21} /> Escanea</span>
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3"><UserRoundPlus size={21} /> Regístrate</span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3"><Sparkles size={21} /> Vive la experiencia</span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3"><Sparkles size={21} /> Vive el encuentro</span>
             </div>
           </div>
 

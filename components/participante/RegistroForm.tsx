@@ -133,13 +133,13 @@ export function RegistroForm({
         <input type="checkbox" name="aceptaDatos" required className="mt-1 h-5 w-5 accent-[var(--epm-azul)]" />
         <span className="leading-relaxed">
           <strong className="flex items-start gap-1.5 text-[var(--epm-azul-profundo)]"><ShieldCheck className="mt-0.5 shrink-0" size={17} />Autorización de tratamiento de datos personales</strong>
-          <span className="mt-2 block">Al registrarme en Pasaporte, autorizo a Grupo EPM al tratamiento de mis datos personales. Estos datos serán utilizados como repositorio del evento y podrán ser publicados, total o parcialmente, en el micrositio de la Vicepresidencia Experiencia Usuario-Cliente y en piezas de comunicación interna relacionadas con este encuentro.</span>
+          <span className="mt-2 block">Al registrarme, autorizo a Grupo EPM al tratamiento de mis datos personales. Estos datos serán utilizados como repositorio del evento y podrán ser publicados, total o parcialmente, en el micrositio de la Vicepresidencia Experiencia Usuario-Cliente y en piezas de comunicación interna relacionadas con este encuentro.</span>
         </span>
       </label>
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
       <button disabled={enviando || procesandoFoto} className="boton-primario w-full disabled:opacity-60">
         {enviando && <LoaderCircle className="animate-spin" size={20} />}
-        {enviando ? "Creando tu pasaporte…" : "Crear mi pasaporte"}
+        {enviando ? "Creando tu cuenta…" : "Crear mi cuenta"}
       </button>
     </form>
   );

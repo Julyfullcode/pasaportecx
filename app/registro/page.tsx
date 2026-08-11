@@ -13,8 +13,8 @@ export default async function Registro() {
   return (
     <main className="pagina-registro min-h-screen">
       <div className="ocultar-tras-registro">
-        <MarcaHeader tituloVerde="Vive la" tituloClaro="experiencia">
-          <p className="mt-4 max-w-xl text-base text-white/85">Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.</p>
+        <MarcaHeader tituloVerde="Encuentro de" tituloClaro="experiencia y comunicaciones">
+          <p className="mt-4 max-w-xl text-base text-white/85"><strong>¡Todo comienza aquí!</strong> Regístrate y prepárate para conectar, descubrir y sumar.</p>
         </MarcaHeader>
       </div>
       <section className="contenedor relative z-10 mt-6 pb-10 md:mt-8">

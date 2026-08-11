@@ -33,9 +33,9 @@ async function sembrar() {
   });
   await db.desafio.createMany({
     data: [
-      { id: "desafio-e2e-100", codigoQr: "reto-e2e-100", titulo: "Reto E2E de 100 puntos", descripcion: "Reto determinista para pruebas.", tipo: "CHECK_IN", puntos: 100, dia: 1, ubicacion: "Registro E2E", estado: "PUBLICADO", configuracion: {} },
-      { id: "desafio-e2e-idempotente", codigoQr: "reto-concurrencia-idempotente", titulo: "Reto concurrente idempotente", descripcion: "Valida que un reto no sume dos veces.", tipo: "CHECK_IN", puntos: 100, dia: 1, ubicacion: "Registro E2E", estado: "PUBLICADO", configuracion: {} },
-      { id: "desafio-e2e-carga", codigoQr: "reto-carga-50", titulo: "Reto para carga concurrente", descripcion: "Reto usado por usuarios virtuales.", tipo: "CHECK_IN", puntos: 100, dia: 1, ubicacion: "Registro E2E", estado: "PUBLICADO", configuracion: {} },
+      { id: "desafio-e2e-100", codigoQr: "reto-e2e-100", titulo: "Desafío E2E de 100 puntos", descripcion: "Desafío determinista para pruebas.", tipo: "CHECK_IN", puntos: 100, dia: 1, ubicacion: "Registro E2E", estado: "PUBLICADO", configuracion: {} },
+      { id: "desafio-e2e-idempotente", codigoQr: "reto-concurrencia-idempotente", titulo: "Desafío concurrente idempotente", descripcion: "Valida que un desafío no sume dos veces.", tipo: "CHECK_IN", puntos: 100, dia: 1, ubicacion: "Registro E2E", estado: "PUBLICADO", configuracion: {} },
+      { id: "desafio-e2e-carga", codigoQr: "reto-carga-50", titulo: "Desafío para carga concurrente", descripcion: "Desafío usado por usuarios virtuales.", tipo: "CHECK_IN", puntos: 100, dia: 1, ubicacion: "Registro E2E", estado: "PUBLICADO", configuracion: {} },
     ],
   });
 

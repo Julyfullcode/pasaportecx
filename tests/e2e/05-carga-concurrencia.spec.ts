@@ -31,7 +31,7 @@ test.describe("Rendimiento y concurrencia", () => {
     await Promise.all([...contextosRegistro, ...contextosEscaneo].map((api) => api.dispose()));
   });
 
-  test("10 requests concurrentes del mismo reto suman una sola vez", async ({ playwright }) => {
+  test("10 requests concurrentes del mismo desafío suman una sola vez", async ({ playwright }) => {
     const { participante, token } = await crearParticipanteConToken({ nombre: `Carrera idempotente ${Date.now()}` });
     const api = await contextoApiParticipante(playwright.request, token);
     const respuestas = await Promise.all(
@@ -44,14 +44,14 @@ test.describe("Rendimiento y concurrencia", () => {
     await api.dispose();
   });
 
-  test("retos distintos concurrentes para una misma persona conservan el total exacto", async ({ playwright }) => {
+  test("desafíos distintos concurrentes para una misma persona conservan el total exacto", async ({ playwright }) => {
     const marca = Date.now();
     const cantidad = 6;
     const puntosPorReto = 17;
     const { participante, token } = await crearParticipanteConToken({ nombre: `Carrera multireto ${marca}` });
     const desafios = Array.from({ length: cantidad }, (_, indice) => ({
       codigoQr: `reto-multirace-${marca}-${indice}`,
-      titulo: `Reto concurrente distinto ${indice}`,
+      titulo: `Desafío concurrente distinto ${indice}`,
       descripcion: "Valida escrituras simultáneas para la misma persona.",
       tipo: "CHECK_IN" as const,
       puntos: puntosPorReto,

@@ -23,20 +23,20 @@ npx playwright install chromium
 | Registro sin foto es rechazado con un mensaje claro | Completar identidad, empresa y autorización sin adjuntar foto. | Se muestra “Toma o selecciona una foto para continuar” y no se crea el registro. |
 | Archivo falso declarado como imagen | Enviar bytes arbitrarios usando nombre `.png` y MIME `image/png`. | El servidor responde 400, explica que no es una imagen válida y no crea el participante. |
 | Dos altas con el mismo nombre crean pasaportes distintos | Enviar simultáneamente dos registros con el mismo nombre y foto. | Ambos se aceptan y reciben códigos de recuperación distintos. Esta es la política actual porque no se recopila un identificador único. |
-| Un QR válido suma los puntos correctos | Autenticar un participante con 25 puntos iniciales y abrir el reto de 100 puntos. | Se muestra `+100`, el total queda en 125 y la base refleja el mismo valor. |
+| Un QR válido suma los puntos correctos | Autenticar un participante con 25 puntos iniciales y abrir el desafío de 100 puntos. | Se muestra `+100`, el total queda en 125 y la base refleja el mismo valor. |
 | Un código QR mal formado muestra error claro | Escribir un código con caracteres inválidos en el ingreso manual. | La aplicación permanece en el escáner y explica que el formato no es válido. |
-| El mismo reto no suma dos veces | Completar un reto, recargar su URL y consultar la base. | Se informa que ya estaba completado, existe una sola completitud y el total sigue en 125. |
-| Los puntos se reflejan en el perfil | Completar el reto por API y abrir la vista inicial del participante. | La tarjeta “Tu puntaje total” muestra 125. |
+| El mismo desafío no suma dos veces | Completar un desafío, recargar su URL y consultar la base. | Se informa que ya estaba completado, existe una sola completitud y el total sigue en 125. |
+| Los puntos se reflejan en el perfil | Completar el desafío por API y abrir la vista inicial del participante. | La tarjeta “Tu puntaje total” muestra 125. |
 | Podio individual top 5 | Consultar ranking y abrir la proyección autenticada. | Aparecen `Podio 1` a `Podio 5` en orden descendente; `Podio 1` figura en primer lugar. |
-| Podio actualizado con 10 participantes concurrentes | Abrir el podio, hacer que 10 participantes completen el reto simultáneamente y esperar el polling. | Las 10 completitudes se guardan y el participante que supera 5.000 puntos pasa visualmente al primer lugar. |
+| Podio actualizado con 10 participantes concurrentes | Abrir el podio, hacer que 10 participantes completen el desafío simultáneamente y esperar el polling. | Las 10 completitudes se guardan y el participante que supera 5.000 puntos pasa visualmente al primer lugar. |
 | Vistas administrativas y ranking protegidos | Abrir `/admin/participantes`, `/api/proyeccion/datos` y `/api/ranking` sin sesión. | La página redirige al login y ambas APIs responden 401. |
 | Figura de equipos retirada | Revisar el registro y la navegación administrativa, consultar el ranking y abrir la antigua proyección de equipos. | No existe selector ni navegación de equipos, el ranking no entrega esa colección y la ruta retirada responde 404. |
 | Bloqueo temporal del administrador | Crear un administrador de prueba, fallar su contraseña cinco veces e intentar luego con la clave correcta. | La cuenta queda bloqueada durante 15 minutos y el acceso correcto también se rechaza mientras dure el bloqueo. |
-| Creación de reto durante el evento | Autenticar administrador, crear y publicar un check-in, luego abrir desafíos como participante. | El reto aparece al participante en la siguiente navegación o actualización, sin redespliegue. |
+| Creación de desafío durante el evento | Autenticar administrador, crear y publicar un check-in, luego abrir desafíos como participante. | El desafío aparece al participante en la siguiente navegación o actualización, sin redespliegue. |
 | Subida de recuerdo | Autenticar participante, adjuntar foto, escribir descripción y subir. | La interfaz muestra “Listo” y existe exactamente un recuerdo asociado. |
 | Carrusel con 50 participantes | Precargar 60 personas, abrir la proyección en modo carrusel y observar dos ciclos. | Se muestran cuatro personas por ciclo, cambia el conjunto visible y no hay errores de página. |
 | 60 usuarios virtuales simultáneos | Ejecutar en paralelo 5 registros, 10 escaneos y 45 consultas de ranking. | Todas las respuestas son exitosas en menos de 30 segundos y los 15 cambios esperados persisten sin pérdida. |
-| 10 requests concurrentes del mismo reto | Enviar diez completitudes simultáneas con la misma sesión y el mismo reto. | Todas las solicitudes son idempotentes: queda una completitud y solo se suman 100 puntos. |
+| 10 requests concurrentes del mismo desafío | Enviar diez completitudes simultáneas con la misma sesión y el mismo desafío. | Todas las solicitudes son idempotentes: queda una completitud y solo se suman 100 puntos. |
 
 ## Alcance de rendimiento
 
@@ -52,4 +52,4 @@ Los hallazgos iniciales quedaron atendidos:
 4. El endpoint público `/api/stream`, que no tenía consumidores en la aplicación, fue eliminado.
 5. Los nombres duplicados siguen permitidos por decisión funcional y de privacidad, pero el límite de registro reduce el abuso automatizado sin incorporar correo ni documento.
 
-Controles adicionales observados: las rutas administrativas exigen sesión; las cookies son `httpOnly`, `sameSite` y `secure` en producción; los puntos se recalculan dentro de transacciones; y existe una restricción única por participante/reto.
+Controles adicionales observados: las rutas administrativas exigen sesión; las cookies son `httpOnly`, `sameSite` y `secure` en producción; los puntos se recalculan dentro de transacciones; y existe una restricción única por participante/desafío.

@@ -268,7 +268,7 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
   const etiquetaCodigo = "Código de recuperación";
   pagina.drawText(etiquetaCodigo, { x: centroInfo - normal.widthOfTextAtSize(etiquetaCodigo, 9.5) / 2, y: 119, size: 9.5, font: normal, color: gris });
   pagina.drawText(datos.codigo, { x: centroInfo - normal.widthOfTextAtSize(datos.codigo, 20) / 2, y: 88, size: 20, font: normal, color: azul });
-  const instruccion1 = "Escanéalo para recuperar tu perfil";
+  const instruccion1 = "Escanéalo para recuperar tu cuenta";
   const instruccion2 = "Toca el QR para abrir la aplicación";
   pagina.drawText(instruccion1, { x: centroInfo - normal.widthOfTextAtSize(instruccion1, 8.2) / 2, y: 64, size: 8.2, font: normal, color: gris });
   pagina.drawText(instruccion2, { x: centroInfo - normal.widthOfTextAtSize(instruccion2, 8.2) / 2, y: 51, size: 8.2, font: normal, color: gris });

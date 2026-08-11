@@ -65,7 +65,7 @@ export function FormularioDesafio({ desafio }: { desafio?: Desafio }) {
 
   async function mostrarVistaPrevia(formulario: HTMLFormElement | null) {
     if (!formulario) return;
-    const titulo = String(new FormData(formulario).get("titulo") ?? "Reto");
+    const titulo = String(new FormData(formulario).get("titulo") ?? "Desafío");
     const base = titulo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
     const codigo = desafio?.codigoQr ?? `${base || "reto"}-vista-previa`;
     const imagen = await QRCode.toDataURL(`${window.location.origin}/d/${codigo}`, {
@@ -178,7 +178,7 @@ export function FormularioDesafio({ desafio }: { desafio?: Desafio }) {
       </div>}
       <div><label className="etiqueta">Estado inicial</label><select className="campo" name="estado" defaultValue={desafio?.estado ?? "BORRADOR"}><option value="BORRADOR">Borrador</option><option value="PUBLICADO">Publicado</option><option value="CERRADO">Cerrado</option></select></div>
       <div><label className="etiqueta">Límite de completitudes (opcional)</label><input className="campo" type="number" min={1} name="limiteCompletitudes" defaultValue={desafio?.limiteCompletitudes ?? ""} /></div>
-      <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="esSecreto" defaultChecked={desafio?.esSecreto} /> Reto secreto: ocultar hasta escanear</label>
+      <label className="md:col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 p-3 font-bold"><input type="checkbox" name="esSecreto" defaultChecked={desafio?.esSecreto} /> Desafío secreto: ocultar hasta escanear</label>
       {resultadoGuardado.tipo !== "inicial" && (
         <div role="status" className={`order-2 rounded-xl border p-3 text-sm font-bold md:col-span-2 ${resultadoGuardado.tipo === "error" ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
           {resultadoGuardado.mensaje}
@@ -186,7 +186,7 @@ export function FormularioDesafio({ desafio }: { desafio?: Desafio }) {
       )}
       <button disabled={guardando} className="boton-primario order-2 disabled:cursor-wait disabled:opacity-70 md:col-span-2">{guardando ? "Guardando…" : desafio ? "Guardar cambios" : "Crear desafío y generar QR"}</button>
       <button type="button" className="boton-secundario order-1 md:col-span-2" onClick={(evento) => void mostrarVistaPrevia(evento.currentTarget.form)}><Eye size={19} /> Vista previa del QR sin guardar</button>
-      {qrVistaPrevia && <div className="order-3 md:col-span-2 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-center"><img src={qrVistaPrevia} alt="Vista previa del código QR" className="mx-auto h-56 w-56 rounded-xl bg-white p-2" /><p className="mt-2 text-xs font-bold text-slate-600">Vista previa visual. En un reto nuevo, el QR quedará activo únicamente después de guardarlo.</p></div>}
+      {qrVistaPrevia && <div className="order-3 md:col-span-2 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-center"><img src={qrVistaPrevia} alt="Vista previa del código QR" className="mx-auto h-56 w-56 rounded-xl bg-white p-2" /><p className="mt-2 text-xs font-bold text-slate-600">Vista previa visual. En un desafío nuevo, el QR quedará activo únicamente después de guardarlo.</p></div>}
     </form>
   );
 }

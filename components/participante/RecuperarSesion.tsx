@@ -10,7 +10,7 @@ export function RecuperarSesion() {
   return (
     <div className="mt-5 text-center">
       <button type="button" onClick={() => setAbierto(!abierto)} className="text-sm font-extrabold text-[var(--epm-azul)] underline">
-        Ya tengo pasaporte · recuperar sesión
+        Ya tengo cuenta · recuperar sesión
       </button>
       {abierto && (
         <form

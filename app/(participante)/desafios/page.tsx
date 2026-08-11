@@ -69,7 +69,7 @@ export default async function Desafios({
         <div className="tarjeta mt-6 p-8 text-center">
           <LockKeyhole className="mx-auto text-[var(--epm-azul)]" />
           <h2 className="mt-3 text-xl font-extrabold">No hay desafíos visibles</h2>
-          <p className="mt-2 text-sm text-slate-600">Algunos retos secretos solo se revelan cuando encuentras y escaneas su QR.</p>
+          <p className="mt-2 text-sm text-slate-600">Algunos desafíos secretos solo se revelan cuando encuentras y escaneas su QR.</p>
         </div>
       )}
     </div>

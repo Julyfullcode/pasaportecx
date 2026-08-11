@@ -268,7 +268,7 @@ async function main() {
     {
       codigoQr: "prototipo-digital",
       titulo: "Prototipo relámpago",
-      descripcion: "Reto adicional listo para publicar cuando la organización lo decida.",
+      descripcion: "Desafío adicional listo para publicar cuando la organización lo decida.",
       tipo: "ENCUESTA" as const,
       puntos: 300,
       dia: 2,

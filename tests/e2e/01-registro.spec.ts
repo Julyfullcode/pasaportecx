@@ -25,9 +25,11 @@ test.describe("Registro de participante", () => {
       expect(nombre).not.toBeNull();
       expect(nombre!.y - (cabecera!.y + cabecera!.height)).toBeGreaterThanOrEqual(35);
     }
-    await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Crear mi pasaporte" })).toBeVisible();
+    await expect(page.getByText("¡Todo comienza aquí! Regístrate y prepárate para conectar, descubrir y sumar.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Crear mi cuenta" })).toBeVisible();
     await expect(page.getByText("Autorización de tratamiento de datos personales", { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Al registrarme, autorizo a Grupo EPM/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Ya tengo cuenta · recuperar sesión" })).toBeVisible();
   });
 
   test("registro exitoso con nombre, empresa y foto", async ({ page }) => {
@@ -38,7 +40,7 @@ test.describe("Registro de participante", () => {
     const registroCompletado = page.waitForResponse((respuesta) =>
       respuesta.url().endsWith("/api/registro") && respuesta.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
+    await page.getByRole("button", { name: "Crear mi cuenta" }).click();
     const respuestaRegistro = await registroCompletado;
 
     await expect(page.getByRole("heading", { name: `¡${marca} E2E, tu pasaporte está listo!` })).toBeVisible();
@@ -46,7 +48,7 @@ test.describe("Registro de participante", () => {
     await expect(page.getByText("Te damos una cálida bienvenida.", { exact: true })).toBeVisible();
     await expect(page.getByText("Gracias por realizar tu registro y prepárate para vivir una gran experiencia.", { exact: true })).toBeVisible();
     await expect(page.getByText("Conéctate con las actividades, vive el encuentro y aprovecha cada momento para escuchar y aportar.", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("Tu pasaporte para conectar, descubrir y sumar durante el encuentro de experiencia y comunicaciones del Grupo EPM.")).toBeHidden();
+    await expect(page.getByText("¡Todo comienza aquí! Regístrate y prepárate para conectar, descubrir y sumar.")).toBeHidden();
     await expect(page.getByText("Código de recuperación", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("img", { name: /QR personal de recuperación/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Descargar Pasaporte" })).toHaveAttribute("href", /^\/api\/pasaporte\?v=.+#view=Fit$/);
@@ -67,7 +69,7 @@ test.describe("Registro de participante", () => {
     const antes = await db.participante.count();
     await page.goto("/registro");
     await completarCamposBasicos(page, `Vacío ${Date.now()}`);
-    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
+    await page.getByRole("button", { name: "Crear mi cuenta" }).click();
 
     await expect(page).toHaveURL(/\/registro/);
     const mensaje = await page.getByLabel("Nombre", { exact: true }).evaluate((campo: HTMLInputElement) => campo.validationMessage);
@@ -85,7 +87,7 @@ test.describe("Registro de participante", () => {
     await page.getByLabel("Apellidos").fill(`E2E ${Date.now()}`);
     await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
     await page.getByRole("checkbox", { name: /Autorización de tratamiento de datos personales/ }).check();
-    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
+    await page.getByRole("button", { name: "Crear mi cuenta" }).click();
 
     await expect(page.getByText("Toma o selecciona una foto para continuar.", { exact: true })).toBeVisible();
     expect(await db.participante.count()).toBe(antes);
@@ -121,7 +123,7 @@ test.describe("Registro de participante", () => {
     await page.getByLabel("Empresa del Grupo").selectOption(EMPRESA_ID);
     await page.getByLabel(/Tomar foto|Repetir/).setInputFiles(fotoPng);
     await page.getByRole("checkbox", { name: /Autorización de tratamiento de datos personales/ }).check();
-    await page.getByRole("button", { name: "Crear mi pasaporte" }).click();
+    await page.getByRole("button", { name: "Crear mi cuenta" }).click();
 
     await expect(page.getByText("Este correo no está autorizado. Conversa con alguien de la Vicepresidencia Experiencia Usuario-Cliente para solicitar autorización.", { exact: true })).toBeVisible();
     expect(await db.participante.count()).toBe(antes);

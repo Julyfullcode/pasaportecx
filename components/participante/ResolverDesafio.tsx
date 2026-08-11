@@ -118,7 +118,7 @@ export function ResolverDesafio({
           {pendiente || antesDeVentana || llegadaTarde ? <Clock3 size={34} /> : <CheckCircle2 size={34} />}
         </span>
         <h2 className="mt-4 text-2xl font-extrabold text-[var(--epm-azul-profundo)]">
-          {matricula ? "¡Elección guardada!" : resultado.yaCompletado ? "Ya habías completado este reto" : pendiente ? "¡Evidencia enviada!" : antesDeVentana ? "El desafío aún no está disponible" : llegadaTarde ? "El tiempo para registrarte terminó" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
+          {matricula ? "¡Elección guardada!" : resultado.yaCompletado ? "Ya habías completado este desafío" : pendiente ? "¡Evidencia enviada!" : antesDeVentana ? "El desafío aún no está disponible" : llegadaTarde ? "El tiempo para registrarte terminó" : puntualidad ? "¡Puntualidad registrada!" : "¡Desafío completado!"}
         </h2>
         {pendiente ? (
           <p className="mt-2 text-slate-600">La organización revisará tu foto. Los {puntos} puntos se sumarán al aprobarla.</p>
