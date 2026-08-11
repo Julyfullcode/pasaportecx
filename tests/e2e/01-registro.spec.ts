@@ -148,6 +148,8 @@ test.describe("Registro de participante", () => {
     const empresa = await db.empresa.create({ data: { nombre: `Empresa perfil ${marca}`, orden: 90, activa: true } });
     await autenticarParticipante(context, persona.token);
     await page.goto("/");
+    await expect(page.getByRole("link", { name: /Ver mi pasaporte/ })).toHaveClass(/bg-gradient-to-r/);
+    await expect(page.getByRole("link", { name: /Ver agenda/ })).toHaveClass(/bg-gradient-to-r/);
     await page.getByRole("button", { name: /Editar mis datos/ }).click();
     await page.getByLabel("Nombre", { exact: true }).fill("Nuevo Nombre");
     await page.getByLabel("Apellidos", { exact: true }).fill("Nuevos Apellidos");

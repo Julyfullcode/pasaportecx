@@ -80,9 +80,9 @@ export default async function Inicio() {
           <Camera size={24} /> Escanear QR
         </Link>
         <Link href="/recuerdos?subir=1" className="boton-secundario w-full"><ImagePlus size={20} /> Subir recuerdo</Link>
-        <a href={`/api/pasaporte?v=${encodeURIComponent(`${participante.id}-${participante.urlFoto}-${participante.nombre}-${participante.empresaId}`)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-azul)] bg-white p-4 text-[var(--epm-azul-profundo)] shadow-soft">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-[var(--epm-azul)]"><Download /></span>
-          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi pasaporte</strong><small className="text-slate-500">Abre el PDF con tu foto, QR y código de recuperación</small></span>
+        <a href={`/api/pasaporte?v=${encodeURIComponent(`${participante.id}-${participante.urlFoto}-${participante.nombre}-${participante.empresaId}`)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="group relative flex min-h-24 items-center gap-4 overflow-hidden rounded-[1.6rem] border border-white/25 bg-gradient-to-r from-[var(--epm-azul-profundo)] via-[var(--epm-azul)] to-[var(--epm-teal)] p-5 text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+          <span className="relative z-10 grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/30 transition group-hover:scale-105"><Download size={28} /></span>
+          <span className="relative z-10 min-w-0 flex-1"><strong className="block font-display text-xl text-white">Ver mi pasaporte</strong><small className="mt-1 block text-white/80">Abre el PDF con tu foto, QR y código de recuperación</small></span><span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 transition group-hover:translate-x-1"><ChevronRight /></span>
         </a>
         {tieneCosecha && (
           <a href={`/api/cosecha?v=${encodeURIComponent(cosechaCompletada!.id)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-verde)] bg-gradient-to-r from-lime-50 to-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
@@ -90,20 +90,20 @@ export default async function Inicio() {
             <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Mi tarjeta de cierre</strong><small className="text-slate-600">Abre tu cosecha, gratitud y acción en PDF</small></span>
           </a>
         )}
-        <a href="/api/agenda" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl border-2 border-[var(--epm-teal)] bg-emerald-50 p-4 text-[var(--epm-azul-profundo)] shadow-soft">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-teal)] text-white"><CalendarDays /></span>
-          <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver agenda</strong><small className="text-slate-600">Abre el PDF con los días, horarios y momentos del encuentro</small></span>
+        <a href="/api/agenda" target="_blank" rel="noopener noreferrer" className="group relative flex min-h-24 items-center gap-4 overflow-hidden rounded-[1.6rem] border border-white/30 bg-gradient-to-r from-[var(--epm-teal)] via-[#16956f] to-[var(--epm-verde-medio)] p-5 text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+          <span className="relative z-10 grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/30 transition group-hover:scale-105"><CalendarDays size={28} /></span>
+          <span className="relative z-10 min-w-0 flex-1"><strong className="block font-display text-xl text-white">Ver agenda</strong><small className="mt-1 block text-white/85">Abre el PDF con los días, horarios y momentos del encuentro</small></span><span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 transition group-hover:translate-x-1"><ChevronRight /></span>
         </a>
         {configuracion.diplomaHabilitado ? (
-          <a href="/api/certificado" target="_blank" rel="noopener noreferrer" className="flex min-h-16 items-center gap-3 rounded-2xl bg-gradient-to-r from-[var(--epm-azul-profundo)] to-[var(--epm-teal)] p-4 text-white shadow-lg">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><Award /></span>
-            <span className="min-w-0 flex-1"><strong className="block font-display text-lg">Ver mi certificado</strong><small className="text-white/75">Se abrirá en PDF para que puedas guardarlo o imprimirlo</small></span>
+          <a href="/api/certificado" target="_blank" rel="noopener noreferrer" className="group relative flex min-h-24 items-center gap-4 overflow-hidden rounded-[1.6rem] border border-white/25 bg-gradient-to-r from-[var(--epm-azul-profundo)] via-[var(--epm-teal)] to-[var(--epm-verde-medio)] p-5 text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+            <span className="relative z-10 grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] ring-1 ring-white/40 transition group-hover:scale-105"><Award size={28} /></span>
+            <span className="relative z-10 min-w-0 flex-1"><strong className="block font-display text-xl">Ver mi certificado</strong><small className="mt-1 block text-white/80">Se abrirá en PDF para que puedas guardarlo o imprimirlo</small></span>
             <ChevronRight />
           </a>
         ) : (
-          <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-600 shadow-soft">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-slate-500"><LockKeyhole /></span>
-            <span className="min-w-0 flex-1"><strong className="block font-display text-lg text-[var(--epm-azul-profundo)]">Mi certificado del encuentro</strong><small className="text-slate-600">Estará disponible al finalizar el encuentro.</small></span>
+          <div className="flex min-h-24 items-center gap-4 rounded-[1.6rem] border border-slate-200 bg-gradient-to-r from-slate-100 to-slate-50 p-5 text-slate-600 shadow-soft">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-slate-500 ring-1 ring-slate-200"><LockKeyhole size={27} /></span>
+            <span className="min-w-0 flex-1"><strong className="block font-display text-xl text-[var(--epm-azul-profundo)]">Mi certificado del encuentro</strong><small className="mt-1 block text-slate-600">Estará disponible al finalizar el encuentro.</small></span>
           </div>
         )}
       </div>

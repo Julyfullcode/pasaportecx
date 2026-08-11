@@ -4,12 +4,15 @@ import { useActionState } from "react";
 import { LoaderCircle, MailPlus } from "lucide-react";
 import { agregarCorreosAutorizados, type EstadoCorreosAutorizados } from "@/app/admin/actions";
 
+
 const ESTADO_INICIAL: EstadoCorreosAutorizados = { tipo: "inicial", mensaje: "" };
 
 export function GestionCorreosAutorizados({
   equipos,
+  dependencias,
 }: {
   equipos: { id: string; nombre: string }[];
+  dependencias: { id: string; nombre: string }[];
 }) {
   const [resultado, accion, pendiente] = useActionState(agregarCorreosAutorizados, ESTADO_INICIAL);
   return (
@@ -21,13 +24,20 @@ export function GestionCorreosAutorizados({
           <p className="mt-1 text-sm text-slate-600">Pega uno o varios correos separados por espacios, comas, punto y coma o líneas. Esta lista se conserva al preparar la aplicación para público real.</p>
         </div>
       </div>
-      <form action={accion} className="mt-4 grid gap-3 md:grid-cols-[1fr_220px_auto]">
+      <form action={accion} className="mt-4 grid gap-3 md:grid-cols-[1fr_210px_210px_auto]">
         <textarea name="correos" required className="campo min-h-28 md:min-h-24" placeholder={"persona1@empresa.com\npersona2@empresa.com"} />
         <label className="self-end">
           <span className="etiqueta">Equipo inicial (opcional)</span>
           <select name="equipoId" className="campo">
             <option value="">Sin equipo</option>
             {equipos.map((equipo) => <option key={equipo.id} value={equipo.id}>{equipo.nombre}</option>)}
+          </select>
+        </label>
+        <label className="self-end">
+          <span className="etiqueta">Dependencia (opcional)</span>
+          <select name="dependenciaId" className="campo">
+            <option value="">Sin asignar</option>
+            {dependencias.map((dependencia) => <option key={dependencia.id} value={dependencia.id}>{dependencia.nombre}</option>)}
           </select>
         </label>
         <button disabled={pendiente} className="boton-primario self-end disabled:cursor-wait disabled:opacity-70">

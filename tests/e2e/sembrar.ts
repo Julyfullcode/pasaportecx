@@ -15,7 +15,14 @@ async function sembrar() {
       maxRecuerdosPorParticipante: 10,
     },
   });
-  await db.empresa.create({
+  await db.dependencia.createMany({
+    data: [
+      { id: "dependencia-comunicaciones", nombre: "Comunicaciones", orden: 1 },
+      { id: "dependencia-experiencia", nombre: "Experiencia", orden: 2 },
+      { id: "dependencia-talento-humano", nombre: "Talento Humano", orden: 3 },
+      { id: "dependencia-reputacion", nombre: "Reputación", orden: 4 },
+    ],
+  });  await db.empresa.create({
     data: { id: "empresa-e2e", nombre: "Empresa E2E", orden: 1, activa: true },
   });
   await db.componente.create({

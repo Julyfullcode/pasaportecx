@@ -11,10 +11,11 @@ import { EncabezadoConfiguracion } from "@/components/admin/EncabezadoConfigurac
 export const dynamic = "force-dynamic";
 
 export default async function Configuracion() {
-  const [config, empresas, equipos, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
+  const [config, empresas, equipos, dependencias, diasAgenda, reporteAlmacenamiento, resumenDatos] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" } }),
     db.empresa.findMany({ orderBy: { orden: "asc" } }),
     db.equipo.findMany({ orderBy: { orden: "asc" } }),
+    db.dependencia.findMany({ orderBy: { orden: "asc" } }),
     db.diaAgenda.findMany({ orderBy: { orden: "asc" }, include: { fotos: { orderBy: { orden: "asc" } }, momentos: { orderBy: [{ horaInicio: "asc" }, { nombre: "asc" }] } } }).catch(() => []),
     obtenerReporteAlmacenamiento(),
     Promise.all([
@@ -77,10 +78,11 @@ export default async function Configuracion() {
       <EstadoAlmacenamiento reporte={reporteAlmacenamiento} />
       <AgendaConfig dias={diasAgenda} urlPdfPersonalizado={config.urlAgendaPdf} />
       <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
-        <EncabezadoConfiguracion icono={Building2} etiqueta="Listados editables" titulo="Empresas y equipos" descripcion="Edita, reordena o agrega las empresas y los equipos disponibles en la aplicación." />
-        <div className="grid gap-5 p-5 xl:grid-cols-2">
+        <EncabezadoConfiguracion icono={Building2} etiqueta="Listados editables" titulo="Empresas, equipos y dependencias" descripcion="Edita, reordena o agrega los listados disponibles para organizar a las personas del encuentro." />
+        <div className="grid gap-5 p-5 xl:grid-cols-3">
           <CatalogoEmpresas items={empresas} />
           <CatalogoEquipos items={equipos} />
+          <CatalogoDependencias items={dependencias} />
         </div>
       </details>
       <details className="group mt-6 overflow-hidden rounded-3xl bg-white shadow-soft">
@@ -164,6 +166,39 @@ function CatalogoEquipos({ items }: { items: { id: string; nombre: string; orden
       <form action={guardarCatalogo} className="mt-4 grid grid-cols-[1fr_55px_auto] gap-2 border-t pt-4">
         <input type="hidden" name="tipo" value="equipo" />
         <input className="campo !min-h-10 !py-1 text-sm" name="nombre" placeholder="Nuevo equipo" required />
+        <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={items.length + 1} required />
+        <button className="text-xs font-extrabold text-[var(--epm-azul)]">Agregar</button>
+      </form>
+    </div>
+  );
+}
+
+function CatalogoDependencias({ items }: { items: { id: string; nombre: string; orden: number; activa: boolean }[] }) {
+  return (
+    <div className="tarjeta p-4">
+      <h3 className="text-lg font-extrabold">Dependencias</h3>
+      <p className="mt-1 text-xs text-slate-500">Administra las dependencias que podrás asignar a los correos autorizados y a las personas registradas.</p>
+      <div className="mt-3 space-y-3">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-3">
+            <form action={guardarCatalogo} className="grid min-w-0 flex-1 grid-cols-[1fr_55px_auto] gap-2">
+              <input type="hidden" name="tipo" value="dependencia" />
+              <input type="hidden" name="id" value={item.id} />
+              <input className="campo !min-h-10 !py-1 text-sm" name="nombre" defaultValue={item.nombre} required />
+              <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={item.orden} required />
+              <button className="text-xs font-extrabold text-[var(--epm-azul)]">Guardar</button>
+            </form>
+            <form action={alternarCatalogo}>
+              <input type="hidden" name="tipo" value="dependencia" />
+              <input type="hidden" name="id" value={item.id} />
+              <button className="text-[10px] font-extrabold text-slate-500">{item.activa ? "Desactivar" : "Activar"}</button>
+            </form>
+          </div>
+        ))}
+      </div>
+      <form action={guardarCatalogo} className="mt-4 grid grid-cols-[1fr_55px_auto] gap-2 border-t pt-4">
+        <input type="hidden" name="tipo" value="dependencia" />
+        <input className="campo !min-h-10 !py-1 text-sm" name="nombre" placeholder="Nueva dependencia" required />
         <input className="campo !min-h-10 !py-1" type="number" name="orden" defaultValue={items.length + 1} required />
         <button className="text-xs font-extrabold text-[var(--epm-azul)]">Agregar</button>
       </form>

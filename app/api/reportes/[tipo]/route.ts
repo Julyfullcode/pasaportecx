@@ -26,11 +26,11 @@ export async function GET(
     const datos = await db.participante.findMany({
       where: esRanking ? { activo: true, esStaff: false } : undefined,
       orderBy: { puntosTotales: "desc" },
-      include: { empresa: true, equipo: true, correoAutorizado: true },
+      include: { empresa: true, equipo: true, dependencia: true, correoAutorizado: true },
     });
     filas = [
-      ["Posición", "Nombre", "Correo", "Empresa", "Equipo", "Puntos", "Staff", "Activo", "Registrado"],
-      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.equipo?.nombre ?? "", p.puntosTotales, p.esStaff ? "Sí" : "No", p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
+      ["Posición", "Nombre", "Correo", "Empresa", "Dependencia", "Equipo", "Puntos", "Staff", "Activo", "Registrado"],
+      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.dependencia?.nombre ?? "", p.equipo?.nombre ?? "", p.puntosTotales, p.esStaff ? "Sí" : "No", p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
     ];
   } else if (tipo === "completitudes") {
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: true }, orderBy: { completadoEn: "asc" } });

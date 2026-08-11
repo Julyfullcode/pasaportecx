@@ -566,6 +566,53 @@ export async function asignarEquipo(formulario: FormData) {
   if (participanteId) revalidatePath(`/admin/participantes/${participanteId}`);
 }
 
+export async function asignarDependencia(formulario: FormData) {
+  await requerirAdmin();
+  const participanteId = String(formulario.get("participanteId") ?? "");
+  const correoAutorizadoId = String(formulario.get("correoAutorizadoId") ?? "");
+  const dependenciaIdSolicitada = String(formulario.get("dependenciaId") ?? "");
+  const dependenciaId = dependenciaIdSolicitada || null;
+  if (!participanteId && !correoAutorizadoId) return;
+  if (dependenciaId) {
+    const dependencia = await db.dependencia.findFirst({ where: { id: dependenciaId, activa: true }, select: { id: true } });
+    if (!dependencia) return;
+  }
+
+  await db.$transaction(async (tx) => {
+    if (participanteId) {
+      const participante = await tx.participante.findUnique({
+        where: { id: participanteId },
+        select: { correoAutorizado: { select: { id: true } } },
+      });
+      if (!participante) return;
+      await tx.participante.update({ where: { id: participanteId }, data: { dependenciaId } });
+      if (participante.correoAutorizado) {
+        await tx.correoAutorizado.update({
+          where: { id: participante.correoAutorizado.id },
+          data: { dependenciaId },
+        });
+      }
+      return;
+    }
+
+    const autorizacion = await tx.correoAutorizado.findUnique({
+      where: { id: correoAutorizadoId },
+      select: { participanteId: true },
+    });
+    if (!autorizacion) return;
+    await tx.correoAutorizado.update({ where: { id: correoAutorizadoId }, data: { dependenciaId } });
+    if (autorizacion.participanteId) {
+      await tx.participante.update({
+        where: { id: autorizacion.participanteId },
+        data: { dependenciaId },
+      });
+    }
+  });
+  anunciarCambio("participante");
+  revalidatePath("/admin/participantes");
+  if (participanteId) revalidatePath(`/admin/participantes/${participanteId}`);
+}
+
 export async function eliminarParticipante(formulario: FormData) {
   await requerirAdmin();
   const id = String(formulario.get("participanteId"));
@@ -615,9 +662,15 @@ export async function agregarCorreosAutorizados(
   try {
     const equipoIdSolicitado = String(formulario.get("equipoId") ?? "");
     const equipoId = equipoIdSolicitado || null;
+    const dependenciaIdSolicitada = String(formulario.get("dependenciaId") ?? "");
+    const dependenciaId = dependenciaIdSolicitada || null;
     if (equipoId) {
       const equipo = await db.equipo.findUnique({ where: { id: equipoId }, select: { id: true } });
       if (!equipo) return { tipo: "error", mensaje: "El equipo seleccionado ya no está disponible." };
+    }
+    if (dependenciaId) {
+      const dependencia = await db.dependencia.findFirst({ where: { id: dependenciaId, activa: true }, select: { id: true } });
+      if (!dependencia) return { tipo: "error", mensaje: "La dependencia seleccionada ya no está disponible." };
     }
     const existentes = await db.correoAutorizado.findMany({
       where: { correo: { in: validos } },
@@ -626,7 +679,7 @@ export async function agregarCorreosAutorizados(
     const yaAutorizados = new Set(existentes.map(({ correo }) => correo));
     const nuevos = validos.filter((correo) => !yaAutorizados.has(correo));
     if (nuevos.length > 0) {
-      await db.correoAutorizado.createMany({ data: nuevos.map((correo) => ({ correo, equipoId })) });
+      await db.correoAutorizado.createMany({ data: nuevos.map((correo) => ({ correo, equipoId, dependenciaId })) });
     }
     revalidatePath("/admin/participantes");
     return {
@@ -1042,6 +1095,9 @@ export async function guardarCatalogo(formulario: FormData) {
   } else if (tipo === "equipo") {
     if (id) await db.equipo.update({ where: { id }, data: { nombre, orden } });
     else await db.equipo.create({ data: { nombre, orden } });
+  } else if (tipo === "dependencia") {
+    if (id) await db.dependencia.update({ where: { id }, data: { nombre, orden } });
+    else await db.dependencia.create({ data: { nombre, orden } });
   }
   anunciarCambio("catalogo");
   revalidatePath("/admin/configuracion");
@@ -1092,6 +1148,9 @@ export async function alternarCatalogo(formulario: FormData) {
   } else if (tipo === "equipo") {
     const actual = await db.equipo.findUniqueOrThrow({ where: { id } });
     await db.equipo.update({ where: { id }, data: { activo: !actual.activo } });
+  } else if (tipo === "dependencia") {
+    const actual = await db.dependencia.findUniqueOrThrow({ where: { id } });
+    await db.dependencia.update({ where: { id }, data: { activa: !actual.activa } });
   }
   anunciarCambio("catalogo");
   revalidatePath("/admin/configuracion");

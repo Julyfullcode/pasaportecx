@@ -26,6 +26,25 @@ try {
   await db.$executeRawUnsafe('ALTER TABLE "CorreoAutorizado" ADD COLUMN IF NOT EXISTS "equipoId" TEXT');
   await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Participante_equipoId_idx" ON "Participante"("equipoId")');
   await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "CorreoAutorizado_equipoId_idx" ON "CorreoAutorizado"("equipoId")');
+  await db.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS "Dependencia" ('
+    + '"id" TEXT NOT NULL PRIMARY KEY, "nombre" TEXT NOT NULL, '
+    + '"orden" INTEGER NOT NULL, "activa" BOOLEAN NOT NULL DEFAULT true)'
+  );
+  await db.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS "Dependencia_nombre_key" ON "Dependencia"("nombre")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Dependencia_orden_idx" ON "Dependencia"("orden")');
+  await db.$executeRawUnsafe('ALTER TABLE "Participante" ADD COLUMN IF NOT EXISTS "dependenciaId" TEXT');
+  await db.$executeRawUnsafe('ALTER TABLE "CorreoAutorizado" ADD COLUMN IF NOT EXISTS "dependenciaId" TEXT');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Participante_dependenciaId_idx" ON "Participante"("dependenciaId")');
+  await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "CorreoAutorizado_dependenciaId_idx" ON "CorreoAutorizado"("dependenciaId")');
+  await db.$executeRawUnsafe(
+    'INSERT INTO "Dependencia" ("id", "nombre", "orden", "activa") VALUES '
+    + '(\'dependencia-comunicaciones\', \'Comunicaciones\', 1, true), '
+    + '(\'dependencia-experiencia\', \'Experiencia\', 2, true), '
+    + '(\'dependencia-talento-humano\', \'Talento Humano\', 3, true), '
+    + '(\'dependencia-reputacion\', \'Reputación\', 4, true) '
+    + 'ON CONFLICT ("id") DO NOTHING'
+  );
   await db.$executeRawUnsafe('INSERT INTO "Equipo" ("id", "nombre", "orden", "activo") VALUES (\'equipo-1\', \'Equipo 1\', 1, true), (\'equipo-2\', \'Equipo 2\', 2, true), (\'equipo-3\', \'Equipo 3\', 3, true) ON CONFLICT ("nombre") DO NOTHING');
   await db.$executeRawUnsafe(
     'CREATE TABLE IF NOT EXISTS "Actividad" ('

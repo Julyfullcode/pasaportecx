@@ -43,6 +43,7 @@ model Participante {
   apellidos           String?
   empresaId           String
   equipoId            String?
+  dependenciaId       String?
   urlFoto             String
   codigoRecuperacion  String               @unique
   puntosRegistro      Int                  @default(0)
@@ -52,6 +53,7 @@ model Participante {
   creadoEn            DateTime             @default(now())
   empresa             Empresa              @relation(fields: [empresaId], references: [id])
   equipo              Equipo?               @relation(fields: [equipoId], references: [id], onDelete: SetNull)
+  dependencia         Dependencia?          @relation(fields: [dependenciaId], references: [id], onDelete: SetNull)
   completitudes       Completitud[]
   recuerdos           Recuerdo[]
   reaccionesRecuerdos ReaccionRecuerdo[]
@@ -66,6 +68,7 @@ model Participante {
   @@index([activo, esStaff, puntosTotales])
   @@index([empresaId])
   @@index([equipoId])
+  @@index([dependenciaId])
 }
 
 model CorreoAutorizado {
@@ -73,12 +76,15 @@ model CorreoAutorizado {
   correo         String        @unique
   participanteId String?       @unique
   equipoId       String?
+  dependenciaId  String?
   creadoEn       DateTime      @default(now())
   participante   Participante? @relation(fields: [participanteId], references: [id], onDelete: SetNull)
   equipo         Equipo?       @relation(fields: [equipoId], references: [id], onDelete: SetNull)
+  dependencia    Dependencia?  @relation(fields: [dependenciaId], references: [id], onDelete: SetNull)
 
   @@index([creadoEn])
   @@index([equipoId])
+  @@index([dependenciaId])
 }
 
 model Equipo {
@@ -89,6 +95,17 @@ model Equipo {
   participantes   Participante[]
   autorizaciones  CorreoAutorizado[]
   resultadosJuego ResultadoJuegoActividad[]
+
+  @@index([orden])
+}
+
+model Dependencia {
+  id              String              @id @default(cuid())
+  nombre          String              @unique
+  orden           Int
+  activa          Boolean             @default(true)
+  participantes   Participante[]
+  autorizaciones  CorreoAutorizado[]
 
   @@index([orden])
 }

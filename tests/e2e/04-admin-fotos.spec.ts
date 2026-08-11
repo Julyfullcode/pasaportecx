@@ -82,25 +82,52 @@ test.describe("Administrador", () => {
     await db.admin.delete({ where: { id: admin.id } });
   });
 
-  test("Participantes administra correos pendientes y registrados", async ({ page, playwright }) => {
-    const correo = `autorizado-${Date.now()}@example.com`;
+test("Participantes configura, asigna y filtra dependencias", async ({ page, playwright }) => {
+    const marca = Date.now();
+    const correo = "autorizado-" + marca + "@example.com";
+    const nombreDependencia = "Innovación " + marca;
+
     await iniciarAdmin(page);
+    await page.goto("/admin/configuracion");
+    const catalogos = page.locator("details").filter({ hasText: "Empresas, equipos y dependencias" });
+    await catalogos.locator("summary").click();
+    const nuevaDependencia = catalogos.getByPlaceholder("Nueva dependencia");
+    await nuevaDependencia.fill(nombreDependencia);
+    await nuevaDependencia.locator("..").getByRole("button", { name: "Agregar" }).click();
+await expect.poll(async () => Boolean(
+      await db.dependencia.findUnique({ where: { nombre: nombreDependencia } }),
+    )).toBe(true);
+    const dependencia = await db.dependencia.findUniqueOrThrow({ where: { nombre: nombreDependencia } });
+
     await page.goto("/admin/participantes");
     await page.locator('textarea[name="correos"]').fill(correo);
+    await page.getByLabel("Dependencia (opcional)").selectOption(dependencia.id);
     await page.getByRole("button", { name: "Autorizar correos" }).click();
     await expect(page.getByRole("status")).toContainText("1 correo quedó autorizado");
     const pendiente = page.locator("article").filter({ hasText: correo });
     await expect(pendiente.getByText("Pendiente de registro", { exact: true })).toBeVisible();
+    await expect(pendiente).toContainText(nombreDependencia);
 
     const api = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
     expect((await registrarPorApi(api, "Persona autorizada", "E2E", correo)).status()).toBe(200);
-    await page.reload();
+    const registradoDb = await db.participante.findFirstOrThrow({ where: { correoAutorizado: { correo } } });
+    expect(registradoDb.dependenciaId).toBe(dependencia.id);
+
+    await page.goto("/admin/participantes?q=" + encodeURIComponent(correo) + "&dependencia=" + dependencia.id);
     const registrado = page.locator("article").filter({ hasText: correo });
     await expect(registrado.getByText("Registrado", { exact: true })).toBeVisible();
-    await expect(registrado.getByText("Persona autorizada E2E", { exact: true })).toBeVisible();
+    await expect(registrado).toContainText(nombreDependencia);
+
+    await registrado.getByLabel("Dependencia").selectOption("dependencia-experiencia");
+    await registrado.getByRole("button", { name: "Guardar dependencia" }).click();
+    await expect.poll(async () => (
+      await db.participante.findUniqueOrThrow({ where: { id: registradoDb.id } })
+    ).dependenciaId).toBe("dependencia-experiencia");
+    await expect.poll(async () => (
+      await db.correoAutorizado.findUniqueOrThrow({ where: { correo } })
+    ).dependenciaId).toBe("dependencia-experiencia");
     await api.dispose();
   });
-
   test("Participantes activa y desactiva Staff de forma reversible", async ({ page }) => {
     const persona = await crearParticipanteConToken({
       nombre: `Staff administrable ${Date.now()}`,

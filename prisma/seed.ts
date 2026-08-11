@@ -90,6 +90,7 @@ async function main() {
   await prisma.sesionParticipante.deleteMany();
   await prisma.sesionAdmin.deleteMany();
   await prisma.correoAutorizado.deleteMany();
+  await prisma.dependencia.deleteMany();
   await prisma.completitud.deleteMany();
   await prisma.recuerdo.deleteMany();
   await prisma.ajustePuntos.deleteMany();
@@ -103,6 +104,14 @@ async function main() {
 
   await crearImagenes();
 
+  await prisma.dependencia.createMany({
+    data: [
+      { id: "dependencia-comunicaciones", nombre: "Comunicaciones", orden: 1 },
+      { id: "dependencia-experiencia", nombre: "Experiencia", orden: 2 },
+      { id: "dependencia-talento-humano", nombre: "Talento Humano", orden: 3 },
+      { id: "dependencia-reputacion", nombre: "Reputación", orden: 4 },
+    ],
+  });
   const empresasCreadas = await Promise.all(
     empresas.map((nombre, indice) =>
       prisma.empresa.create({ data: { nombre, orden: indice + 1 } }),

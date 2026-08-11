@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const datos = registroSchema.parse(Object.fromEntries(formulario));
     const autorizacion = await db.correoAutorizado.findUnique({
       where: { correo: datos.correo },
-      select: { id: true, participanteId: true, equipoId: true },
+      select: { id: true, participanteId: true, equipoId: true, dependenciaId: true },
     });
     if (!autorizacion) {
       return Response.json({
@@ -69,6 +69,7 @@ export async function POST(request: Request) {
           apellidos: datos.apellidos,
           empresaId: datos.empresaId,
           equipoId: autorizacion.equipoId,
+          dependenciaId: autorizacion.dependenciaId,
           urlFoto: urlFoto!,
           codigoRecuperacion: codigo,
           puntosRegistro: configuracion.puntosPorRegistro,
