@@ -80,10 +80,28 @@ test.describe("PDF de cierre y proyección de recuerdos", () => {
       },
     });
 
+    await db.recuerdo.createMany({
+      data: Array.from({ length: 11 }, (_, indice) => ({
+        participanteId: participante.id,
+        urlFoto: "/marca/logo-grupo-epm-oficial.png",
+        urlMiniatura: "/marca/logo-grupo-epm-oficial.png",
+        descripcion: `Recuerdo adicional ${indice + 1}`,
+        visible: true,
+      })),
+    });
+
     await iniciarAdmin(page);
     await page.goto("/admin/proyeccion/recuerdos");
     const foto = page.getByRole("img", { name: descripcion });
     await expect(foto).toBeVisible();
     expect(await foto.evaluate((elemento) => getComputedStyle(elemento).objectFit)).toBe("contain");
+    const tarjetas = page.locator("figure");
+    await expect(tarjetas).toHaveCount(12);
+    const dimensiones = await tarjetas.evaluateAll((elementos) => elementos.map((elemento) => {
+      const rectangulo = elemento.getBoundingClientRect();
+      return { alto: rectangulo.height, abajo: rectangulo.bottom };
+    }));
+    expect(Math.min(...dimensiones.map(({ alto }) => alto))).toBeGreaterThan(100);
+    expect(Math.max(...dimensiones.map(({ abajo }) => abajo))).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight));
   });
 });

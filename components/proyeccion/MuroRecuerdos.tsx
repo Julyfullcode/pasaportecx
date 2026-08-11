@@ -18,13 +18,22 @@ export function MuroRecuerdosProyeccion({ inicial }: { inicial: Recuerdo[] }) {
     const respuesta = await fetch("/api/proyeccion/datos", { cache: "no-store" });
     if (respuesta.ok) setRecuerdos((await respuesta.json()).recuerdos);
   }, 5_000);
+  const visibles = recuerdos.slice(0, 12);
+  const estructura = visibles.length <= 1
+    ? "grid-cols-1 grid-rows-1"
+    : visibles.length <= 5
+      ? "grid-cols-4 grid-rows-2"
+      : visibles.length <= 9
+        ? "grid-cols-4 grid-rows-3"
+        : "grid-cols-5 grid-rows-3";
+  const destacarPrimero = visibles.length > 1;
   return (
-    <div className="grid h-full min-h-0 grid-cols-4 grid-rows-3 gap-[clamp(8px,1.2vw,18px)] py-[clamp(12px,2vh,24px)]">
-      {recuerdos.slice(0, 12).map((recuerdo, indice) => {
+    <div className={`grid h-full min-h-0 grid-flow-row-dense ${estructura} gap-[clamp(8px,1.2vw,18px)] py-[clamp(12px,2vh,24px)]`}>
+      {visibles.map((recuerdo, indice) => {
         const corazones = recuerdo.reacciones.filter((reaccion) => reaccion.tipo === "CORAZON").length;
         const risas = recuerdo.reacciones.filter((reaccion) => reaccion.tipo === "RISA").length;
         return (
-          <figure key={recuerdo.id} className={`entrada-suave relative overflow-hidden rounded-[1.5rem] bg-slate-950 shadow-2xl ${indice === 0 ? "col-span-2 row-span-2 ring-2 ring-[var(--epm-verde)]/70" : ""}`}>
+          <figure key={recuerdo.id} className={`entrada-suave relative min-h-0 overflow-hidden rounded-[1.5rem] bg-slate-950 shadow-2xl ${indice === 0 && destacarPrimero ? "col-span-2 row-span-2 ring-2 ring-[var(--epm-verde)]/70" : ""}`}>
             <img src={recuerdo.urlFoto} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-xl" />
             <img src={recuerdo.urlFoto} alt={recuerdo.descripcion || `Recuerdo de ${recuerdo.participante.nombre}`} className="relative z-[1] h-full min-h-0 w-full object-contain" />
             {indice === 0 && <span className="absolute left-4 top-4 z-20 rounded-full bg-gradient-to-r from-rose-500 to-amber-400 px-4 py-2 text-sm font-extrabold shadow-lg">🔥 El favorito</span>}
