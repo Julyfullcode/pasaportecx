@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { participanteActual } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { evaluarRespuestaActividad, idsRespuestasCorrectas, preguntasDe, respuestaActividadValida, type PreguntaActividad } from "@/lib/actividad";
-import { recalcularPuntosParticipante } from "@/lib/puntos";
+import { bloquearPuntosParticipante, recalcularPuntosParticipante } from "@/lib/puntos";
 import { calcularJuegoCxEx, DURACION_JUEGO_CX_EX, respuestasJuegoCxExValidas, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 import { ejecutarTransaccionRobusta } from "@/lib/transaccion";
 
@@ -88,6 +88,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
   }
   try {
     const resultado = await ejecutarTransaccionRobusta(async (tx) => {
+      await bloquearPuntosParticipante(tx, participante.id);
       const actividad = await tx.actividad.findUniqueOrThrow({ where: { codigoAcceso } });
       const id = actividad.id;
       const preguntas = preguntasDe(actividad.configuracion);

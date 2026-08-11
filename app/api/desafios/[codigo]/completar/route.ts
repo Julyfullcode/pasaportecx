@@ -4,7 +4,7 @@ import { participanteActual } from "@/lib/auth";
 import { anunciarCambio } from "@/lib/eventos";
 import { storage } from "@/lib/storage";
 import { puntuarOpcionMultiple, validarRespuestaAbierta, type Opcion } from "@/lib/validacion";
-import { recalcularPuntosParticipante } from "@/lib/puntos";
+import { bloquearPuntosParticipante, recalcularPuntosParticipante } from "@/lib/puntos";
 import { ImagenInvalidaError, normalizarImagen } from "@/lib/imagenes-servidor";
 import { esDesafioCosecha, esRespuestasCosecha, PREGUNTAS_COSECHA } from "@/lib/cosecha-config";
 import {
@@ -189,6 +189,7 @@ export async function POST(
 
   try {
     const resultado = await ejecutarTransaccionRobusta(async (tx) => {
+      await bloquearPuntosParticipante(tx, participante.id);
       if (!existente && desafio.limiteCompletitudes) {
         const completadas = await tx.completitud.count({ where: { desafioId: desafio.id } });
         if (completadas >= desafio.limiteCompletitudes) throw new Error("LIMITE_COMPLETITUDES");

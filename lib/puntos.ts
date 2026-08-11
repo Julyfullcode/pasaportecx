@@ -20,14 +20,21 @@ export function calcularTotalIndividual(
 
 type ClienteTransaccion = Prisma.TransactionClient;
 
-export async function recalcularPuntosParticipante(
+export async function bloquearPuntosParticipante(
   tx: ClienteTransaccion,
   participanteId: string,
-): Promise<number> {
+): Promise<void> {
   const usaPostgres = /^(postgres|postgresql):/i.test(process.env.DATABASE_URL ?? "");
   if (usaPostgres) {
     await tx.$queryRaw`SELECT "id" FROM "Participante" WHERE "id" = ${participanteId} FOR UPDATE`;
   }
+}
+
+export async function recalcularPuntosParticipante(
+  tx: ClienteTransaccion,
+  participanteId: string,
+): Promise<number> {
+  await bloquearPuntosParticipante(tx, participanteId);
   const [participante, completitudes, ajustes, actividades] = await Promise.all([
     tx.participante.findUniqueOrThrow({
       where: { id: participanteId },
