@@ -262,7 +262,7 @@ export async function generarPasaportePdf(datos: DatosPasaporte) {
   const qr = await documento.embedPng(qrBytes);
   cajaRedondeada(pagina, 38, 30, 344, 124, 26, rgb(0.965, 0.982, 0.988));
   pagina.drawImage(qr, { x: 53, y: 44, width: 96, height: 96 });
-  agregarVinculo(documento, pagina, datos.urlAplicacion, 53, 44, 96, 96);
+  agregarVinculo(documento, pagina, datos.urlRecuperacion, 53, 44, 96, 96);
   pagina.drawLine({ start: { x: 168, y: 48 }, end: { x: 168, y: 136 }, thickness: 1, color: teal, opacity: 0.18 });
   const centroInfo = 271;
   const etiquetaCodigo = "Código de recuperación";

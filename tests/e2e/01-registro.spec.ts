@@ -160,6 +160,19 @@ test.describe("Registro de participante", () => {
     expect(actualizado).toMatchObject({ nombre: "Nuevo Nombre Nuevos Apellidos", nombres: "Nuevo Nombre", apellidos: "Nuevos Apellidos", empresaId: empresa.id });
   });
 
+  test("el QR del pasaporte recupera la cuenta en otro dispositivo", async ({ browser }) => {
+    const persona = await crearParticipanteConToken({ nombre: "Recuperación QR " + Date.now() });
+    const contextoNuevo = await browser.newContext();
+    const paginaNueva = await contextoNuevo.newPage();
+
+    await paginaNueva.goto("/recuperar/" + persona.participante.codigoRecuperacion.toLowerCase());
+    await expect(paginaNueva).toHaveURL(BASE_URL + "/");
+    const cookies = await contextoNuevo.cookies();
+    expect(cookies.some((cookie) => cookie.name === "pasaporte_participante" && cookie.value.length > 20)).toBe(true);
+    await expect(paginaNueva.getByText(persona.participante.nombre.split(" ")[0], { exact: false }).first()).toBeVisible();
+
+    await contextoNuevo.close();
+  });
   test("dos altas con el mismo nombre crean pasaportes distintos", async ({ playwright }) => {
     const nombre = `Nombre repetido ${Date.now()}`;
     const apiUno = await playwright.request.newContext({ baseURL: "http://127.0.0.1:3000" });
