@@ -499,6 +499,24 @@ test.describe("Fotos y carrusel", () => {
     expect(await db.recuerdo.count({ where: { participanteId: participante.id, descripcion: "Recuerdo automatizado E2E" } })).toBe(1);
   });
 
+  test("una foto pesada de celular se comprime y se guarda sin fricción", async ({ context, page }) => {
+    const { participante, token } = await crearParticipanteConToken({ nombre: `Recuerdo pesado ${Date.now()}` });
+    const ancho = 2600;
+    const alto = 1900;
+    const fotoPesada = await sharp(randomBytes(ancho * alto * 3), { raw: { width: ancho, height: alto, channels: 3 } })
+      .jpeg({ quality: 100 })
+      .toBuffer();
+    expect(fotoPesada.length).toBeGreaterThan(4_000_000);
+
+    await autenticarParticipante(context, token);
+    await page.goto("/recuerdos?subir=1");
+    await page.getByLabel("Elegir fotos").setInputFiles({ name: "foto-celular.jpg", mimeType: "image/jpeg", buffer: fotoPesada });
+    await page.getByLabel("Descripción opcional").fill("Recuerdo pesado comprimido E2E");
+    await page.getByRole("button", { name: "Subir fotos pendientes" }).click();
+
+    await expect(page.getByText("Listo", { exact: true })).toBeVisible({ timeout: 30_000 });
+    expect(await db.recuerdo.count({ where: { participanteId: participante.id, descripcion: "Recuerdo pesado comprimido E2E" } })).toBe(1);
+  });
   test("una evidencia aprobada aparece en Recuerdos cuando el desafío lo permite", async ({ page, playwright }) => {
     const marca = Date.now();
     const titulo = "Foto para recuerdos " + marca;

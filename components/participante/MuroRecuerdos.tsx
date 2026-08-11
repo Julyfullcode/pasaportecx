@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Camera, Clock3, Flag, Flame, Heart, LoaderCircle, RotateCcw, Trash2, X } from "lucide-react";
-import { comprimirImagen } from "@/lib/imagen";
+import { comprimirImagenHasta } from "@/lib/imagen";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 import { usePollingVisible } from "@/lib/usePollingVisible";
 import type { TipoReaccionRecuerdo } from "@/lib/recuerdos";
@@ -133,23 +133,22 @@ export function MuroRecuerdos({
   async function subirUna(carga: Carga) {
     setCargas((actual) => actual.map((c) => c.clave === carga.clave ? { ...c, estado: "subiendo", error: undefined } : c));
     try {
-      const [foto, miniatura] = await Promise.all([
-        comprimirImagen(carga.archivo, 1200, 0.74),
-        comprimirImagen(carga.archivo, 360, 0.68),
-      ]);
+      // Procesarlas una por una evita mantener dos copias gigantes de la foto en memoria,
+      // algo especialmente importante en iPhone y Android con cámaras de alta resolución.
+      const foto = await comprimirImagenHasta(carga.archivo, 1600, 650_000, 0.78);
+      const miniatura = await comprimirImagenHasta(carga.archivo, 480, 90_000, 0.72);
       const datos = new FormData();
       datos.set("foto", foto, "recuerdo.webp");
       datos.set("miniatura", miniatura, "miniatura.webp");
       datos.set("descripcion", descripcion);
       const controlador = new AbortController();
-      const timeout = setTimeout(() => controlador.abort(), 30_000);
+      const timeout = setTimeout(() => controlador.abort(), 60_000);
       const respuesta = await fetch("/api/recuerdos", {
         method: "POST",
         body: datos,
         headers: { "Idempotency-Key": carga.clave },
         signal: controlador.signal,
-      });
-      clearTimeout(timeout);
+      }).finally(() => clearTimeout(timeout));
       const cuerpo = await respuesta.json();
       if (!respuesta.ok) throw new Error(cuerpo.error);
       setCargas((actual) => actual.map((c) => c.clave === carga.clave ? { ...c, estado: "listo" } : c));
@@ -275,11 +274,12 @@ export function MuroRecuerdos({
             <p className="mt-2 text-center text-xs text-slate-500">Puedes elegir hasta {Math.min(5, cupo.restantes)} en esta carga.</p>
             <div className="mt-3 space-y-2">
               {cargas.map((carga) => (
-                <div key={carga.clave} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+                <div key={carga.clave} className="flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3">
                   <span className="min-w-0 flex-1 truncate text-sm font-bold">{carga.archivo.name}</span>
                   {carga.estado === "subiendo" && <LoaderCircle className="animate-spin text-[var(--epm-azul)]" />}
                   {carga.estado === "listo" && <span className="font-extrabold text-[var(--epm-verde-medio)]">Listo</span>}
                   {carga.estado === "error" && <button onClick={() => void subirUna(carga)} className="flex items-center gap-1 text-sm font-extrabold text-red-700"><RotateCcw size={17} /> Reintentar</button>}
+                  {carga.estado === "error" && carga.error && <p role="alert" className="basis-full text-xs font-bold text-red-700">{carga.error}</p>}
                 </div>
               ))}
             </div>

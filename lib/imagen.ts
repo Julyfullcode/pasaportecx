@@ -81,16 +81,27 @@ export async function comprimirImagenHasta(
   const fuente = await abrirImagen(archivo);
   let calidad = calidadInicial;
   let dimension = maximo;
+  let formato: "image/webp" | "image/jpeg" = "image/webp";
   try {
-    let resultado = await convertirImagen(fuente, dimension, calidad, "image/webp");
-    for (let intento = 0; resultado.size > maxBytes && intento < 12; intento += 1) {
-      if (calidad > 0.38) {
-        calidad = Math.max(0.34, calidad - 0.08);
-      } else {
+    let resultado = await convertirImagen(fuente, dimension, calidad, formato);
+    // Si el navegador no codifica WebP, JPEG evita que Canvas devuelva un PNG enorme.
+    if (resultado.type && resultado.type !== formato) {
+      formato = "image/jpeg";
+      resultado = await convertirImagen(fuente, dimension, calidad, formato);
+    }
+    for (let intento = 0; resultado.size > maxBytes && intento < 20; intento += 1) {
+      if (calidad > 0.4) {
+        calidad = Math.max(0.36, calidad - 0.08);
+      } else if (dimension > 320) {
         dimension = Math.max(320, Math.floor(dimension * 0.8));
         calidad = 0.68;
+      } else {
+        calidad = Math.max(0.2, calidad - 0.05);
       }
-      resultado = await convertirImagen(fuente, dimension, calidad, "image/webp");
+      resultado = await convertirImagen(fuente, dimension, calidad, formato);
+    }
+    if (resultado.size > maxBytes) {
+      throw new Error("No pudimos optimizar esta foto. Intenta seleccionarla nuevamente.");
     }
     return resultado;
   } finally {
