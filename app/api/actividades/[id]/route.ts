@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { evaluarRespuestaActividad, idsRespuestasCorrectas, preguntasDe, respuestaActividadValida, type PreguntaActividad } from "@/lib/actividad";
 import { recalcularPuntosParticipante } from "@/lib/puntos";
 import { calcularJuegoCxEx, DURACION_JUEGO_CX_EX, respuestasJuegoCxExValidas, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
-import { ejecutarTransaccionSerializable } from "@/lib/transaccion";
+import { ejecutarTransaccionRobusta } from "@/lib/transaccion";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +87,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
     return Response.json({ error: "La respuesta no tiene un formato válido." }, { status: 400 });
   }
   try {
-    const resultado = await ejecutarTransaccionSerializable(async (tx) => {
+    const resultado = await ejecutarTransaccionRobusta(async (tx) => {
       const actividad = await tx.actividad.findUniqueOrThrow({ where: { codigoAcceso } });
       const id = actividad.id;
       const preguntas = preguntasDe(actividad.configuracion);

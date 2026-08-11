@@ -3,21 +3,24 @@ import { db } from "@/lib/db";
 
 type Operacion<T> = (tx: Prisma.TransactionClient) => Promise<T>;
 
-export async function ejecutarTransaccionSerializable<T>(
+export async function ejecutarTransaccionRobusta<T>(
   operacion: Operacion<T>,
-  { intentos = 7, maxWait = 15_000, timeout = 20_000 } = {},
+  { intentos = 9, maxWait = 30_000, timeout = 30_000, serializable = false } = {},
 ): Promise<T> {
   for (let intento = 0; intento < intentos; intento += 1) {
     try {
-      return await db.$transaction(operacion, {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        maxWait,
-        timeout,
-      });
+      const opciones: {
+        maxWait: number;
+        timeout: number;
+        isolationLevel?: Prisma.TransactionIsolationLevel;
+      } = { maxWait, timeout };
+      if (serializable) opciones.isolationLevel = Prisma.TransactionIsolationLevel.Serializable;
+      return await db.$transaction(operacion, opciones);
     } catch (error) {
-      const conflicto = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
-      if (!conflicto || intento === intentos - 1) throw error;
-      const esperaMs = Math.min(800, 40 * (2 ** intento)) + Math.floor(Math.random() * 80);
+      const reintentable = error instanceof Prisma.PrismaClientKnownRequestError
+        && (error.code === "P2034" || error.code === "P2024");
+      if (!reintentable || intento === intentos - 1) throw error;
+      const esperaMs = Math.min(1_500, 50 * (2 ** intento)) + Math.floor(Math.random() * 120);
       await new Promise((resolver) => setTimeout(resolver, esperaMs));
     }
   }
