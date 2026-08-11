@@ -70,6 +70,15 @@ test.describe("PDF de cierre y proyección de recuerdos", () => {
   test("la presentación muestra la fotografía completa sin recortarla", async ({ page }) => {
     const { participante } = await crearParticipanteConToken({ nombre: `Recuerdo completo ${Date.now()}` });
     const descripcion = `Fotografía completa ${Date.now()}`;
+    await db.recuerdo.createMany({
+      data: Array.from({ length: 22 }, (_, indice) => ({
+        participanteId: participante.id,
+        urlFoto: "/marca/logo-grupo-epm-oficial.png",
+        urlMiniatura: "/marca/logo-grupo-epm-oficial.png",
+        descripcion: `Recuerdo adicional ${indice + 1}`,
+        visible: true,
+      })),
+    });
     await db.recuerdo.create({
       data: {
         participanteId: participante.id,
@@ -79,17 +88,6 @@ test.describe("PDF de cierre y proyección de recuerdos", () => {
         visible: true,
       },
     });
-
-    await db.recuerdo.createMany({
-      data: Array.from({ length: 11 }, (_, indice) => ({
-        participanteId: participante.id,
-        urlFoto: "/marca/logo-grupo-epm-oficial.png",
-        urlMiniatura: "/marca/logo-grupo-epm-oficial.png",
-        descripcion: `Recuerdo adicional ${indice + 1}`,
-        visible: true,
-      })),
-    });
-
     await iniciarAdmin(page);
     await page.goto("/admin/proyeccion/recuerdos");
     const foto = page.getByRole("img", { name: descripcion });
@@ -97,6 +95,14 @@ test.describe("PDF de cierre y proyección de recuerdos", () => {
     expect(await foto.evaluate((elemento) => getComputedStyle(elemento).objectFit)).toBe("contain");
     const tarjetas = page.locator("figure");
     await expect(tarjetas).toHaveCount(12);
+    const favorita = page.locator('figure[data-destacado="true"]');
+    await expect(favorita.getByRole("img", { name: descripcion })).toBeVisible();
+    const idsPrimeraTanda = await page.locator('figure[data-destacado="false"]').evaluateAll((elementos) => elementos.map((elemento) => (elemento as HTMLElement).dataset.recuerdoId));
+    await expect.poll(async () => {
+      const idsActuales = await page.locator('figure[data-destacado="false"]').evaluateAll((elementos) => elementos.map((elemento) => (elemento as HTMLElement).dataset.recuerdoId));
+      return idsActuales.some((id) => !idsPrimeraTanda.includes(id));
+    }, { timeout: 15_000 }).toBe(true);
+    await expect(favorita.getByRole("img", { name: descripcion })).toBeVisible();
     const dimensiones = await tarjetas.evaluateAll((elementos) => elementos.map((elemento) => {
       const rectangulo = elemento.getBoundingClientRect();
       return { alto: rectangulo.height, abajo: rectangulo.bottom };

@@ -10,7 +10,6 @@ export default async function ProyeccionRecuerdos() {
   const recuerdos = await db.recuerdo.findMany({
     where: { visible: true, pendiente: false, reportado: false },
     orderBy: [{ reacciones: { _count: "desc" } }, { creadoEn: "desc" }],
-    take: 20,
     select: {
       id: true,
       urlFoto: true,
