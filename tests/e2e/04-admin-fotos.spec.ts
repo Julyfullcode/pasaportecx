@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
+import JSZip from "jszip";
 import { db } from "@/lib/db";
 import { CODIGO_DESAFIO_CIERRE, TITULO_DESAFIO_CIERRE } from "@/lib/cosecha-config";
 import { fechaHoraColombiaComoFecha, fechaParaInputColombia } from "@/lib/duracion-desafio";
@@ -207,12 +208,29 @@ await expect.poll(async () => Boolean(
       await db.participante.findUniqueOrThrow({ where: { id: persona.participante.id } })
     ).puntosTotales).toBe(0);
 
-    const [reporteParticipantes, reporteRanking] = await page.evaluate(async () => Promise.all([
-      fetch("/api/reportes/participantes").then((respuesta) => respuesta.text()),
-      fetch("/api/reportes/ranking-individual").then((respuesta) => respuesta.text()),
-    ]));
-    expect(reporteParticipantes).toContain(persona.participante.nombre);
-    expect(reporteRanking).not.toContain(persona.participante.nombre);
+    const [reporteParticipantes, reporteRanking] = await page.evaluate(async () => {
+      const descargar = async (url: string) => {
+        const respuesta = await fetch(url);
+        return {
+          tipo: respuesta.headers.get("content-type"),
+          disposicion: respuesta.headers.get("content-disposition"),
+          bytes: Array.from(new Uint8Array(await respuesta.arrayBuffer())),
+        };
+      };
+      return Promise.all([
+        descargar("/api/reportes/participantes"),
+        descargar("/api/reportes/ranking-individual"),
+      ]);
+    });
+    expect(reporteParticipantes.tipo).toContain("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    expect(reporteParticipantes.disposicion).toContain("reporte-participantes.xlsx");
+    expect(reporteRanking.disposicion).toContain("reporte-ranking-individual.xlsx");
+    const excelParticipantes = await JSZip.loadAsync(Uint8Array.from(reporteParticipantes.bytes));
+    const excelRanking = await JSZip.loadAsync(Uint8Array.from(reporteRanking.bytes));
+    const hojaParticipantes = await excelParticipantes.file("xl/worksheets/sheet1.xml")!.async("string");
+    const hojaRanking = await excelRanking.file("xl/worksheets/sheet1.xml")!.async("string");
+    expect(hojaParticipantes).toContain(persona.participante.nombre);
+    expect(hojaRanking).not.toContain(persona.participante.nombre);
 
     await tarjeta.getByRole("button", { name: "Quitar Staff" }).click();
     await expect(tarjeta.getByRole("button", { name: "Marcar Staff" })).toBeVisible();

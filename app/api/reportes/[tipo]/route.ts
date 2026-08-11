@@ -2,17 +2,7 @@ import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
-
-function csv(filas: (string | number | null | undefined)[][]) {
-  const contenido = filas
-    .map((fila) =>
-      fila
-        .map((valor) => `"${String(valor ?? "").replace(/"/g, '""')}"`)
-        .join(","),
-    )
-    .join("\r\n");
-  return `\uFEFF${contenido}`;
-}
+import { crearExcel } from "@/lib/excel";
 
 export async function GET(
   _request: Request,
@@ -29,8 +19,8 @@ export async function GET(
       include: { empresa: true, equipo: true, dependencia: true, correoAutorizado: true },
     });
     filas = [
-      ["Posición", "Nombre", "Correo", "Empresa", "Dependencia", "Equipo", "Puntos", "Staff", "Activo", "Registrado"],
-      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.dependencia?.nombre ?? "", p.equipo?.nombre ?? "", p.puntosTotales, p.esStaff ? "Sí" : "No", p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
+      ["Posición", "Nombre", "Correo", "Empresa", "Dependencia", "Equipo", "Puntos", "Staff", "Tiene licencia", "Activo", "Registrado"],
+      ...datos.map((p, i) => [i + 1, p.nombre, p.correoAutorizado?.correo, p.empresa.nombre, p.dependencia?.nombre ?? "", p.equipo?.nombre ?? "", p.puntosTotales, p.esStaff ? "Sí" : "No", p.tieneLicencia ? "Sí" : "No", p.activo ? "Sí" : "No", p.creadoEn.toISOString()]),
     ];
   } else if (tipo === "completitudes") {
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: true }, orderBy: { completadoEn: "asc" } });
@@ -60,10 +50,20 @@ export async function GET(
   } else {
     return Response.json({ error: "Reporte no encontrado" }, { status: 404 });
   }
-  return new Response(csv(filas), {
+  const nombresHoja: Record<string, string> = {
+    participantes: "Participantes",
+    "ranking-individual": "Ranking individual",
+    completitudes: "Desafíos completados",
+    encuestas: "Encuestas",
+    actividades: "Actividades",
+    empresas: "Empresas",
+  };
+  const archivo = await crearExcel(filas, nombresHoja[tipo] ?? "Reporte");
+  return new Response(archivo, {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${tipo}-pasaporte-cx.csv"`,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="reporte-${tipo}.xlsx"`,
+      "Cache-Control": "private, no-store",
     },
   });
 }
