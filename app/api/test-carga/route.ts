@@ -1,8 +1,9 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/db";
 import { storage } from "@/lib/storage";
 
 
+const CLAVE_CARGA_HASH = "9e92cdcefa0b7c433e804c90e73306c3914017084b62bcb98c38d584d2faab8c";
 const PUNTOS_REGISTRO = 10;
 const PUNTOS_RAFAGA = 100;
 const PUNTOS_MISMO = 37;
@@ -10,10 +11,17 @@ const PUNTOS_DISTINTOS = 53;
 const PUNTOS_MULTI = 17;
 const CANTIDAD_MULTI = 12;
 
+function claveValida(valor: string | null) {
+  if (!valor) return false;
+  const recibida = createHash("sha256").update(valor).digest();
+  const esperada = Buffer.from(CLAVE_CARGA_HASH, "hex");
+  return recibida.length === esperada.length && timingSafeEqual(recibida, esperada);
+}
+
 function autorizado(request: Request) {
   return process.env.VERCEL_ENV !== "production"
     && process.env.VERCEL_GIT_COMMIT_REF === "load-test-staging"
-    && Boolean(process.env.ADMIN_PASSWORD) && request.headers.get("x-load-test-key") === process.env.ADMIN_PASSWORD;
+    && claveValida(request.headers.get("x-load-test-key"));
 }
 
 function runValido(valor: unknown) {
