@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { storage } from "@/lib/storage";
 
 
-const CLAVE_CARGA_HASH = "9e92cdcefa0b7c433e804c90e73306c3914017084b62bcb98c38d584d2faab8c";
+const CLAVE_CARGA_HASH = "874b1d0d33486d88d15def173eb1e542e79131cd67903215e3b2dbae16ada8e3";
 const PUNTOS_REGISTRO = 10;
 const PUNTOS_RAFAGA = 100;
 const PUNTOS_MISMO = 37;
