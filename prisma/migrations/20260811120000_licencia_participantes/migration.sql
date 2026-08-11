@@ -1,0 +1,2 @@
+ALTER TABLE "Participante"
+ADD COLUMN IF NOT EXISTS "tieneLicencia" BOOLEAN NOT NULL DEFAULT false;

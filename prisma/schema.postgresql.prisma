@@ -50,6 +50,7 @@ model Participante {
   puntosTotales       Int                  @default(0)
   activo              Boolean              @default(true)
   esStaff             Boolean              @default(false)
+  tieneLicencia       Boolean              @default(false)
   creadoEn            DateTime             @default(now())
   empresa             Empresa              @relation(fields: [empresaId], references: [id])
   equipo              Equipo?               @relation(fields: [equipoId], references: [id], onDelete: SetNull)

@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 
 export function consultarEquiposProyeccion() {
   return db.equipo.findMany({
-    where: { activo: true },
+    where: { activo: true, participantes: { some: { activo: true } } },
     orderBy: [{ orden: "asc" }, { nombre: "asc" }],
     select: {
       id: true,
@@ -15,6 +15,7 @@ export function consultarEquiposProyeccion() {
           id: true,
           nombre: true,
           urlFoto: true,
+          tieneLicencia: true,
           empresa: { select: { nombre: true } },
         },
       },

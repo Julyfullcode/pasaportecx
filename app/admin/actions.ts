@@ -521,6 +521,17 @@ export async function alternarStaff(formulario: FormData) {
   revalidatePath("/admin/proyeccion/podio");
 }
 
+export async function actualizarLicencia(formulario: FormData) {
+  await requerirAdmin();
+  const id = String(formulario.get("participanteId") ?? "");
+  if (!id) return;
+  const tieneLicencia = formulario.get("tieneLicencia") === "on";
+  await db.participante.update({ where: { id }, data: { tieneLicencia } });
+  anunciarCambio("participante");
+  revalidatePath("/admin/participantes");
+  revalidatePath(`/admin/participantes/${id}`);
+  revalidatePath("/admin/proyeccion/equipos");
+}
 export async function asignarEquipo(formulario: FormData) {
   await requerirAdmin();
   const participanteId = String(formulario.get("participanteId") ?? "");

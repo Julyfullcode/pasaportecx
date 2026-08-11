@@ -32,9 +32,10 @@ test.describe("Administrador", () => {
 
   test("la vista de participantes presenta los equipos y sus integrantes", async ({ page }) => {
     const marca = Date.now();
-    const [equipoUno, equipoDos] = await Promise.all([
+    const [equipoUno, equipoDos, equipoVacio] = await Promise.all([
       db.equipo.create({ data: { nombre: `Equipo conexión ${marca}`, orden: 1, activo: true } }),
       db.equipo.create({ data: { nombre: `Equipo experiencia ${marca}`, orden: 2, activo: true } }),
+      db.equipo.create({ data: { nombre: `Equipo sin integrantes ${marca}`, orden: 3, activo: true } }),
     ]);
     const [{ participante: personaUno }, { participante: personaDos }] = await Promise.all([
       crearParticipanteConToken({ nombre: `Ana equipo ${marca}` }),
@@ -44,20 +45,57 @@ test.describe("Administrador", () => {
       db.participante.update({ where: { id: personaUno.id }, data: { equipoId: equipoUno.id } }),
       db.participante.update({ where: { id: personaDos.id }, data: { equipoId: equipoDos.id } }),
     ]);
+    await db.participante.createMany({
+      data: Array.from({ length: 25 }, (_, indice) => ({
+        nombre: `Integrante ${String(indice + 1).padStart(2, "0")} ${marca}`,
+        empresaId: personaUno.empresaId,
+        equipoId: equipoUno.id,
+        urlFoto: "/marca/logo-grupo-epm-oficial.png",
+        codigoRecuperacion: randomBytes(8).toString("hex").toUpperCase(),
+        puntosRegistro: 10,
+        puntosTotales: 10,
+      })),
+    });
 
     await iniciarAdmin(page);
     await page.goto("/admin/participantes");
     const presentar = page.getByRole("link", { name: "Presentar equipos" });
     await expect(presentar).toHaveAttribute("href", "/admin/proyeccion/equipos");
     await expect(presentar).toHaveAttribute("target", "_blank");
+    const licencia = page.getByLabel(`Tiene licencia: ${personaUno.nombre}`);
+    await licencia.check();
+    await licencia.locator("xpath=ancestor::form").getByRole("button", { name: "Guardar" }).click();
+    await expect.poll(async () => (await db.participante.findUniqueOrThrow({ where: { id: personaUno.id } })).tieneLicencia).toBe(true);
 
     await page.goto("/admin/proyeccion/equipos");
     await expect(page.getByRole("heading", { name: "Equipos que nos conectan" })).toBeVisible();
     await expect(page.getByRole("heading", { name: equipoUno.nombre })).toBeVisible();
     await expect(page.getByRole("heading", { name: equipoDos.nombre })).toBeVisible();
+    await expect(page.getByRole("heading", { name: equipoVacio.nombre })).toHaveCount(0);
     await expect(page.getByText(personaUno.nombre, { exact: true })).toBeVisible();
+    await expect(page.locator(`[data-integrante-id="${personaUno.id}"]`)).toHaveAttribute("data-tiene-licencia", "true");
     await expect(page.getByText(personaDos.nombre, { exact: true })).toBeVisible();
-    await expect(page.getByText("2 equipos · 2 integrantes", { exact: true })).toBeVisible();
+    await expect(page.getByText("2 equipos · 27 integrantes", { exact: true })).toBeVisible();
+
+    const integrantesVisibles = () => page
+      .locator(`[data-equipo-id="${equipoUno.id}"] [data-integrante-id]`)
+      .evaluateAll((elementos) => elementos.map((elemento) => elemento.getAttribute("data-integrante-id")));
+    const iniciales = await integrantesVisibles();
+    const anterior = page.getByRole("button", { name: "Vista anterior de equipos" });
+    const siguiente = page.getByRole("button", { name: "Siguiente vista de equipos" });
+    await expect(anterior).toBeVisible();
+    await expect(siguiente).toBeVisible();
+
+    await siguiente.click();
+    await expect.poll(async () => JSON.stringify(await integrantesVisibles())).not.toBe(JSON.stringify(iniciales));
+
+    await anterior.click();
+    await expect.poll(async () => JSON.stringify(await integrantesVisibles())).toBe(JSON.stringify(iniciales));
+
+    await expect.poll(
+      async () => JSON.stringify(await integrantesVisibles()),
+      { timeout: 12_000 },
+    ).not.toBe(JSON.stringify(iniciales));
   });
   test("la barra lateral abre la invitación de registro en modo presentación", async ({ page }) => {
     await iniciarAdmin(page);

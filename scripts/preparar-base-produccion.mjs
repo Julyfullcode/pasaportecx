@@ -112,6 +112,10 @@ try {
     + 'ADD COLUMN IF NOT EXISTS "esStaff" BOOLEAN NOT NULL DEFAULT false',
   );
   await db.$executeRawUnsafe(
+    'ALTER TABLE "Participante" '
+    + 'ADD COLUMN IF NOT EXISTS "tieneLicencia" BOOLEAN NOT NULL DEFAULT false',
+  );
+  await db.$executeRawUnsafe(
     'CREATE INDEX IF NOT EXISTS "Participante_activo_esStaff_puntosTotales_idx" '
     + 'ON "Participante"("activo", "esStaff", "puntosTotales")',
   );

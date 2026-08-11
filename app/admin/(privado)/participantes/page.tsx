@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Building2, Clock3, FileText, Mail, MonitorPlay, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
+import { BadgeCheck, Building2, Clock3, FileText, Mail, MonitorPlay, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
 import { db } from "@/lib/db";
-import { ajustarPuntos, alternarParticipante, alternarStaff, asignarDependencia, asignarEquipo, eliminarCorreoAutorizado, eliminarParticipante } from "@/app/admin/actions";
+import { actualizarLicencia, ajustarPuntos, alternarParticipante, alternarStaff, asignarDependencia, asignarEquipo, eliminarCorreoAutorizado, eliminarParticipante } from "@/app/admin/actions";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
 import { GestionCorreosAutorizados } from "@/components/admin/GestionCorreosAutorizados";
@@ -75,7 +75,7 @@ export default async function AdminParticipantes({
             <div className="flex flex-wrap items-center gap-3">
               <FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-14 w-14" />
               <Link href={`/admin/participantes/${persona.id}`} className="min-w-[180px] flex-1">
-                <div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{persona.nombre}</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-emerald-700">Registrado</span>{persona.esStaff && <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-violet-700"><ShieldCheck size={12} /> Staff</span>}</div>
+                <div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold text-[var(--epm-azul-profundo)]">{persona.nombre}</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-emerald-700">Registrado</span>{persona.esStaff && <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-violet-700"><ShieldCheck size={12} /> Staff</span>}{persona.tieneLicencia && <span className="inline-flex items-center gap-1 rounded-full bg-lime-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-lime-700"><BadgeCheck size={12} /> Tiene licencia</span>}</div>
                 <p className="mt-0.5 text-xs font-bold text-[var(--epm-azul)]">{persona.correoAutorizado?.correo ?? "Correo no asociado"}</p>
                 <p className="text-xs text-slate-500">{persona.empresa.nombre} · {persona.dependencia?.nombre ?? "Sin dependencia"} · {persona.equipo?.nombre ?? "Sin equipo"} · {persona._count.completitudes} desafíos · {persona._count.recuerdos} recuerdos</p>
               </Link>
@@ -91,6 +91,14 @@ export default async function AdminParticipantes({
               <div className="flex flex-wrap items-center justify-end gap-3">
                 <a href={`/api/admin/participantes/${persona.id}/pasaporte?v=${encodeURIComponent(persona.urlFoto)}#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-azul)] transition hover:bg-sky-100"><FileText size={17} /> Ver pasaporte</a>
                 {esRespuestasCosecha(persona.completitudes[0]?.respuesta) && <a href={`/api/admin/participantes/${persona.id}/cosecha#view=Fit`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2 text-sm font-extrabold text-[var(--epm-teal)] transition hover:bg-emerald-100"><Sprout size={17} /> Tarjeta de cierre</a>}
+                <form action={actualizarLicencia} className="inline-flex items-center gap-2 rounded-full bg-lime-50 px-3 py-1.5">
+                  <input type="hidden" name="participanteId" value={persona.id} />
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-extrabold text-lime-800">
+                    <input type="checkbox" name="tieneLicencia" defaultChecked={persona.tieneLicencia} aria-label={`Tiene licencia: ${persona.nombre}`} className="h-4 w-4 accent-[var(--epm-verde-medio)]" />
+                    Tiene licencia
+                  </label>
+                  <button className="text-xs font-extrabold text-[var(--epm-teal)]">Guardar</button>
+                </form>
                 <form action={alternarStaff}><input type="hidden" name="participanteId" value={persona.id} /><button className="inline-flex items-center gap-1 text-sm font-extrabold text-violet-700"><ShieldCheck size={16} /> {persona.esStaff ? "Quitar Staff" : "Marcar Staff"}</button></form>
                 <form action={alternarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-amber-700">{persona.activo ? "Desactivar" : "Reactivar"}</button></form>
                 <form action={eliminarParticipante}><input type="hidden" name="participanteId" value={persona.id} /><button className="text-sm font-extrabold text-red-700">Eliminar</button></form>
