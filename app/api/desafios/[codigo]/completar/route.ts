@@ -23,7 +23,7 @@ import {
 } from "@/lib/encuesta-mixta";
 import { esConfiguracionMatricula } from "@/lib/matricula";
 import { validarTokenQrPuntualidad } from "@/lib/puntualidad-qr";
-import { ejecutarTransaccionSerializable } from "@/lib/transaccion";
+import { ejecutarTransaccionRobusta } from "@/lib/transaccion";
 
 type Configuracion = {
   opciones?: Opcion[];
@@ -188,7 +188,7 @@ export async function POST(
   const puntosOtorgados = participante.esStaff ? 0 : puntos;
 
   try {
-    const resultado = await ejecutarTransaccionSerializable(async (tx) => {
+    const resultado = await ejecutarTransaccionRobusta(async (tx) => {
       if (!existente && desafio.limiteCompletitudes) {
         const completadas = await tx.completitud.count({ where: { desafioId: desafio.id } });
         if (completadas >= desafio.limiteCompletitudes) throw new Error("LIMITE_COMPLETITUDES");
@@ -210,7 +210,7 @@ export async function POST(
         });
       const nuevoTotal = await recalcularPuntosParticipante(tx, participante.id);
       return { completitud, nuevoTotal };
-    });
+    }, { serializable: Boolean(!existente && desafio.limiteCompletitudes) });
     anunciarCambio("puntos");
     return Response.json({
       completitudId: resultado.completitud.id,
@@ -229,16 +229,19 @@ export async function POST(
       return Response.json({ error: "Se alcanzó el límite de completitudes." }, { status: 409 });
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const existente = await db.completitud.findUniqueOrThrow({
-        where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
-      });
+      const [existente, participanteActualizado] = await Promise.all([
+        db.completitud.findUniqueOrThrow({
+          where: { participanteId_desafioId: { participanteId: participante.id, desafioId: desafio.id } },
+        }),
+        db.participante.findUniqueOrThrow({ where: { id: participante.id }, select: { puntosTotales: true } }),
+      ]);
       const puntualidad = resultadoPuntualidadDesdeRespuesta(existente.respuesta);
       return Response.json({
         yaCompletado: true,
         completitudId: existente.id,
         estado: existente.estado,
         puntosGanados: participante.esStaff ? 0 : existente.puntosOtorgados,
-        nuevoTotal: participante.puntosTotales,
+        nuevoTotal: participanteActualizado.puntosTotales,
         puntualidad,
         mensaje: participante.esStaff
           ? "Tu participación quedó registrada. Como integrante Staff, no participas en el esquema de puntos."
