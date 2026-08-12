@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Heart, Lightbulb, Rocket, Sprout } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Lightbulb, Rocket, Sprout } from "lucide-react";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 import { usePollingVisible } from "@/lib/usePollingVisible";
 import type { TarjetaCierreProyeccion } from "@/lib/cosecha-proyeccion";
@@ -54,6 +54,7 @@ function TextoAjustable({ texto }: { texto: string }) {
 export function RotadorCierre({ inicial }: { inicial: TarjetaCierreProyeccion[] }) {
   const [tarjetas, setTarjetas] = useState(inicial);
   const [indice, setIndice] = useState(0);
+  const [reinicioRotacion, setReinicioRotacion] = useState(0);
 
   useEffect(() => {
     if (tarjetas.length < 2) return;
@@ -62,8 +63,22 @@ export function RotadorCierre({ inicial }: { inicial: TarjetaCierreProyeccion[] 
       INTERVALO_ROTACION_MS,
     );
     return () => window.clearInterval(temporizador);
-  }, [tarjetas.length]);
+  }, [tarjetas.length, reinicioRotacion]);
 
+  function mover(direccion: -1 | 1) {
+    if (tarjetas.length < 2) return;
+    setIndice((actual) => (actual + direccion + tarjetas.length) % tarjetas.length);
+    setReinicioRotacion((actual) => actual + 1);
+  }
+
+  useEffect(() => {
+    const navegar = (evento: KeyboardEvent) => {
+      if (evento.key === "ArrowLeft") mover(-1);
+      if (evento.key === "ArrowRight") mover(1);
+    };
+    window.addEventListener("keydown", navegar);
+    return () => window.removeEventListener("keydown", navegar);
+  });
   usePollingVisible(async () => {
     const respuesta = await fetch("/api/proyeccion/cierre", { cache: "no-store" });
     if (!respuesta.ok) return;
@@ -95,7 +110,11 @@ export function RotadorCierre({ inicial }: { inicial: TarjetaCierreProyeccion[] 
     <div className="flex h-full min-h-0 flex-col py-[clamp(12px,2vh,24px)]">
       <div className="mb-3 flex shrink-0 items-center justify-between gap-4">
         <p className="text-[clamp(13px,1.2vw,20px)] font-bold text-white/70">Cosecha, gratitud y celebración</p>
-        <span className="rounded-full bg-white/15 px-4 py-2 text-[clamp(11px,1vw,16px)] font-extrabold">{indice + 1} de {tarjetas.length} tarjetas</span>
+        <div className="flex items-center gap-2 rounded-full bg-white/15 p-1.5">
+          <button type="button" onClick={() => mover(-1)} disabled={tarjetas.length < 2} aria-label="Tarjeta anterior" title="Tarjeta anterior" className="grid h-10 w-10 place-items-center rounded-full text-white transition hover:bg-white/15 disabled:opacity-35"><ChevronLeft size={26} /></button>
+          <span className="px-2 text-[clamp(11px,1vw,16px)] font-extrabold">{indice + 1} de {tarjetas.length} tarjetas</span>
+          <button type="button" onClick={() => mover(1)} disabled={tarjetas.length < 2} aria-label="Tarjeta siguiente" title="Tarjeta siguiente" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] transition hover:brightness-105 disabled:opacity-35"><ChevronRight size={26} /></button>
+        </div>
       </div>
       <article key={tarjeta.id + "-" + indice} className="entrada-suave grid min-h-0 flex-1 overflow-hidden rounded-[clamp(24px,3vw,44px)] border border-white/20 bg-white/10 p-[clamp(18px,2.4vw,38px)] shadow-2xl backdrop-blur md:grid-cols-[minmax(230px,.52fr)_minmax(0,1.48fr)]">
         <div className="flex min-h-0 flex-col items-center justify-center border-b border-white/15 pb-5 text-center md:border-b-0 md:border-r md:pb-0 md:pr-[clamp(20px,3vw,48px)]">
