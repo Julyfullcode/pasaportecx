@@ -143,3 +143,27 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+.matriz-scroll {
+  scrollbar-color: var(--epm-verde) rgba(255, 255, 255, 0.28);
+  scrollbar-width: auto;
+  scrollbar-gutter: stable both-edges;
+}
+
+.matriz-scroll::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.matriz-scroll::-webkit-scrollbar-track {
+  background: #e8f1f4;
+}
+
+.matriz-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid #e8f1f4;
+  border-radius: 999px;
+  background: var(--epm-verde-medio);
+}
+
+.matriz-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--epm-azul);
+}
