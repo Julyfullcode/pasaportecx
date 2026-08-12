@@ -236,7 +236,7 @@ try {
       puntosRegistro: true,
       completitudes: {
         where: { puntosOtorgados: 14 },
-        select: { id: true, estado: true, desafio: { select: { titulo: true, configuracion: true } } },
+        select: { id: true, estado: true, respuesta: true, desafio: { select: { titulo: true, configuracion: true } } },
       },
     },
   });
@@ -253,7 +253,9 @@ try {
       || titulo.includes("presentes a tiempo");
   };
   const coincidenciasPuntualidad = personasLuisFernando.flatMap((persona) => persona.completitudes
-    .filter((completitud) => esPuntualidad(completitud.desafio))
+    .filter((completitud) => esPuntualidad(completitud.desafio)
+      || (completitud.respuesta && typeof completitud.respuesta === "object"
+        && String(completitud.respuesta.tipoEspecial ?? completitud.respuesta.tipo ?? "").toUpperCase() === "PUNTUALIDAD"))
     .map((completitud) => ({ persona, completitud })));
   if (coincidenciasPuntualidad.length === 1) {
     const [{ persona, completitud }] = coincidenciasPuntualidad;

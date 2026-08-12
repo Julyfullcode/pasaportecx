@@ -22,11 +22,11 @@ export async function GET() {
       consultaStorage,
       db.participante.findMany({
         where: { AND: [{ nombre: { contains: "Luis" } }, { nombre: { contains: "Fernando" } }, { nombre: { contains: "Maldonado" } }] },
-        select: { completitudes: { where: { puntosOtorgados: { in: [10, 14] } }, select: { puntosOtorgados: true, desafio: { select: { titulo: true, configuracion: true } } } } },
+        select: { completitudes: { where: { puntosOtorgados: { in: [10, 14] } }, select: { puntosOtorgados: true, respuesta: true, desafio: { select: { titulo: true, configuracion: true } } } } },
       }),
     ]);
     const puntosPuntualidadLuis = puntualidadLuis.flatMap((persona) => persona.completitudes)
-      .filter((completitud) => esDesafioPuntualidad(completitud.desafio))
+      .filter((completitud) => esDesafioPuntualidad({ ...completitud.desafio, completitudes: [{ respuesta: completitud.respuesta }] }))
       .map((completitud) => completitud.puntosOtorgados);
     return Response.json(
       {
