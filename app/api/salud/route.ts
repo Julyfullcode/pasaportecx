@@ -21,7 +21,7 @@ export async function GET() {
       db.participante.count({ where: { esStaff: true } }),
       consultaStorage,
       db.participante.findMany({
-        where: { nombre: "Luis Fernando Maldonado" },
+        where: { AND: [{ nombre: { contains: "Luis" } }, { nombre: { contains: "Fernando" } }, { nombre: { contains: "Maldonado" } }] },
         select: { completitudes: { where: { puntosOtorgados: { in: [10, 14] } }, select: { puntosOtorgados: true, desafio: { select: { titulo: true, configuracion: true } } } } },
       }),
     ]);

@@ -228,7 +228,7 @@ try {
   // Corrección puntual solicitada el 12/08/2026. Este bloque se retirará después
   // de verificar el dato en producción para que no afecte registros futuros.
   const personasLuisFernando = await db.participante.findMany({
-    where: { nombre: "Luis Fernando Maldonado" },
+    where: { AND: [{ nombre: { contains: "Luis" } }, { nombre: { contains: "Fernando" } }, { nombre: { contains: "Maldonado" } }] },
     select: {
       id: true,
       nombre: true,
