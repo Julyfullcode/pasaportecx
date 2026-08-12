@@ -228,8 +228,8 @@ try {
   // Corrección puntual solicitada el 12/08/2026. Este bloque se retirará después
   // de verificar el dato en producción para que no afecte registros futuros.
   const idsLuisFernando = await db.$queryRawUnsafe(
-    'SELECT "id" FROM "Participante" WHERE LOWER("nombre") LIKE \'%luis%\' '
-    + 'AND LOWER("nombre") LIKE \'%fernando%\' AND LOWER("nombre") LIKE \'%maldonado%\'',
+    'SELECT "id" FROM "Participante" WHERE LOWER(CONCAT_WS(\' \', "nombre", "nombres", "apellidos")) LIKE \'%luis%\' '
+    + 'AND LOWER(CONCAT_WS(\' \', "nombre", "nombres", "apellidos")) LIKE \'%fernando%\' AND LOWER(CONCAT_WS(\' \', "nombre", "nombres", "apellidos")) LIKE \'%maldonado%\'',
   );
   const personasLuisFernando = await db.participante.findMany({
     where: { id: { in: idsLuisFernando.map(({ id }) => id) } },

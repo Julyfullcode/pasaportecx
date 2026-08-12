@@ -24,9 +24,9 @@ export async function GET() {
         FROM "Completitud" c
         INNER JOIN "Participante" p ON p."id" = c."participanteId"
         INNER JOIN "Desafio" d ON d."id" = c."desafioId"
-        WHERE LOWER(p."nombre") LIKE '%luis%'
-          AND LOWER(p."nombre") LIKE '%fernando%'
-          AND LOWER(p."nombre") LIKE '%maldonado%'
+        WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%'
+          AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%'
+          AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%'
           AND c."puntosOtorgados" IN (10, 14)
           AND (
             LOWER(d."titulo") LIKE '%puntualidad%'
@@ -41,9 +41,9 @@ export async function GET() {
           COUNT(c."id") FILTER (WHERE c."puntosOtorgados" = 14)::int AS "asignaciones14"
         FROM "Participante" p
         LEFT JOIN "Completitud" c ON c."participanteId" = p."id"
-        WHERE LOWER(p."nombre") LIKE '%luis%'
-          AND LOWER(p."nombre") LIKE '%fernando%'
-          AND LOWER(p."nombre") LIKE '%maldonado%'
+        WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%'
+          AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%'
+          AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%'
       `,
     ]);
     const puntosPuntualidadLuis = puntualidadLuis.map(({ puntos }) => Number(puntos));
