@@ -49,6 +49,7 @@ export function NavegacionAdmin({ pendientes }: { pendientes: number }) {
           })}
         </nav>
         <Link href="/admin/proyeccion/registro" target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-2 rounded-xl bg-[var(--epm-verde)] p-3 font-bold text-[var(--epm-azul-profundo)] transition hover:brightness-105"><QrCode /> Invitar a registrarse</Link>
+        <Link href="/admin/proyeccion/valoracion" target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-2 rounded-xl bg-white/15 p-3 font-bold transition hover:bg-white/20"><QrCode /> Proyectar QR valoración</Link>
         <Link href="/admin/proyeccion/mixto" target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-2 rounded-xl bg-white/10 p-3 font-bold"><MonitorPlay /> Abrir proyección</Link>
         <form action={salirAdmin}><button className="flex w-full items-center gap-2 rounded-xl p-3 text-white/75"><DoorOpen /> Cerrar sesión</button></form>
       </aside>
