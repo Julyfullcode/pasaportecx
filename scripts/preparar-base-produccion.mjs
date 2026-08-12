@@ -227,8 +227,12 @@ try {
   }
   // Corrección puntual solicitada el 12/08/2026. Este bloque se retirará después
   // de verificar el dato en producción para que no afecte registros futuros.
+  const idsLuisFernando = await db.$queryRawUnsafe(
+    'SELECT "id" FROM "Participante" WHERE LOWER("nombre") LIKE \'%luis%\' '
+    + 'AND LOWER("nombre") LIKE \'%fernando%\' AND LOWER("nombre") LIKE \'%maldonado%\'',
+  );
   const personasLuisFernando = await db.participante.findMany({
-    where: { AND: [{ nombre: { contains: "Luis" } }, { nombre: { contains: "Fernando" } }, { nombre: { contains: "Maldonado" } }] },
+    where: { id: { in: idsLuisFernando.map(({ id }) => id) } },
     select: {
       id: true,
       nombre: true,

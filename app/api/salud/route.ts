@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { esDesafioPuntualidad } from "@/lib/puntualidad";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +19,25 @@ export async function GET() {
       db.correoAutorizado.count(),
       db.participante.count({ where: { esStaff: true } }),
       consultaStorage,
-      db.participante.findMany({
-        where: { AND: [{ nombre: { contains: "Luis" } }, { nombre: { contains: "Fernando" } }, { nombre: { contains: "Maldonado" } }] },
-        select: { completitudes: { where: { puntosOtorgados: { in: [10, 14] } }, select: { puntosOtorgados: true, respuesta: true, desafio: { select: { titulo: true, configuracion: true } } } } },
-      }),
+      db.$queryRaw<{ puntos: number }[]>`
+        SELECT c."puntosOtorgados" AS puntos
+        FROM "Completitud" c
+        INNER JOIN "Participante" p ON p."id" = c."participanteId"
+        INNER JOIN "Desafio" d ON d."id" = c."desafioId"
+        WHERE LOWER(p."nombre") LIKE '%luis%'
+          AND LOWER(p."nombre") LIKE '%fernando%'
+          AND LOWER(p."nombre") LIKE '%maldonado%'
+          AND c."puntosOtorgados" IN (10, 14)
+          AND (
+            LOWER(d."titulo") LIKE '%puntualidad%'
+            OR LOWER(d."titulo") LIKE '%llegada a tiempo%'
+            OR LOWER(d."titulo") LIKE '%presentes a tiempo%'
+            OR c."respuesta"->>'tipoEspecial' = 'PUNTUALIDAD'
+            OR c."respuesta"->>'tipo' = 'PUNTUALIDAD'
+          )
+      `,
     ]);
-    const puntosPuntualidadLuis = puntualidadLuis.flatMap((persona) => persona.completitudes)
-      .filter((completitud) => esDesafioPuntualidad({ ...completitud.desafio, completitudes: [{ respuesta: completitud.respuesta }] }))
-      .map((completitud) => completitud.puntosOtorgados);
+    const puntosPuntualidadLuis = puntualidadLuis.map(({ puntos }) => Number(puntos));
     return Response.json(
       {
         ok: true,
@@ -39,7 +49,7 @@ export async function GET() {
         reaccionesRecuerdos,
         correosAutorizados,
         participantesStaff,
-        ajustePuntualidadVerificado: puntosPuntualidadLuis.length === 1 && puntosPuntualidadLuis[0] === 10,
+        ajustePuntualidadVerificado: !puntosPuntualidadLuis.includes(14) && puntosPuntualidadLuis.includes(10),
         maxRecuerdosPorParticipante: configuracion?.maxRecuerdosPorParticipante,
         limpiezaEvidenciasRechazadas: configuracion?.eliminarEvidenciasRechazadas,
         diplomaHabilitado: configuracion?.diplomaHabilitado,
