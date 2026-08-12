@@ -9,7 +9,7 @@ export async function GET() {
     const consultaStorage = bucket && process.env.STORAGE_DRIVER?.toLowerCase() === "supabase"
       ? db.$queryRaw<{ total: number }[]>`SELECT COUNT(*)::int AS "total" FROM storage.objects WHERE bucket_id = ${bucket}`
       : Promise.resolve([{ total: 0 }]);
-    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos, correosAutorizados, participantesStaff, objetosStorage, puntualidadLuis] = await Promise.all([
+    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos, correosAutorizados, participantesStaff, objetosStorage, puntualidadLuis, diagnosticoLuis] = await Promise.all([
       db.$queryRaw`SELECT 1 AS "ok"`,
       db.diaAgenda.count(),
       db.momentoAgenda.findFirst({ select: { destacado: true, urlFotoExpositor: true } }),
@@ -35,6 +35,15 @@ export async function GET() {
             OR c."respuesta"->>'tipoEspecial' = 'PUNTUALIDAD'
             OR c."respuesta"->>'tipo' = 'PUNTUALIDAD'
           )
+      `,      db.$queryRaw<{ personas: number; asignaciones14: number }[]>`
+        SELECT
+          COUNT(DISTINCT p."id")::int AS personas,
+          COUNT(c."id") FILTER (WHERE c."puntosOtorgados" = 14)::int AS "asignaciones14"
+        FROM "Participante" p
+        LEFT JOIN "Completitud" c ON c."participanteId" = p."id"
+        WHERE LOWER(p."nombre") LIKE '%luis%'
+          AND LOWER(p."nombre") LIKE '%fernando%'
+          AND LOWER(p."nombre") LIKE '%maldonado%'
       `,
     ]);
     const puntosPuntualidadLuis = puntualidadLuis.map(({ puntos }) => Number(puntos));
@@ -50,6 +59,7 @@ export async function GET() {
         correosAutorizados,
         participantesStaff,
         ajustePuntualidadVerificado: !puntosPuntualidadLuis.includes(14) && puntosPuntualidadLuis.includes(10),
+        diagnosticoAjuste: { personas: Number(diagnosticoLuis[0]?.personas ?? 0), asignaciones14: Number(diagnosticoLuis[0]?.asignaciones14 ?? 0), puntualidadesDetectadas: puntosPuntualidadLuis.length },
         maxRecuerdosPorParticipante: configuracion?.maxRecuerdosPorParticipante,
         limpiezaEvidenciasRechazadas: configuracion?.eliminarEvidenciasRechazadas,
         diplomaHabilitado: configuracion?.diplomaHabilitado,
