@@ -3,10 +3,8 @@ import { MessageSquareText } from "lucide-react";
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { preguntasDe } from "@/lib/actividad";
-import { analizarRespuestasActividad } from "@/lib/analisis-actividad";
 import { Logo } from "@/components/marca/Logo";
 import { ActualizacionModeracion } from "@/components/admin/ActualizacionModeracion";
-import { ResumenAnalisisActividad } from "@/components/admin/ResumenAnalisisActividad";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +29,6 @@ export default async function ProyectarRespuestasActividad({ params }: { params:
     grupos.set(respuesta.participanteId, lista);
   }
   const evaluaciones = Array.from(grupos.values());
-  const analisis = analizarRespuestasActividad(preguntas, actividad.respuestas);
 
   return <main className="marca-gradiente flex h-screen flex-col overflow-hidden p-5 text-white md:p-8"><ActualizacionModeracion />
     <header className="flex shrink-0 items-center gap-5 border-b border-white/20 pb-5"><Logo className="h-12 w-auto md:h-16" /><span className="h-12 w-px bg-white/25" /><div className="min-w-0"><p className="font-extrabold tracking-wide text-[var(--epm-verde)]">Matriz de resultados anónimos</p><h1 className="truncate text-3xl font-extrabold md:text-5xl">{actividad.titulo}</h1></div><span className="ml-auto hidden shrink-0 rounded-full bg-white/15 px-5 py-3 font-extrabold md:inline-flex">{evaluaciones.length} evaluaciones</span></header>
@@ -43,7 +40,6 @@ export default async function ProyectarRespuestasActividad({ params }: { params:
           <tbody>{preguntas.map((pregunta, indicePregunta) => <tr key={pregunta.id}><th className={`w-[24%] border-b border-r p-[clamp(7px,.8vw,13px)] text-left align-middle text-[clamp(10px,.78vw,14px)] font-extrabold leading-snug text-[var(--epm-azul-profundo)] ${indicePregunta % 2 ? "bg-sky-50" : "bg-white"}`}>{pregunta.titulo}</th>{evaluaciones.map((respuestas) => { const respuesta = respuestas.find((item) => item.preguntaId === pregunta.id); return <td key={respuestas[0].participanteId} className={`overflow-hidden whitespace-pre-line border-b border-r p-[clamp(7px,.8vw,13px)] align-middle text-[clamp(8px,.68vw,12px)] leading-snug last:border-r-0 ${indicePregunta % 2 ? "bg-sky-50/50" : "bg-white"}`}>{respuesta ? textoRespuesta(respuesta.respuesta) : <span className="text-slate-400">Sin respuesta</span>}</td>; })}</tr>)}</tbody>
         </table>
       </section>
-      <div className="mt-4 shrink-0"><ResumenAnalisisActividad analisis={analisis} oscuro /></div>
-    </div> : <section className="grid min-h-0 flex-1 place-items-center text-center"><div><MessageSquareText className="mx-auto text-[var(--epm-verde)]" size={72} /><h2 className="mt-5 text-4xl font-extrabold">Esperando respuestas</h2><p className="mt-3 text-xl text-white/75">La matriz y su conclusión aparecerán automáticamente.</p></div></section>}
+    </div> : <section className="grid min-h-0 flex-1 place-items-center text-center"><div><MessageSquareText className="mx-auto text-[var(--epm-verde)]" size={72} /><h2 className="mt-5 text-4xl font-extrabold">Esperando respuestas</h2><p className="mt-3 text-xl text-white/75">La matriz aparecerá automáticamente.</p></div></section>}
   </main>;
 }
