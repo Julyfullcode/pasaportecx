@@ -25,7 +25,6 @@ export async function GET() {
         INNER JOIN "Participante" p ON p."id" = c."participanteId"
         INNER JOIN "Desafio" d ON d."id" = c."desafioId"
         WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%'
-          AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%'
           AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%'
           AND c."puntosOtorgados" IN (10, 14)
           AND (
@@ -42,7 +41,6 @@ export async function GET() {
         FROM "Participante" p
         LEFT JOIN "Completitud" c ON c."participanteId" = p."id"
         WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%'
-          AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%'
           AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%'
       `,      db.$queryRaw<{ luis: number; fernando: number; maldonado: number; luisFernando: number; luisMaldonado: number; fernandoMaldonado: number; puntualidades14: number; luisFernandoPuntualidades14: number; luisMaldonadoPuntualidades14: number }[]>`
         SELECT
