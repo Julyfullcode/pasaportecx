@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { esDesafioPuntualidad } from "@/lib/puntualidad";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ export async function GET() {
     const consultaStorage = bucket && process.env.STORAGE_DRIVER?.toLowerCase() === "supabase"
       ? db.$queryRaw<{ total: number }[]>`SELECT COUNT(*)::int AS "total" FROM storage.objects WHERE bucket_id = ${bucket}`
       : Promise.resolve([{ total: 0 }]);
-    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos, correosAutorizados, participantesStaff, objetosStorage] = await Promise.all([
+    const [, agendaDias, , fotosDias, configuracion, reaccionesRecuerdos, correosAutorizados, participantesStaff, objetosStorage, puntualidadLuis] = await Promise.all([
       db.$queryRaw`SELECT 1 AS "ok"`,
       db.diaAgenda.count(),
       db.momentoAgenda.findFirst({ select: { destacado: true, urlFotoExpositor: true } }),
@@ -19,7 +20,14 @@ export async function GET() {
       db.correoAutorizado.count(),
       db.participante.count({ where: { esStaff: true } }),
       consultaStorage,
+      db.participante.findMany({
+        where: { nombre: "Luis Fernando Maldonado" },
+        select: { completitudes: { where: { puntosOtorgados: { in: [10, 14] } }, select: { puntosOtorgados: true, desafio: { select: { titulo: true, configuracion: true } } } } },
+      }),
     ]);
+    const puntosPuntualidadLuis = puntualidadLuis.flatMap((persona) => persona.completitudes)
+      .filter((completitud) => esDesafioPuntualidad(completitud.desafio))
+      .map((completitud) => completitud.puntosOtorgados);
     return Response.json(
       {
         ok: true,
@@ -31,6 +39,7 @@ export async function GET() {
         reaccionesRecuerdos,
         correosAutorizados,
         participantesStaff,
+        ajustePuntualidadVerificado: puntosPuntualidadLuis.length === 1 && puntosPuntualidadLuis[0] === 10,
         maxRecuerdosPorParticipante: configuracion?.maxRecuerdosPorParticipante,
         limpiezaEvidenciasRechazadas: configuracion?.eliminarEvidenciasRechazadas,
         diplomaHabilitado: configuracion?.diplomaHabilitado,
