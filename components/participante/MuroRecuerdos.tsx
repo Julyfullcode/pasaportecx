@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, Clock3, Flag, Flame, Heart, LoaderCircle, RotateCcw, Trash2, X } from "lucide-react";
 import { comprimirImagenHasta } from "@/lib/imagen";
 import { FotoCircular } from "@/components/marca/FotoCircular";
-import { usePollingVisible } from "@/lib/usePollingVisible";
 import type { TipoReaccionRecuerdo } from "@/lib/recuerdos";
 
 type ResumenReacciones = {
@@ -164,8 +163,6 @@ export function MuroRecuerdos({
     }
     await recargar(mios);
   }
-
-  usePollingVisible(() => recargar(mios), 30_000);
 
   useEffect(() => {
     const boton = cargarMasRef.current;
