@@ -44,7 +44,7 @@ export async function GET() {
         WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%'
           AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%'
           AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%'
-      `,      db.$queryRaw<{ luis: number; fernando: number; maldonado: number; luisFernando: number; luisMaldonado: number; fernandoMaldonado: number; puntualidades14: number }[]>`
+      `,      db.$queryRaw<{ luis: number; fernando: number; maldonado: number; luisFernando: number; luisMaldonado: number; fernandoMaldonado: number; puntualidades14: number; luisFernandoPuntualidades14: number; luisMaldonadoPuntualidades14: number }[]>`
         SELECT
           COUNT(DISTINCT p."id") FILTER (WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%')::int AS luis,
           COUNT(DISTINCT p."id") FILTER (WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%')::int AS fernando,
@@ -52,7 +52,9 @@ export async function GET() {
           COUNT(DISTINCT p."id") FILTER (WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%' AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%')::int AS "luisFernando",
           COUNT(DISTINCT p."id") FILTER (WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%' AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%')::int AS "luisMaldonado",
           COUNT(DISTINCT p."id") FILTER (WHERE LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%' AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%')::int AS "fernandoMaldonado",
-          COUNT(c."id") FILTER (WHERE c."puntosOtorgados" = 14 AND (LOWER(d."titulo") LIKE '%puntualidad%' OR LOWER(d."titulo") LIKE '%llegada a tiempo%' OR LOWER(d."titulo") LIKE '%presentes a tiempo%' OR c."respuesta"->>'tipoEspecial' = 'PUNTUALIDAD' OR c."respuesta"->>'tipo' = 'PUNTUALIDAD'))::int AS "puntualidades14"
+          COUNT(c."id") FILTER (WHERE c."puntosOtorgados" = 14 AND (LOWER(d."titulo") LIKE '%puntualidad%' OR LOWER(d."titulo") LIKE '%llegada a tiempo%' OR LOWER(d."titulo") LIKE '%presentes a tiempo%' OR c."respuesta"->>'tipoEspecial' = 'PUNTUALIDAD' OR c."respuesta"->>'tipo' = 'PUNTUALIDAD'))::int AS "puntualidades14",
+          COUNT(c."id") FILTER (WHERE c."puntosOtorgados" = 14 AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%' AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%fernando%' AND (LOWER(d."titulo") LIKE '%puntualidad%' OR LOWER(d."titulo") LIKE '%llegada a tiempo%' OR LOWER(d."titulo") LIKE '%presentes a tiempo%' OR c."respuesta"->>'tipoEspecial' = 'PUNTUALIDAD' OR c."respuesta"->>'tipo' = 'PUNTUALIDAD'))::int AS "luisFernandoPuntualidades14",
+          COUNT(c."id") FILTER (WHERE c."puntosOtorgados" = 14 AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%luis%' AND LOWER(CONCAT_WS(' ', p."nombre", p."nombres", p."apellidos")) LIKE '%maldonado%' AND (LOWER(d."titulo") LIKE '%puntualidad%' OR LOWER(d."titulo") LIKE '%llegada a tiempo%' OR LOWER(d."titulo") LIKE '%presentes a tiempo%' OR c."respuesta"->>'tipoEspecial' = 'PUNTUALIDAD' OR c."respuesta"->>'tipo' = 'PUNTUALIDAD'))::int AS "luisMaldonadoPuntualidades14"
         FROM "Participante" p
         LEFT JOIN "Completitud" c ON c."participanteId" = p."id"
         LEFT JOIN "Desafio" d ON d."id" = c."desafioId"
