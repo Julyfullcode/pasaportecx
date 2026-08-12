@@ -225,64 +225,6 @@ try {
       }
     }
   }
-  // Corrección puntual solicitada el 12/08/2026. Este bloque se retirará después
-  // de verificar el dato en producción para que no afecte registros futuros.
-  const idsLuisFernando = await db.$queryRawUnsafe(
-    'SELECT "id" FROM "Participante" WHERE LOWER(CONCAT_WS(\' \', "nombre", "nombres", "apellidos")) LIKE \'%luis%\' '
-    + 'AND LOWER(CONCAT_WS(\' \', "nombre", "nombres", "apellidos")) LIKE \'%maldonado%\'',
-  );
-  const personasLuisFernando = await db.participante.findMany({
-    where: { id: { in: idsLuisFernando.map(({ id }) => id) } },
-    select: {
-      id: true,
-      nombre: true,
-      esStaff: true,
-      puntosRegistro: true,
-      completitudes: {
-        where: { puntosOtorgados: 14 },
-        select: { id: true, estado: true, respuesta: true, desafio: { select: { titulo: true, configuracion: true } } },
-      },
-    },
-  });
-  const normalizar = (valor) => valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const esPuntualidad = (desafio) => {
-    const titulo = normalizar(desafio.titulo);
-    const configuracion = desafio.configuracion && typeof desafio.configuracion === "object"
-      ? desafio.configuracion
-      : {};
-    const tipo = String(configuracion.tipoEspecial ?? configuracion.tipo ?? configuracion.tipoDesafio ?? "").toUpperCase();
-    return tipo === "PUNTUALIDAD"
-      || titulo.includes("puntualidad")
-      || titulo.includes("llegada a tiempo")
-      || titulo.includes("presentes a tiempo");
-  };
-  const coincidenciasPuntualidad = personasLuisFernando.flatMap((persona) => persona.completitudes
-    .filter((completitud) => esPuntualidad(completitud.desafio)
-      || (completitud.respuesta && typeof completitud.respuesta === "object"
-        && String(completitud.respuesta.tipoEspecial ?? completitud.respuesta.tipo ?? "").toUpperCase() === "PUNTUALIDAD"))
-    .map((completitud) => ({ persona, completitud })));
-  if (coincidenciasPuntualidad.length === 1) {
-    const [{ persona, completitud }] = coincidenciasPuntualidad;
-    await db.$transaction(async (tx) => {
-      await tx.completitud.update({ where: { id: completitud.id }, data: { puntosOtorgados: 10 } });
-      const [completitudes, ajustes, actividades] = await Promise.all([
-        tx.completitud.aggregate({ where: { participanteId: persona.id, estado: "APROBADO" }, _sum: { puntosOtorgados: true } }),
-        tx.ajustePuntos.aggregate({ where: { participanteId: persona.id }, _sum: { puntos: true } }),
-        tx.participacionActividad.aggregate({ where: { participanteId: persona.id }, _sum: { puntosOtorgados: true } }),
-      ]);
-      const total = persona.esStaff ? 0 : persona.puntosRegistro
-        + (completitudes._sum.puntosOtorgados ?? 0)
-        + (ajustes._sum.puntos ?? 0)
-        + (actividades._sum.puntosOtorgados ?? 0);
-      await tx.participante.update({ where: { id: persona.id }, data: { puntosTotales: total } });
-    });
-    console.log("Corrección puntual de puntualidad aplicada correctamente.");
-  } else if (coincidenciasPuntualidad.length > 1) {
-    throw new Error(`Corrección de puntualidad cancelada: se encontraron ${coincidenciasPuntualidad.length} coincidencias.`);
-  } else {
-    console.log("Corrección puntual de puntualidad: no hay una asignación pendiente de 14 puntos.");
-  }
-
   console.log("Base de producción preparada.");
 } finally {
   await db.$disconnect();
