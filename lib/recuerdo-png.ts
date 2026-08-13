@@ -83,7 +83,7 @@ export async function generarRecuerdoPng(datos: DatosRecuerdoPng) {
     renderizarTexto(datos.autor, anchoNombre, nombreTamano, "#0b3b60", true),
     renderizarTexto(datos.empresa, anchoNombre, empresaTamano, "#64748b"),
     renderizarTexto(String(datos.corazones), chipAncho - 42, chipTamano, "#0b3b60", true, "left"),
-    renderizarTexto(`Risa ${datos.risas}`, chipAncho - 16, chipTamano, "#0b3b60", true, "left"),
+    renderizarTexto(String(datos.risas), chipAncho - 42, chipTamano, "#0b3b60", true, "left"),
     prepararAvatar(datos.urlFotoAutor, datos.autor, avatarTamano),
   ]);
 
@@ -105,6 +105,11 @@ export async function generarRecuerdoPng(datos: DatosRecuerdoPng) {
   const corazonIconoX = chip1X + Math.round((chipAncho - corazonGrupoAncho) / 2);
   const corazonTextoX = corazonIconoX + corazonIconoTamano + 6;
   const corazonIcono = Buffer.from(`<svg width="${corazonIconoTamano}" height="${corazonIconoTamano}" viewBox="0 0 24 24"><path fill="#e11d48" d="M12 21s-7.2-4.35-9.6-8.46C.35 9.03 1.8 4.5 5.85 3.3A5.2 5.2 0 0 1 12 5.2a5.2 5.2 0 0 1 6.15-1.9c4.05 1.2 5.5 5.73 3.45 9.24C19.2 16.65 12 21 12 21Z"/></svg>`);
+  const risaIconoTamano = corazonIconoTamano;
+  const risaGrupoAncho = risaIconoTamano + 6 + risa.ancho;
+  const risaIconoX = chip2X + Math.round((chipAncho - risaGrupoAncho) / 2);
+  const risaTextoX = risaIconoX + risaIconoTamano + 6;
+  const risaIcono = Buffer.from(`<svg width="${risaIconoTamano}" height="${risaIconoTamano}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#facc15"/><path d="M7 10c1.2-1.4 2.4-1.4 3.6 0M13.4 10c1.2-1.4 2.4-1.4 3.6 0" fill="none" stroke="#713f12" stroke-width="1.7" stroke-linecap="round"/><path d="M7.2 13.2h9.6c-.55 3-2.15 4.6-4.8 4.6s-4.25-1.6-4.8-4.6Z" fill="#fff" stroke="#713f12" stroke-width="1.2" stroke-linejoin="round"/></svg>`);
   const composiciones: sharp.OverlayOptions[] = [
     { input: { create: { width: ancho, height: Math.max(5, Math.round(ancho * 0.005)), channels: 4, background: "#8cc63f" } }, left: 0, top: 0 },
     { input: comentario.buffer, left: margen, top: margen },
@@ -116,7 +121,8 @@ export async function generarRecuerdoPng(datos: DatosRecuerdoPng) {
     { input: { create: { width: chipAncho, height: chipAlto, channels: 4, background: "#f1f5f9" } }, left: chip2X, top: chipY },
     { input: corazonIcono, left: corazonIconoX, top: chipY + Math.round((chipAlto - corazonIconoTamano) / 2) },
     { input: corazon.buffer, left: corazonTextoX, top: chipY + Math.max(2, Math.round((chipAlto - corazon.alto) / 2)) },
-    { input: risa.buffer, left: chip2X + Math.max(8, Math.round((chipAncho - risa.ancho) / 2)), top: chipY + Math.max(2, Math.round((chipAlto - risa.alto) / 2)) },
+    { input: risaIcono, left: risaIconoX, top: chipY + Math.round((chipAlto - risaIconoTamano) / 2) },
+    { input: risa.buffer, left: risaTextoX, top: chipY + Math.max(2, Math.round((chipAlto - risa.alto) / 2)) },
   ];
   const franjaBuffer = await franja.composite(composiciones).png({ compressionLevel: 7 }).toBuffer();
   return sharp({ create: { width: ancho, height: alto + altoFranja, channels: 4, background: "#ffffff" } })
