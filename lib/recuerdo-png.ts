@@ -82,7 +82,7 @@ export async function generarRecuerdoPng(datos: DatosRecuerdoPng) {
     renderizarTexto(datos.comentario?.trim() || "Un momento que nos conecta", ancho - margen * 2, comentarioTamano, "#0b3b60", true),
     renderizarTexto(datos.autor, anchoNombre, nombreTamano, "#0b3b60", true),
     renderizarTexto(datos.empresa, anchoNombre, empresaTamano, "#64748b"),
-    renderizarTexto(`Corazón ${datos.corazones}`, chipAncho - 16, chipTamano, "#0b3b60", true, "left"),
+    renderizarTexto(String(datos.corazones), chipAncho - 42, chipTamano, "#0b3b60", true, "left"),
     renderizarTexto(`Risa ${datos.risas}`, chipAncho - 16, chipTamano, "#0b3b60", true, "left"),
     prepararAvatar(datos.urlFotoAutor, datos.autor, avatarTamano),
   ]);
@@ -98,16 +98,24 @@ export async function generarRecuerdoPng(datos: DatosRecuerdoPng) {
   const chip1X = chip2X - separacion - chipAncho;
   const chipY = datosY + Math.round((altoDatos - chipAlto) / 2);
   const textoX = margen + avatarTamano + separacion;
+  const altoBloquePersona = nombre.alto + empresa.alto + 6;
+  const textoY = datosY + Math.max(0, Math.round((altoDatos - altoBloquePersona) / 2));
+  const corazonIconoTamano = Math.max(18, Math.round(chipAlto * 0.38));
+  const corazonGrupoAncho = corazonIconoTamano + 6 + corazon.ancho;
+  const corazonIconoX = chip1X + Math.round((chipAncho - corazonGrupoAncho) / 2);
+  const corazonTextoX = corazonIconoX + corazonIconoTamano + 6;
+  const corazonIcono = Buffer.from(`<svg width="${corazonIconoTamano}" height="${corazonIconoTamano}" viewBox="0 0 24 24"><path fill="#e11d48" d="M12 21s-7.2-4.35-9.6-8.46C.35 9.03 1.8 4.5 5.85 3.3A5.2 5.2 0 0 1 12 5.2a5.2 5.2 0 0 1 6.15-1.9c4.05 1.2 5.5 5.73 3.45 9.24C19.2 16.65 12 21 12 21Z"/></svg>`);
   const composiciones: sharp.OverlayOptions[] = [
     { input: { create: { width: ancho, height: Math.max(5, Math.round(ancho * 0.005)), channels: 4, background: "#8cc63f" } }, left: 0, top: 0 },
     { input: comentario.buffer, left: margen, top: margen },
     { input: { create: { width: ancho - margen * 2, height: 2, channels: 4, background: "#dce6eb" } }, left: margen, top: divisorY },
     { input: avatar, left: margen, top: datosY },
-    { input: nombre.buffer, left: textoX, top: datosY },
-    { input: empresa.buffer, left: textoX, top: datosY + nombre.alto + 6 },
+    { input: nombre.buffer, left: textoX, top: textoY },
+    { input: empresa.buffer, left: textoX, top: textoY + nombre.alto + 6 },
     { input: { create: { width: chipAncho, height: chipAlto, channels: 4, background: "#f1f5f9" } }, left: chip1X, top: chipY },
     { input: { create: { width: chipAncho, height: chipAlto, channels: 4, background: "#f1f5f9" } }, left: chip2X, top: chipY },
-    { input: corazon.buffer, left: chip1X + Math.max(8, Math.round((chipAncho - corazon.ancho) / 2)), top: chipY + Math.max(2, Math.round((chipAlto - corazon.alto) / 2)) },
+    { input: corazonIcono, left: corazonIconoX, top: chipY + Math.round((chipAlto - corazonIconoTamano) / 2) },
+    { input: corazon.buffer, left: corazonTextoX, top: chipY + Math.max(2, Math.round((chipAlto - corazon.alto) / 2)) },
     { input: risa.buffer, left: chip2X + Math.max(8, Math.round((chipAncho - risa.ancho) / 2)), top: chipY + Math.max(2, Math.round((chipAlto - risa.alto) / 2)) },
   ];
   const franjaBuffer = await franja.composite(composiciones).png({ compressionLevel: 7 }).toBuffer();
