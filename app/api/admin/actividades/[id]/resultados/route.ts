@@ -20,7 +20,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     include: {
       respuestas: {
         orderBy: { respondidoEn: "asc" },
-        include: { participante: { include: { correoAutorizado: true } } },
+        include: {
+          participante: {
+            include: {
+              correoAutorizado: { select: { correo: true } },
+              empresa: { select: { nombre: true } },
+              dependencia: { select: { nombre: true } },
+              equipo: { select: { nombre: true } },
+            },
+          },
+        },
       },
       resultadosJuego: { orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } }, participante: { select: { nombre: true } } } },
     },
@@ -43,17 +52,51 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     lista.push(respuesta);
     porParticipante.set(respuesta.participanteId, lista);
   }
-  const encabezado = actividad.anonima
-    ? ["Respuesta", "Empresa evaluada", ...preguntas.map((pregunta) => pregunta.titulo)]
-    : ["Participante", "Correo", "Empresa evaluada", ...preguntas.map((pregunta) => pregunta.titulo)];
+  const encabezado = [
+    "Número de evaluación",
+    "ID del participante",
+    "Participante",
+    "Nombres",
+    "Apellidos",
+    "Correo",
+    "Empresa del participante",
+    "Dependencia",
+    "Equipo",
+    "Staff",
+    "Tiene licencia",
+    "Empresa evaluada",
+    "Inicio de la evaluación",
+    "Última respuesta",
+    "Estado",
+    "Preguntas respondidas",
+    "Total de preguntas",
+    ...preguntas.map((pregunta) => pregunta.titulo),
+  ];
+  const formatoFecha = (fecha: Date) => fecha.toLocaleString("es-CO", { timeZone: "America/Bogota" });
   const filas = [encabezado, ...Array.from(porParticipante.values()).map((respuestas, indice) => {
     const primera = respuestas[0];
-    const identidad = actividad.anonima
-      ? [`Respuesta ${indice + 1}`]
-      : [primera.participante.nombre, primera.participante.correoAutorizado?.correo ?? ""];
+    const participante = primera.participante;
+    const empresaEvaluadaId = respuestas.find((respuesta) => respuesta.empresaEvaluadaId)?.empresaEvaluadaId ?? "";
+    const fechas = respuestas.map((respuesta) => respuesta.respondidoEn.getTime());
+    const respondidas = preguntas.filter((pregunta) => respuestas.some((respuesta) => respuesta.preguntaId === pregunta.id)).length;
     return [
-      ...identidad,
-      nombreEmpresa.get(primera.empresaEvaluadaId ?? "") ?? "",
+      indice + 1,
+      participante.id,
+      participante.nombre,
+      participante.nombres ?? "",
+      participante.apellidos ?? "",
+      participante.correoAutorizado?.correo ?? "",
+      participante.empresa.nombre,
+      participante.dependencia?.nombre ?? "",
+      participante.equipo?.nombre ?? "",
+      participante.esStaff,
+      participante.tieneLicencia,
+      nombreEmpresa.get(empresaEvaluadaId) ?? empresaEvaluadaId,
+      formatoFecha(new Date(Math.min(...fechas))),
+      formatoFecha(new Date(Math.max(...fechas))),
+      respondidas === preguntas.length ? "Completa" : "Incompleta",
+      respondidas,
+      preguntas.length,
       ...preguntas.map((pregunta) => textoRespuesta(respuestas.find((respuesta) => respuesta.preguntaId === pregunta.id)?.respuesta)),
     ];
   })];
