@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Building2, Clock3, FileText, Mail, MonitorPlay, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
+import { BadgeCheck, Building2, Clock3, Download, FileText, Mail, MonitorPlay, Search, ShieldCheck, SlidersHorizontal, Sprout, Trash2, UserCheck } from "lucide-react";
 import { db } from "@/lib/db";
 import { actualizarLicencia, ajustarPuntos, alternarParticipante, alternarStaff, asignarDependencia, asignarEquipo, eliminarCorreoAutorizado, eliminarParticipante } from "@/app/admin/actions";
 import { FotoCircular } from "@/components/marca/FotoCircular";
@@ -54,7 +54,7 @@ export default async function AdminParticipantes({
     <div className="p-4 md:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Personas y puntajes</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">Participantes</h1></div>
-        <Link href="/admin/proyeccion/equipos" target="_blank" rel="noopener noreferrer" className="boton-primario"><MonitorPlay size={19} /> Presentar equipos</Link>
+        <div className="flex flex-wrap gap-2"><a href="/api/admin/participantes/tarjetas" className="boton-secundario"><Download size={19} /> Descargar fotos y nombres</a><Link href="/admin/proyeccion/equipos" target="_blank" rel="noopener noreferrer" className="boton-primario"><MonitorPlay size={19} /> Presentar equipos</Link></div>
       </div>
       <GestionCorreosAutorizados equipos={equipos.filter((equipo) => equipo.activo)} dependencias={dependencias.filter((dependencia) => dependencia.activa)} />
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
