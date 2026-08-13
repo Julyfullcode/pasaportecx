@@ -4,6 +4,7 @@ import { etiquetaDiaDesafio } from "@/lib/dia-desafio";
 import { esConfiguracionPuntualidad } from "@/lib/puntualidad";
 import { crearExcel } from "@/lib/excel";
 import { detallarRespuestasEncuesta } from "@/lib/reporte-encuestas";
+import { preguntasDe } from "@/lib/actividad";
 
 export async function GET(
   _request: Request,
@@ -44,20 +45,48 @@ export async function GET(
       ])),
     ];
   } else if (tipo === "actividades") {
-    const datos = await db.respuestaActividad.findMany({
-      include: { participante: true, actividad: true },
-      orderBy: { respondidoEn: "asc" },
-    });
+    const [datos, empresas] = await Promise.all([
+      db.respuestaActividad.findMany({
+        include: {
+          participante: {
+            include: {
+              correoAutorizado: { select: { correo: true } },
+              empresa: { select: { nombre: true } },
+              dependencia: { select: { nombre: true } },
+              equipo: { select: { nombre: true } },
+            },
+          },
+          actividad: true,
+        },
+        orderBy: { respondidoEn: "asc" },
+      }),
+      db.empresa.findMany({ select: { id: true, nombre: true } }),
+    ]);
+    const empresaPorId = new Map(empresas.map((empresa) => [empresa.id, empresa.nombre]));
     filas = [
-      ["Participante", "Staff", "Actividad", "Pregunta", "Respuesta", "Fecha"],
-      ...datos.map((item) => [
-        item.actividad.anonima ? "Anónimo" : item.participante.nombre,
-        item.participante.esStaff ? "Sí" : "No",
-        item.actividad.titulo,
-        item.preguntaId,
-        JSON.stringify(item.respuesta),
-        item.respondidoEn.toISOString(),
-      ]),
+      ["ID del participante", "Participante", "Nombres", "Apellidos", "Correo", "Empresa del participante", "Dependencia", "Equipo", "Staff", "Tiene licencia", "Actividad", "Tipo de actividad", "Empresa evaluada", "Pregunta", "Descripción o contexto", "Respuesta", "Fecha"],
+      ...datos.map((item) => {
+        const pregunta = preguntasDe(item.actividad.configuracion).find((opcion) => opcion.id === item.preguntaId);
+        return [
+          item.participante.id,
+          item.participante.nombre,
+          item.participante.nombres ?? "",
+          item.participante.apellidos ?? "",
+          item.participante.correoAutorizado?.correo ?? "",
+          item.participante.empresa.nombre,
+          item.participante.dependencia?.nombre ?? "",
+          item.participante.equipo?.nombre ?? "",
+          item.participante.esStaff,
+          item.participante.tieneLicencia,
+          item.actividad.titulo,
+          item.actividad.tipo,
+          empresaPorId.get(item.empresaEvaluadaId ?? "") ?? item.empresaEvaluadaId ?? "",
+          pregunta?.titulo ?? item.preguntaId,
+          pregunta?.contexto ?? "",
+          typeof item.respuesta === "string" ? item.respuesta : JSON.stringify(item.respuesta),
+          item.respondidoEn.toLocaleString("es-CO", { timeZone: "America/Bogota" }),
+        ];
+      }),
     ];
   } else if (tipo === "empresas") {
     const datos = await db.empresa.findMany({ include: { participantes: true }, orderBy: { orden: "asc" } });
