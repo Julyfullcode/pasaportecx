@@ -14,6 +14,7 @@ export type DatosRecuerdoPng = {
 
 const FUENTE_REGULAR = join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf");
 const FUENTE_SEMIBOLD = join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf");
+const FUENTE_EMOJI = join(process.cwd(), "public", "fuentes", "NotoColorEmoji.ttf");
 
 export function nombrePngSeguro(valor: string) {
   return valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "recuerdo";
@@ -36,7 +37,7 @@ type TextoRenderizado = { buffer: Buffer; ancho: number; alto: number };
 async function renderizarTexto(texto: string, ancho: number, tamano: number, color: string, semibold = false, alineacion: "left" | "right" = "left"): Promise<TextoRenderizado> {
   const buffer = await sharp({
     text: {
-      text: `<span foreground="${color}">${escaparPango(texto)}</span>`,
+      text: `<span foreground="${color}" font_family="Poppins, Noto Color Emoji">${escaparPango(texto)}</span>`,
       font: `Poppins ${tamano}`,
       fontfile: semibold ? FUENTE_SEMIBOLD : FUENTE_REGULAR,
       width: Math.max(1, Math.floor(ancho)),
@@ -51,6 +52,9 @@ async function renderizarTexto(texto: string, ancho: number, tamano: number, col
   return { buffer, ancho: metadata.width || ancho, alto: metadata.height || tamano * 2 };
 }
 
+async function cargarFuenteEmoji() {
+  await sharp({ text: { text: "😀", font: "Noto Color Emoji 16", fontfile: FUENTE_EMOJI, rgba: true } }).png().toBuffer();
+}
 async function prepararAvatar(url: string | null | undefined, nombre: string, tamano: number) {
   const mascara = Buffer.from(`<svg width="${tamano}" height="${tamano}"><circle cx="${tamano / 2}" cy="${tamano / 2}" r="${tamano / 2}" fill="white"/></svg>`);
   try {
@@ -67,6 +71,7 @@ async function prepararAvatar(url: string | null | undefined, nombre: string, ta
   }
 }
 export async function generarRecuerdoPng(datos: DatosRecuerdoPng) {
+  await cargarFuenteEmoji();
   const { foto, ancho, alto } = await prepararFoto(datos.urlFoto);
   const margen = Math.max(20, Math.round(ancho * 0.035));
   const avatarTamano = Math.max(56, Math.min(100, Math.round(ancho * 0.1)));

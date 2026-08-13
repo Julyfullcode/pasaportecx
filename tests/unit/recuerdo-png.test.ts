@@ -16,7 +16,7 @@ describe("exportación PNG de recuerdos", () => {
     await writeFile(rutaFoto, await sharp({ create: { width: 720, height: 1080, channels: 3, background: "#4f8f7b" } }).png().toBuffer());
     const png = await generarRecuerdoPng({
       urlFoto: "/uploads/tests/recuerdo-vertical.png",
-      comentario: "Un gran momento para conectar y compartir durante el encuentro.",
+      comentario: "Medallo, ciudad bonita 🌸🌿🤩",
       autor: "Ana Elida González",
       empresa: "ENSA",
       corazones: 7,
