@@ -74,6 +74,7 @@ export default async function AdminDesafios() {
                 <a href={`/admin/proyeccion/puntualidad/${desafio.id}`} target="_blank" rel="noopener noreferrer" className="boton-primario !min-h-10 !px-3 text-sm"><MonitorPlay size={17} /> Proyectar QR dinámico</a>
               ) : (
                 <>
+                  {desafio.codigoQr === CODIGO_DESAFIO_CIERRE && <a href="/api/admin/cosecha" className="boton-primario !min-h-10 !px-3 text-sm"><Download size={17} /> Descargar tarjetas PNG</a>}
                   <a href={`/api/qr/${desafio.id}`} className="boton-secundario !min-h-10 !px-3 text-sm"><Download size={17} /> PNG</a>
                   <a href={`/api/qr/${desafio.id}?formato=pdf`} target="_blank" rel="noopener noreferrer" className="boton-secundario !min-h-10 !px-3 text-sm"><FileDown size={17} /> Ver PDF</a>
                 </>

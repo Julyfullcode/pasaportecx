@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import JSZip from "jszip";
 import { db } from "@/lib/db";
@@ -579,7 +580,27 @@ await expect.poll(async () => Boolean(
     await page.goto("/admin/desafios");
     const tarjetaCierre = page.locator("article").filter({ hasText: TITULO_DESAFIO_CIERRE });
     await expect(tarjetaCierre.getByRole("link", { name: "Proyectar tarjetas" })).toHaveAttribute("href", "/admin/proyeccion/cierre");
+    const enlaceDescarga = tarjetaCierre.getByRole("link", { name: "Descargar tarjetas PNG" });
+    await expect(enlaceDescarga).toBeVisible();
+    await expect(enlaceDescarga).toHaveAttribute("href", "/api/admin/cosecha");
+
+    const [descarga] = await Promise.all([
+      page.waitForEvent("download"),
+      enlaceDescarga.click(),
+    ]);
+    expect(descarga.suggestedFilename()).toBe("tarjetas-desafio-cierre-png.zip");
+    const rutaDescarga = await descarga.path();
+    expect(rutaDescarga).toBeTruthy();
+    const zip = await JSZip.loadAsync(await readFile(rutaDescarga!));
+    const nombresPng = Object.keys(zip.files).filter((nombre) => nombre.endsWith(".png"));
+    const nombrePrimera = nombresPng.find((nombre) => nombre.includes(`cosecha-primera-${marca}`));
+    expect(nombrePrimera).toBeTruthy();
+    expect(nombresPng.some((nombre) => nombre.includes(`cosecha-segunda-${marca}`))).toBe(true);
+    const metadata = await sharp(await zip.file(nombrePrimera!)!.async("nodebuffer")).metadata();
+    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 1690 });
+
     await page.goto("/admin/proyeccion/cierre");
+    await expect(page.getByRole("link", { name: "Descargar tarjetas PNG" })).toBeVisible();
     await expect(page.getByText(`Cosecha segunda ${marca}`)).toBeVisible();
     await expect(page.getByText("Aprendizaje dos", { exact: true })).toBeVisible();
     await expect(page.getByText(`Cosecha primera ${marca}`)).toBeVisible({ timeout: 10_000 });
