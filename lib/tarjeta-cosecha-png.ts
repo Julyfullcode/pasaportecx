@@ -13,7 +13,7 @@ export type DatosTarjetaCosechaPng = {
 };
 
 const ANCHO = 1200;
-const ALTO = 1690;
+const ALTO = 2000;
 const FUENTE_REGULAR = join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf");
 const FUENTE_SEMIBOLD = join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf");
 
@@ -25,28 +25,60 @@ function escaparPango(valor: string) {
   return valor.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-async function texto(
+type TextoRenderizado = { buffer: Buffer; ancho: number; alto: number };
+
+async function renderizarTexto(
   valor: string,
   ancho: number,
-  alto: number,
   tamano: number,
   color: string,
   semibold = false,
   alineacion: "left" | "centre" = "left",
-) {
-  return sharp({
+): Promise<TextoRenderizado> {
+  const buffer = await sharp({
     text: {
-      text: `<span foreground="${color}">${escaparPango(valor.trim())}</span>`,
+      text: `<span foreground="${color}">${escaparPango(valor.trim() || " ")}</span>`,
       font: `Poppins ${tamano}`,
       fontfile: semibold ? FUENTE_SEMIBOLD : FUENTE_REGULAR,
       width: ancho,
-      height: alto,
       align: alineacion,
       rgba: true,
       wrap: "word-char",
       spacing: 0,
+      dpi: 72,
     },
   }).png().toBuffer();
+  const metadata = await sharp(buffer).metadata();
+  return { buffer, ancho: metadata.width || ancho, alto: metadata.height || tamano * 2 };
+}
+
+async function textoAjustado(
+  valor: string,
+  ancho: number,
+  altoMaximo: number,
+  tamanoMaximo: number,
+  tamanoMinimo: number,
+  color: string,
+  semibold = false,
+  alineacion: "left" | "centre" = "left",
+) {
+  let ultimo = await renderizarTexto(valor, ancho, tamanoMaximo, color, semibold, alineacion);
+  for (let tamano = tamanoMaximo; tamano >= tamanoMinimo; tamano -= 2) {
+    const candidato = tamano === tamanoMaximo
+      ? ultimo
+      : await renderizarTexto(valor, ancho, tamano, color, semibold, alineacion);
+    if (candidato.alto <= altoMaximo) return candidato;
+    ultimo = candidato;
+  }
+
+  let limite = Math.max(24, Math.floor(valor.length * altoMaximo / Math.max(ultimo.alto, 1)));
+  while (limite >= 24) {
+    const abreviado = `${valor.slice(0, limite).trimEnd()}…`;
+    const candidato = await renderizarTexto(abreviado, ancho, tamanoMinimo, color, semibold, alineacion);
+    if (candidato.alto <= altoMaximo) return candidato;
+    limite -= 12;
+  }
+  return ultimo;
 }
 
 async function leerFoto(url: string) {
@@ -62,18 +94,17 @@ async function avatar(url: string | null | undefined, nombre: string, tamano: nu
     return sharp(await leerFoto(url)).rotate().resize(tamano, tamano, { fit: "cover", position: "centre" }).composite([{ input: mascara, blend: "dest-in" }]).png().toBuffer();
   } catch {
     const iniciales = nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]?.toUpperCase()).join("") || "CX";
-    const altoTexto = Math.round(tamano * 0.55);
-    const inicialesPng = await texto(iniciales, tamano, altoTexto, Math.round(tamano * 0.34), "#ffffff", true, "centre");
+    const inicialesPng = await textoAjustado(iniciales, tamano, Math.round(tamano * 0.58), Math.round(tamano * 0.34), Math.round(tamano * 0.25), "#ffffff", true, "centre");
     return sharp({ create: { width: tamano, height: tamano, channels: 4, background: "#0e7c6e" } })
-      .composite([{ input: inicialesPng, left: 0, top: Math.round((tamano - altoTexto) / 2) }, { input: mascara, blend: "dest-in" }])
+      .composite([{ input: inicialesPng.buffer, left: 0, top: Math.round((tamano - inicialesPng.alto) / 2) }, { input: mascara, blend: "dest-in" }])
       .png()
       .toBuffer();
   }
 }
 
 export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
-  const avatarTamano = 190;
-  const posiciones = [700, 970, 1240];
+  const avatarTamano = 200;
+  const posiciones = [770, 1100, 1430];
   const respuestas = [datos.respuestas.meLlevo, datos.respuestas.agradezco, datos.respuestas.activo];
   const etiquetas = ["Me llevo", "Agradezco", "Activo"];
   const colores = ["#087aa8", "#0e7c6e", "#5c8f1d"];
@@ -81,15 +112,20 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   const [logo, foto, titulo, evento, nombre, empresa, subtitulo, reflexion, ...textosRespuesta] = await Promise.all([
     readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).then((archivo) => sharp(archivo).resize(240, 70, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()),
     avatar(datos.urlFoto, datos.nombre, avatarTamano),
-    texto(TITULO_DESAFIO_CIERRE, 900, 105, 43, "#ffffff", true, "centre"),
-    texto(datos.evento, 880, 52, 24, "#d9edf0", false, "centre"),
-    texto(datos.nombre, 680, 105, 46, "#0b3b60", true),
-    texto(datos.empresa, 680, 50, 27, "#52616b"),
-    texto("Mi cosecha personal", 680, 44, 25, "#0e7c6e", true),
-    texto("Lo que cosechamos hoy inspira la experiencia que construiremos mañana.", 980, 48, 23, "#0e7c6e", true, "centre"),
-    ...respuestas.map((respuesta) => texto(respuesta, 900, 150, 30, "#4f5e68")),
+    textoAjustado(TITULO_DESAFIO_CIERRE, 900, 105, 44, 34, "#ffffff", true, "centre"),
+    textoAjustado(datos.evento, 880, 58, 26, 18, "#d9edf0", false, "centre"),
+    textoAjustado(datos.nombre, 650, 112, 44, 30, "#0b3b60", true),
+    textoAjustado(datos.empresa, 650, 42, 28, 20, "#52616b"),
+    textoAjustado("Mi cosecha personal", 650, 38, 24, 20, "#0e7c6e", true),
+    textoAjustado("Lo que cosechamos hoy inspira la experiencia que construiremos mañana.", 960, 42, 23, 18, "#0e7c6e", true, "centre"),
+    ...respuestas.map((respuesta) => textoAjustado(respuesta, 865, 180, 30, 18, "#4f5e68")),
   ]);
-  const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => texto(etiqueta, 350, 52, 32, colores[indice], true)));
+  const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => textoAjustado(etiqueta, 350, 48, 32, 26, colores[indice], true)));
+
+  const altoPerfil = nombre.alto + empresa.alto + subtitulo.alto + 24;
+  const perfilTextoY = 430 + Math.max(28, Math.round((300 - altoPerfil) / 2));
+  const empresaY = perfilTextoY + nombre.alto + 12;
+  const subtituloY = empresaY + empresa.alto + 8;
 
   const fondo = Buffer.from(`<svg width="${ANCHO}" height="${ALTO}" viewBox="0 0 ${ANCHO} ${ALTO}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -100,37 +136,40 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
     </defs>
     <rect width="${ANCHO}" height="${ALTO}" fill="#eff8fa"/>
     <circle cx="1160" cy="70" r="230" fill="#8cc63f" opacity=".14"/>
-    <circle cx="20" cy="1640" r="190" fill="#0e7c6e" opacity=".08"/>
-    <rect x="50" y="50" width="1100" height="1590" rx="66" fill="#fff"/>
-    <rect x="80" y="80" width="1040" height="300" rx="54" fill="url(#cabecera)"/>
+    <circle cx="20" cy="1940" r="210" fill="#0e7c6e" opacity=".08"/>
+    <rect x="50" y="50" width="1100" height="1900" rx="66" fill="#fff"/>
+    <rect x="80" y="80" width="1040" height="320" rx="54" fill="url(#cabecera)"/>
     <circle cx="1060" cy="120" r="135" fill="#8cc63f" opacity=".18"/>
-    <rect x="110" y="410" width="980" height="250" rx="46" fill="#f7fbfc"/>
-    <circle cx="240" cy="535" r="105" fill="#087aa8" opacity=".12"/>
-    <circle cx="240" cy="535" r="99" fill="#fff"/>
-    <rect x="110" y="700" width="980" height="240" rx="42" fill="url(#r1)"/>
-    <rect x="110" y="970" width="980" height="240" rx="42" fill="url(#r2)"/>
-    <rect x="110" y="1240" width="980" height="240" rx="42" fill="url(#r3)"/>
-    <circle cx="155" cy="752" r="15" fill="#087aa8"/>
-    <circle cx="155" cy="1022" r="15" fill="#0e7c6e"/>
-    <circle cx="155" cy="1292" r="15" fill="#5c8f1d"/>
-    <circle cx="110" cy="1566" r="7" fill="#8cc63f"/>
-    <circle cx="1090" cy="1566" r="7" fill="#0e7c6e"/>
+    <rect x="110" y="430" width="980" height="300" rx="46" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
+    <circle cx="250" cy="580" r="112" fill="#087aa8" opacity=".10"/>
+    <circle cx="250" cy="580" r="104" fill="#fff"/>
+    <rect x="110" y="770" width="980" height="300" rx="42" fill="url(#r1)"/>
+    <rect x="110" y="1100" width="980" height="300" rx="42" fill="url(#r2)"/>
+    <rect x="110" y="1430" width="980" height="300" rx="42" fill="url(#r3)"/>
+    <circle cx="155" cy="821" r="14" fill="#087aa8"/>
+    <circle cx="155" cy="1151" r="14" fill="#0e7c6e"/>
+    <circle cx="155" cy="1481" r="14" fill="#5c8f1d"/>
+    <rect x="140" y="864" width="6" height="176" rx="3" fill="#087aa8" opacity=".42"/>
+    <rect x="140" y="1194" width="6" height="176" rx="3" fill="#0e7c6e" opacity=".42"/>
+    <rect x="140" y="1524" width="6" height="176" rx="3" fill="#5c8f1d" opacity=".42"/>
+    <circle cx="110" cy="1858" r="7" fill="#8cc63f"/>
+    <circle cx="1090" cy="1858" r="7" fill="#0e7c6e"/>
   </svg>`);
 
   const overlays: sharp.OverlayOptions[] = [
     { input: logo, left: 480, top: 105 },
-    { input: titulo, left: 150, top: 185 },
-    { input: evento, left: 160, top: 310 },
-    { input: foto, left: 145, top: 440 },
-    { input: nombre, left: 360, top: 452 },
-    { input: empresa, left: 360, top: 555 },
-    { input: subtitulo, left: 360, top: 608 },
-    { input: reflexion, left: 110, top: 1542 },
+    { input: titulo.buffer, left: 150, top: 188 },
+    { input: evento.buffer, left: 160, top: 324 },
+    { input: foto, left: 150, top: 480 },
+    { input: nombre.buffer, left: 390, top: perfilTextoY },
+    { input: empresa.buffer, left: 390, top: empresaY },
+    { input: subtitulo.buffer, left: 390, top: subtituloY },
+    { input: reflexion.buffer, left: 120, top: 1838 },
   ];
 
   posiciones.forEach((y, indice) => {
-    overlays.push({ input: etiquetasPng[indice], left: 185, top: y + 26 });
-    overlays.push({ input: textosRespuesta[indice], left: 150, top: y + 80 });
+    overlays.push({ input: etiquetasPng[indice].buffer, left: 185, top: y + 28 });
+    overlays.push({ input: textosRespuesta[indice].buffer, left: 165, top: y + 94 });
   });
 
   return sharp(fondo).composite(overlays).png({ compressionLevel: 7, adaptiveFiltering: false }).toBuffer();
