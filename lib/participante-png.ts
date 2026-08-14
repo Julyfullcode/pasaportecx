@@ -48,7 +48,7 @@ async function logoEmpresa(url: string | null | undefined, ancho: number, alto: 
 }
 export async function generarParticipantePng(datos: DatosParticipantePng) {
   const ancho = 1000;
-  const alto = 620;
+  const alto = 560;
   const fotoTamano = 360;
   const [foto, nombre, empresa, logo] = await Promise.all([
     fotoCircular(datos.urlFoto, fotoTamano),
