@@ -597,7 +597,7 @@ await expect.poll(async () => Boolean(
     expect(nombrePrimera).toBeTruthy();
     expect(nombresPng.some((nombre) => nombre.includes(`cosecha-segunda-${marca}`))).toBe(true);
     const metadata = await sharp(await zip.file(nombrePrimera!)!.async("nodebuffer")).metadata();
-    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 2000 });
+    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 1500 });
 
     await page.goto("/admin/proyeccion/cierre");
     await expect(page.getByRole("link", { name: "Descargar tarjetas PNG" })).toBeVisible();

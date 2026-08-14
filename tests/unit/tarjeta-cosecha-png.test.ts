@@ -29,7 +29,7 @@ describe("tarjetas PNG del desafío de cierre", () => {
     });
     const metadata = await sharp(png).metadata();
 
-    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 2000 });
+    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 1500 });
     expect(nombreCosechaSeguro("Ana Élida González")).toBe("ana-elida-gonzalez");
   }, 30_000);
 
@@ -45,6 +45,6 @@ describe("tarjetas PNG del desafío de cierre", () => {
       },
     });
 
-    expect(await sharp(png).metadata()).toMatchObject({ format: "png", width: 1200, height: 2000 });
+    expect(await sharp(png).metadata()).toMatchObject({ format: "png", width: 1200, height: 1500 });
   }, 30_000);
 });

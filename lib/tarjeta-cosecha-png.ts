@@ -13,7 +13,7 @@ export type DatosTarjetaCosechaPng = {
 };
 
 const ANCHO = 1200;
-const ALTO = 2000;
+const ALTO = 1500;
 const FUENTE_REGULAR = join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf");
 const FUENTE_SEMIBOLD = join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf");
 
@@ -103,8 +103,8 @@ async function avatar(url: string | null | undefined, nombre: string, tamano: nu
 }
 
 export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
-  const avatarTamano = 200;
-  const posiciones = [770, 1100, 1430];
+  const avatarTamano = 160;
+  const posiciones = [600, 855, 1110];
   const respuestas = [datos.respuestas.meLlevo, datos.respuestas.agradezco, datos.respuestas.activo];
   const etiquetas = ["Me llevo", "Agradezco", "Activo"];
   const colores = ["#087aa8", "#0e7c6e", "#5c8f1d"];
@@ -112,20 +112,26 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   const [logo, foto, titulo, evento, nombre, empresa, subtitulo, reflexion, ...textosRespuesta] = await Promise.all([
     readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).then((archivo) => sharp(archivo).resize(240, 70, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()),
     avatar(datos.urlFoto, datos.nombre, avatarTamano),
-    textoAjustado(TITULO_DESAFIO_CIERRE, 900, 105, 44, 34, "#ffffff", true, "centre"),
-    textoAjustado(datos.evento, 880, 58, 26, 18, "#d9edf0", false, "centre"),
-    textoAjustado(datos.nombre, 650, 112, 44, 30, "#0b3b60", true),
-    textoAjustado(datos.empresa, 650, 42, 28, 20, "#52616b"),
-    textoAjustado("Mi cosecha personal", 650, 38, 24, 20, "#0e7c6e", true),
-    textoAjustado("Lo que cosechamos hoy inspira la experiencia que construiremos mañana.", 960, 42, 23, 18, "#0e7c6e", true, "centre"),
-    ...respuestas.map((respuesta) => textoAjustado(respuesta, 865, 180, 30, 18, "#4f5e68")),
+    textoAjustado(TITULO_DESAFIO_CIERRE, 900, 78, 42, 32, "#ffffff", true, "centre"),
+    textoAjustado(datos.evento, 880, 38, 24, 18, "#d9edf0", false, "centre"),
+    textoAjustado(datos.nombre, 700, 82, 40, 28, "#0b3b60", true),
+    textoAjustado(datos.empresa, 700, 34, 25, 19, "#52616b"),
+    textoAjustado("Mi cosecha personal", 700, 32, 22, 18, "#0e7c6e", true),
+    textoAjustado("Lo que cosechamos hoy inspira la experiencia que construiremos mañana.", 840, 34, 21, 17, "#0e7c6e", true, "centre"),
+    ...respuestas.map((respuesta) => {
+      const longitud = respuesta.trim().length;
+      const tamano = longitud <= 55 ? 40 : longitud <= 110 ? 36 : longitud <= 180 ? 32 : longitud <= 300 ? 27 : 23;
+      return textoAjustado(respuesta, 865, 122, tamano, 18, "#4f5e68");
+    }),
   ]);
-  const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => textoAjustado(etiqueta, 350, 48, 32, 26, colores[indice], true)));
+  const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => textoAjustado(etiqueta, 350, 42, 30, 25, colores[indice], true)));
 
   const altoPerfil = nombre.alto + empresa.alto + subtitulo.alto + 24;
-  const perfilTextoY = 430 + Math.max(28, Math.round((300 - altoPerfil) / 2));
-  const empresaY = perfilTextoY + nombre.alto + 12;
-  const subtituloY = empresaY + empresa.alto + 8;
+  const perfilTextoY = 350 + Math.max(20, Math.round((220 - altoPerfil) / 2));
+  const empresaY = perfilTextoY + nombre.alto + 8;
+  const subtituloY = empresaY + empresa.alto + 5;
+  const reflexionY = 1380;
+  const puntoFooterY = reflexionY + Math.round(reflexion.alto / 2);
 
   const fondo = Buffer.from(`<svg width="${ANCHO}" height="${ALTO}" viewBox="0 0 ${ANCHO} ${ALTO}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -135,41 +141,41 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
       <linearGradient id="r3" x1="0" x2="1"><stop stop-color="#f2f9e8"/><stop offset="1" stop-color="#e8f7fb"/></linearGradient>
     </defs>
     <rect width="${ANCHO}" height="${ALTO}" fill="#eff8fa"/>
-    <circle cx="1160" cy="70" r="230" fill="#8cc63f" opacity=".14"/>
-    <circle cx="20" cy="1940" r="210" fill="#0e7c6e" opacity=".08"/>
-    <rect x="50" y="50" width="1100" height="1900" rx="66" fill="#fff"/>
-    <rect x="80" y="80" width="1040" height="320" rx="54" fill="url(#cabecera)"/>
-    <circle cx="1060" cy="120" r="135" fill="#8cc63f" opacity=".18"/>
-    <rect x="110" y="430" width="980" height="300" rx="46" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
-    <circle cx="250" cy="580" r="112" fill="#087aa8" opacity=".10"/>
-    <circle cx="250" cy="580" r="104" fill="#fff"/>
-    <rect x="110" y="770" width="980" height="300" rx="42" fill="url(#r1)"/>
-    <rect x="110" y="1100" width="980" height="300" rx="42" fill="url(#r2)"/>
-    <rect x="110" y="1430" width="980" height="300" rx="42" fill="url(#r3)"/>
-    <circle cx="155" cy="821" r="14" fill="#087aa8"/>
-    <circle cx="155" cy="1151" r="14" fill="#0e7c6e"/>
-    <circle cx="155" cy="1481" r="14" fill="#5c8f1d"/>
-    <rect x="140" y="864" width="6" height="176" rx="3" fill="#087aa8" opacity=".42"/>
-    <rect x="140" y="1194" width="6" height="176" rx="3" fill="#0e7c6e" opacity=".42"/>
-    <rect x="140" y="1524" width="6" height="176" rx="3" fill="#5c8f1d" opacity=".42"/>
-    <circle cx="110" cy="1858" r="7" fill="#8cc63f"/>
-    <circle cx="1090" cy="1858" r="7" fill="#0e7c6e"/>
+    <circle cx="1160" cy="55" r="190" fill="#8cc63f" opacity=".14"/>
+    <circle cx="20" cy="1470" r="150" fill="#0e7c6e" opacity=".08"/>
+    <rect x="50" y="50" width="1100" height="1400" rx="66" fill="#fff"/>
+    <rect x="80" y="75" width="1040" height="250" rx="50" fill="url(#cabecera)"/>
+    <circle cx="1060" cy="100" r="118" fill="#8cc63f" opacity=".18"/>
+    <rect x="110" y="350" width="980" height="220" rx="42" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
+    <circle cx="230" cy="460" r="91" fill="#087aa8" opacity=".10"/>
+    <circle cx="230" cy="460" r="84" fill="#fff"/>
+    <rect x="110" y="600" width="980" height="225" rx="38" fill="url(#r1)"/>
+    <rect x="110" y="855" width="980" height="225" rx="38" fill="url(#r2)"/>
+    <rect x="110" y="1110" width="980" height="225" rx="38" fill="url(#r3)"/>
+    <circle cx="155" cy="638" r="13" fill="#087aa8"/>
+    <circle cx="155" cy="893" r="13" fill="#0e7c6e"/>
+    <circle cx="155" cy="1148" r="13" fill="#5c8f1d"/>
+    <rect x="140" y="674" width="6" height="126" rx="3" fill="#087aa8" opacity=".42"/>
+    <rect x="140" y="929" width="6" height="126" rx="3" fill="#0e7c6e" opacity=".42"/>
+    <rect x="140" y="1184" width="6" height="126" rx="3" fill="#5c8f1d" opacity=".42"/>
+    <circle cx="135" cy="${puntoFooterY}" r="7" fill="#8cc63f"/>
+    <circle cx="1065" cy="${puntoFooterY}" r="7" fill="#0e7c6e"/>
   </svg>`);
 
   const overlays: sharp.OverlayOptions[] = [
-    { input: logo, left: 480, top: 105 },
-    { input: titulo.buffer, left: 150, top: 188 },
-    { input: evento.buffer, left: 160, top: 324 },
-    { input: foto, left: 150, top: 480 },
-    { input: nombre.buffer, left: 390, top: perfilTextoY },
-    { input: empresa.buffer, left: 390, top: empresaY },
-    { input: subtitulo.buffer, left: 390, top: subtituloY },
-    { input: reflexion.buffer, left: 120, top: 1838 },
+    { input: logo, left: 480, top: 91 },
+    { input: titulo.buffer, left: 150, top: 159 },
+    { input: evento.buffer, left: 160, top: 267 },
+    { input: foto, left: 150, top: 380 },
+    { input: nombre.buffer, left: 350, top: perfilTextoY },
+    { input: empresa.buffer, left: 350, top: empresaY },
+    { input: subtitulo.buffer, left: 350, top: subtituloY },
+    { input: reflexion.buffer, left: 180, top: reflexionY },
   ];
 
   posiciones.forEach((y, indice) => {
-    overlays.push({ input: etiquetasPng[indice].buffer, left: 185, top: y + 28 });
-    overlays.push({ input: textosRespuesta[indice].buffer, left: 165, top: y + 94 });
+    overlays.push({ input: etiquetasPng[indice].buffer, left: 185, top: y + 21 });
+    overlays.push({ input: textosRespuesta[indice].buffer, left: 165, top: y + 76 });
   });
 
   return sharp(fondo).composite(overlays).png({ compressionLevel: 7, adaptiveFiltering: false }).toBuffer();
