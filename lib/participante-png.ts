@@ -48,7 +48,7 @@ async function logoEmpresa(url: string | null | undefined, ancho: number, alto: 
 }
 export async function generarParticipantePng(datos: DatosParticipantePng) {
   const ancho = 1000;
-  const alto = 720;
+  const alto = 620;
   const fotoTamano = 360;
   const [foto, nombre, empresa, logo] = await Promise.all([
     fotoCircular(datos.urlFoto, fotoTamano),
@@ -63,7 +63,7 @@ export async function generarParticipantePng(datos: DatosParticipantePng) {
   const bloqueAlto = nombre.alto + 34 + empresaFilaAlto;
   const bloqueY = Math.max(70, Math.round((alto - bloqueAlto) / 2));
   const empresaY = bloqueY + nombre.alto + 34;
-  const fondo = Buffer.from(`<svg width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="f" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0d536b"/><stop offset="1" stop-color="#27877c"/></linearGradient></defs><rect width="${ancho}" height="${alto}" rx="54" fill="url(#f)"/><rect x="8" y="8" width="984" height="704" rx="48" fill="none" stroke="#ffffff33" stroke-width="3"/><circle cx="${fotoX + fotoTamano / 2}" cy="${fotoY + fotoTamano / 2}" r="${fotoTamano / 2 + 9}" fill="#fff"/></svg>`);
+  const fondo = Buffer.from(`<svg width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="f" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0d536b"/><stop offset="1" stop-color="#27877c"/></linearGradient></defs><rect width="${ancho}" height="${alto}" rx="54" fill="url(#f)"/><rect x="8" y="8" width="${ancho - 16}" height="${alto - 16}" rx="48" fill="none" stroke="#ffffff33" stroke-width="3"/><circle cx="${fotoX + fotoTamano / 2}" cy="${fotoY + fotoTamano / 2}" r="${fotoTamano / 2 + 9}" fill="#fff"/></svg>`);
   const overlays: sharp.OverlayOptions[] = [
     { input: foto, left: fotoX, top: fotoY },
     { input: nombre.buffer, left: textoX, top: bloqueY },

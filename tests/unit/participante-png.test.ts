@@ -17,7 +17,7 @@ describe("tarjetas PNG de participantes", () => {
     const metadata = await sharp(png).metadata();
     expect(metadata.format).toBe("png");
     expect(metadata.width).toBe(1000);
-    expect(metadata.height).toBe(720);
+    expect(metadata.height).toBe(620);
     expect(nombreParticipanteSeguro("Maritza Johana Ruiz Pérez")).toBe("maritza-johana-ruiz-perez");
   }, 30_000);
 });
