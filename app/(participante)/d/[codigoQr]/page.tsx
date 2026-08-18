@@ -70,7 +70,7 @@ export default async function DetalleDesafio({
         </div>
         <CurvaMarca />
       </header>
-      <section className="relative z-20 mx-auto -mt-4 max-w-2xl px-4">
+      <section className={`relative z-20 mx-auto -mt-4 px-4 ${esCosecha ? "max-w-6xl" : "max-w-2xl"}`}>
         {estaCompletado && completitud ? (
           <div className="tarjeta p-6 text-center">
             <CheckExistente

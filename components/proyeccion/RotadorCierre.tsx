@@ -111,7 +111,7 @@ export function RotadorCierre({ inicial }: { inicial: TarjetaCierreProyeccion[] 
       <div className="mb-3 flex shrink-0 items-center justify-between gap-4">
         <p className="text-[clamp(13px,1.2vw,20px)] font-bold text-white/70">Cosecha, gratitud y celebración</p>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <a href="/api/admin/cosecha" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-extrabold text-[var(--epm-azul-profundo)] shadow-lg transition hover:bg-[var(--epm-verde)]"><Download size={19} /> Descargar tarjetas PNG</a>
+          <a href="/api/admin/cosecha?formato=horizontal-v2" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-extrabold text-[var(--epm-azul-profundo)] shadow-lg transition hover:bg-[var(--epm-verde)]"><Download size={19} /> Descargar tarjetas PNG horizontales</a>
           <div className="flex items-center gap-2 rounded-full bg-white/15 p-1.5">
             <button type="button" onClick={() => mover(-1)} disabled={tarjetas.length < 2} aria-label="Tarjeta anterior" title="Tarjeta anterior" className="grid h-10 w-10 place-items-center rounded-full text-white transition hover:bg-white/15 disabled:opacity-35"><ChevronLeft size={26} /></button>
             <span className="px-2 text-[clamp(11px,1vw,16px)] font-extrabold">{indice + 1} de {tarjetas.length} tarjetas</span>
@@ -119,13 +119,13 @@ export function RotadorCierre({ inicial }: { inicial: TarjetaCierreProyeccion[] 
           </div>
         </div>
       </div>
-      <article key={tarjeta.id + "-" + indice} className="entrada-suave grid min-h-0 flex-1 overflow-hidden rounded-[clamp(24px,3vw,44px)] border border-white/20 bg-white/10 p-[clamp(18px,2.4vw,38px)] shadow-2xl backdrop-blur md:grid-cols-[minmax(230px,.52fr)_minmax(0,1.48fr)]">
+      <article key={tarjeta.id + "-" + indice} className="entrada-suave grid min-h-0 flex-1 overflow-hidden rounded-[clamp(24px,3vw,44px)] border border-white/20 bg-white/10 p-[clamp(18px,2.4vw,38px)] shadow-2xl backdrop-blur md:grid-cols-[minmax(210px,.4fr)_minmax(0,1.6fr)]">
         <div className="flex min-h-0 flex-col items-center justify-center border-b border-white/15 pb-5 text-center md:border-b-0 md:border-r md:pb-0 md:pr-[clamp(20px,3vw,48px)]">
           <FotoCircular src={tarjeta.participante.urlFoto} alt={"Foto de " + tarjeta.participante.nombre} className="h-[clamp(130px,18vw,270px)] w-[clamp(130px,18vw,270px)] border-4" />
           <h2 className="mt-5 font-display text-[clamp(24px,3vw,46px)] font-extrabold leading-tight">{tarjeta.participante.nombre}</h2>
           <p className="mt-2 text-[clamp(13px,1.25vw,20px)] font-bold text-white/70">{tarjeta.participante.empresa.nombre}</p>
         </div>
-        <div className="grid min-h-0 grid-rows-3 gap-[clamp(10px,1.4vw,20px)] pt-5 md:pl-[clamp(20px,3vw,48px)] md:pt-0">
+        <div className="grid min-h-0 grid-rows-3 gap-[clamp(10px,1.4vw,20px)] pt-5 md:grid-cols-3 md:grid-rows-1 md:pl-[clamp(20px,3vw,48px)] md:pt-0">
           {bloques.map(({ titulo, texto, Icono, clase }) => (
             <section key={titulo} className={"min-h-0 overflow-hidden rounded-[clamp(16px,1.7vw,26px)] border bg-gradient-to-r p-[clamp(13px,1.5vw,24px)] " + clase}>
               <h3 className="flex items-center gap-2 font-display text-[clamp(16px,1.6vw,25px)] font-extrabold text-[var(--epm-verde)]"><Icono size={24} /> {titulo}</h3>

@@ -12,8 +12,8 @@ export type DatosTarjetaCosechaPng = {
   urlFoto?: string | null;
 };
 
-const ANCHO = 1200;
-const ALTO = 1500;
+const ANCHO = 1600;
+const ALTO = 1000;
 const FUENTE_REGULAR = join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf");
 const FUENTE_SEMIBOLD = join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf");
 const FUENTE_EMOJI = join(process.cwd(), "public", "fuentes", "NotoColorEmoji.ttf");
@@ -110,34 +110,34 @@ async function avatar(url: string | null | undefined, nombre: string, tamano: nu
 
 export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   await cargarFuenteEmoji();
-  const avatarTamano = 160;
-  const posiciones = [600, 855, 1110];
+  const avatarTamano = 180;
+  const posiciones = [260, 470, 680];
   const respuestas = [datos.respuestas.meLlevo, datos.respuestas.agradezco, datos.respuestas.activo];
   const etiquetas = ["Me llevo", "Agradezco", "Activo"];
   const colores = ["#087aa8", "#0e7c6e", "#5c8f1d"];
 
   const [logo, foto, titulo, evento, nombre, empresa, subtitulo, reflexion, ...textosRespuesta] = await Promise.all([
-    readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).then((archivo) => sharp(archivo).resize(240, 70, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()),
+    readFile(join(process.cwd(), "public", "marca", "logo-grupo-epm-blanco.png")).then((archivo) => sharp(archivo).resize(220, 64, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()),
     avatar(datos.urlFoto, datos.nombre, avatarTamano),
-    textoAjustado(TITULO_DESAFIO_CIERRE, 900, 78, 42, 32, "#ffffff", true, "centre"),
-    textoAjustado(datos.evento, 880, 38, 24, 18, "#d9edf0", false, "centre"),
-    textoAjustado(datos.nombre, 700, 82, 40, 28, "#0b3b60", true),
-    textoAjustado(datos.empresa, 700, 34, 25, 19, "#52616b"),
-    textoAjustado("Mi cosecha personal", 700, 32, 22, 18, "#0e7c6e", true),
-    textoAjustado("Lo que cosechamos hoy inspira la experiencia que construiremos mañana.", 840, 34, 21, 17, "#0e7c6e", true, "centre"),
+    textoAjustado(TITULO_DESAFIO_CIERRE, 930, 56, 40, 30, "#ffffff", true, "centre"),
+    textoAjustado(datos.evento, 880, 30, 22, 17, "#d9edf0", false, "centre"),
+    textoAjustado(datos.nombre, 350, 100, 38, 25, "#0b3b60", true, "centre"),
+    textoAjustado(datos.empresa, 350, 66, 24, 18, "#52616b", false, "centre"),
+    textoAjustado("Mi cosecha personal", 350, 32, 22, 18, "#0e7c6e", true, "centre"),
+    textoAjustado("Lo que cosechamos hoy inspira la experiencia que construiremos mañana.", 940, 30, 20, 16, "#0e7c6e", true, "centre"),
     ...respuestas.map((respuesta) => {
       const longitud = respuesta.trim().length;
       const tamano = longitud <= 55 ? 40 : longitud <= 110 ? 36 : longitud <= 180 ? 32 : longitud <= 300 ? 27 : 23;
-      return textoAjustado(respuesta, 865, 122, tamano, 18, "#4f5e68");
+      return textoAjustado(respuesta, 880, 96, tamano, 18, "#4f5e68");
     }),
   ]);
   const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => textoAjustado(etiqueta, 350, 42, 30, 25, colores[indice], true)));
 
-  const altoPerfil = nombre.alto + empresa.alto + subtitulo.alto + 24;
-  const perfilTextoY = 350 + Math.max(20, Math.round((220 - altoPerfil) / 2));
-  const empresaY = perfilTextoY + nombre.alto + 8;
-  const subtituloY = empresaY + empresa.alto + 5;
-  const reflexionY = 1380;
+  const altoPerfil = nombre.alto + empresa.alto + subtitulo.alto + 22;
+  const perfilTextoY = 500 + Math.max(18, Math.round((330 - altoPerfil) / 2));
+  const empresaY = perfilTextoY + nombre.alto + 10;
+  const subtituloY = empresaY + empresa.alto + 8;
+  const reflexionY = 912;
   const puntoFooterY = reflexionY + Math.round(reflexion.alto / 2);
   const centrarHorizontal = (texto: TextoRenderizado) => Math.round((ANCHO - texto.ancho) / 2);
 
@@ -149,41 +149,41 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
       <linearGradient id="r3" x1="0" x2="1"><stop stop-color="#f2f9e8"/><stop offset="1" stop-color="#e8f7fb"/></linearGradient>
     </defs>
     <rect width="${ANCHO}" height="${ALTO}" fill="#eff8fa"/>
-    <circle cx="1160" cy="55" r="190" fill="#8cc63f" opacity=".14"/>
-    <circle cx="20" cy="1470" r="150" fill="#0e7c6e" opacity=".08"/>
-    <rect x="50" y="50" width="1100" height="1400" rx="66" fill="#fff"/>
-    <rect x="80" y="75" width="1040" height="250" rx="50" fill="url(#cabecera)"/>
-    <circle cx="1060" cy="100" r="118" fill="#8cc63f" opacity=".18"/>
-    <rect x="110" y="350" width="980" height="220" rx="42" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
-    <circle cx="230" cy="460" r="91" fill="#087aa8" opacity=".10"/>
-    <circle cx="230" cy="460" r="84" fill="#fff"/>
-    <rect x="110" y="600" width="980" height="225" rx="38" fill="url(#r1)"/>
-    <rect x="110" y="855" width="980" height="225" rx="38" fill="url(#r2)"/>
-    <rect x="110" y="1110" width="980" height="225" rx="38" fill="url(#r3)"/>
-    <circle cx="155" cy="638" r="13" fill="#087aa8"/>
-    <circle cx="155" cy="893" r="13" fill="#0e7c6e"/>
-    <circle cx="155" cy="1148" r="13" fill="#5c8f1d"/>
-    <rect x="140" y="674" width="6" height="126" rx="3" fill="#087aa8" opacity=".42"/>
-    <rect x="140" y="929" width="6" height="126" rx="3" fill="#0e7c6e" opacity=".42"/>
-    <rect x="140" y="1184" width="6" height="126" rx="3" fill="#5c8f1d" opacity=".42"/>
-    <circle cx="135" cy="${puntoFooterY}" r="7" fill="#8cc63f"/>
-    <circle cx="1065" cy="${puntoFooterY}" r="7" fill="#0e7c6e"/>
+    <circle cx="1545" cy="25" r="190" fill="#8cc63f" opacity=".14"/>
+    <circle cx="20" cy="980" r="150" fill="#0e7c6e" opacity=".08"/>
+    <rect x="50" y="50" width="1500" height="900" rx="58" fill="#fff"/>
+    <rect x="75" y="75" width="1450" height="160" rx="42" fill="url(#cabecera)"/>
+    <circle cx="1465" cy="82" r="112" fill="#8cc63f" opacity=".18"/>
+    <rect x="75" y="260" width="420" height="625" rx="42" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
+    <circle cx="285" cy="375" r="101" fill="#087aa8" opacity=".10"/>
+    <circle cx="285" cy="375" r="94" fill="#fff"/>
+    <rect x="520" y="260" width="1005" height="185" rx="36" fill="url(#r1)"/>
+    <rect x="520" y="470" width="1005" height="185" rx="36" fill="url(#r2)"/>
+    <rect x="520" y="680" width="1005" height="185" rx="36" fill="url(#r3)"/>
+    <circle cx="565" cy="297" r="13" fill="#087aa8"/>
+    <circle cx="565" cy="507" r="13" fill="#0e7c6e"/>
+    <circle cx="565" cy="717" r="13" fill="#5c8f1d"/>
+    <rect x="550" y="331" width="6" height="91" rx="3" fill="#087aa8" opacity=".42"/>
+    <rect x="550" y="541" width="6" height="91" rx="3" fill="#0e7c6e" opacity=".42"/>
+    <rect x="550" y="751" width="6" height="91" rx="3" fill="#5c8f1d" opacity=".42"/>
+    <circle cx="305" cy="${puntoFooterY}" r="7" fill="#8cc63f"/>
+    <circle cx="1295" cy="${puntoFooterY}" r="7" fill="#0e7c6e"/>
   </svg>`);
 
   const overlays: sharp.OverlayOptions[] = [
-    { input: logo, left: Math.round((ANCHO - 240) / 2), top: 91 },
-    { input: titulo.buffer, left: centrarHorizontal(titulo), top: 159 },
-    { input: evento.buffer, left: centrarHorizontal(evento), top: 267 },
-    { input: foto, left: 150, top: 380 },
-    { input: nombre.buffer, left: 350, top: perfilTextoY },
-    { input: empresa.buffer, left: 350, top: empresaY },
-    { input: subtitulo.buffer, left: 350, top: subtituloY },
+    { input: logo, left: 115, top: 113 },
+    { input: titulo.buffer, left: 505, top: 104 },
+    { input: evento.buffer, left: 530, top: 176 },
+    { input: foto, left: 195, top: 285 },
+    { input: nombre.buffer, left: 110, top: perfilTextoY },
+    { input: empresa.buffer, left: 110, top: empresaY },
+    { input: subtitulo.buffer, left: 110, top: subtituloY },
     { input: reflexion.buffer, left: centrarHorizontal(reflexion), top: reflexionY },
   ];
 
   posiciones.forEach((y, indice) => {
-    overlays.push({ input: etiquetasPng[indice].buffer, left: 185, top: y + 21 });
-    overlays.push({ input: textosRespuesta[indice].buffer, left: 165, top: y + 76 });
+    overlays.push({ input: etiquetasPng[indice].buffer, left: 595, top: y + 18 });
+    overlays.push({ input: textosRespuesta[indice].buffer, left: 575, top: y + 68 });
   });
 
   return sharp(fondo).composite(overlays).png({ compressionLevel: 7, adaptiveFiltering: false }).toBuffer();

@@ -203,12 +203,12 @@ export function ResolverDesafio({
           ) : esConfiguracionEncuestaMixta(configuracion) ? (
             <EncuestaMixta preguntas={configuracion.preguntas} />
           ) : configuracion.formato === FORMATO_COSECHA ? (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
               {PREGUNTAS_COSECHA.map((pregunta) => (
-                <label key={pregunta.id} className="block rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 p-4">
+                <label key={pregunta.id} className="flex h-full flex-col rounded-2xl bg-gradient-to-br from-emerald-50 to-sky-50 p-4">
                   <span className="block font-display text-lg font-extrabold text-[var(--epm-azul-profundo)]">{pregunta.titulo}</span>
                   <span className="mb-3 mt-1 block text-sm text-slate-600">{pregunta.ayuda}</span>
-                  <textarea className="campo min-h-24 bg-white" name={pregunta.id} maxLength={600} required />
+                  <textarea className="campo min-h-40 flex-1 bg-white" name={pregunta.id} maxLength={600} required />
                 </label>
               ))}
             </div>

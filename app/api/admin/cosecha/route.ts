@@ -56,7 +56,7 @@ export async function GET() {
       if (!item) continue;
       cantidad += 1;
       zip.file(
-        `${String(cantidad).padStart(3, "0")}-cosecha-${nombreCosechaSeguro(item.completitud.participante.nombre)}-${item.completitud.id}.png`,
+        `${String(cantidad).padStart(3, "0")}-cosecha-horizontal-${nombreCosechaSeguro(item.completitud.participante.nombre)}-${item.completitud.id}.png`,
         item.png,
       );
     }
@@ -73,7 +73,7 @@ export async function GET() {
   return new Response(archivo, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": 'attachment; filename="tarjetas-desafio-cierre-png.zip"',
+      "Content-Disposition": 'attachment; filename="tarjetas-desafio-cierre-horizontales.zip"',
       "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
       "CDN-Cache-Control": "no-store",
       "Vercel-CDN-Cache-Control": "no-store",

@@ -9,7 +9,7 @@ const carpeta = join(process.cwd(), "uploads", "tests-cosecha-png");
 afterEach(() => rm(carpeta, { recursive: true, force: true }));
 
 describe("tarjetas PNG del desafío de cierre", () => {
-  it("genera una imagen vertical con la foto y las tres respuestas", async () => {
+  it("genera una imagen horizontal con la foto y las tres respuestas", async () => {
     await mkdir(carpeta, { recursive: true });
     await writeFile(
       join(carpeta, "foto.png"),
@@ -29,7 +29,7 @@ describe("tarjetas PNG del desafío de cierre", () => {
     });
     const metadata = await sharp(png).metadata();
 
-    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 1500 });
+    expect(metadata).toMatchObject({ format: "png", width: 1600, height: 1000 });
     expect(nombreCosechaSeguro("Ana Élida González")).toBe("ana-elida-gonzalez");
   }, 30_000);
 
@@ -45,6 +45,6 @@ describe("tarjetas PNG del desafío de cierre", () => {
       },
     });
 
-    expect(await sharp(png).metadata()).toMatchObject({ format: "png", width: 1200, height: 1500 });
+    expect(await sharp(png).metadata()).toMatchObject({ format: "png", width: 1600, height: 1000 });
   }, 30_000);
 });

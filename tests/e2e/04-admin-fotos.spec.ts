@@ -582,13 +582,13 @@ await expect.poll(async () => Boolean(
     await expect(tarjetaCierre.getByRole("link", { name: "Proyectar tarjetas" })).toHaveAttribute("href", "/admin/proyeccion/cierre");
     const enlaceDescarga = tarjetaCierre.getByRole("link", { name: "Descargar tarjetas PNG" });
     await expect(enlaceDescarga).toBeVisible();
-    await expect(enlaceDescarga).toHaveAttribute("href", "/api/admin/cosecha");
+    await expect(enlaceDescarga).toHaveAttribute("href", "/api/admin/cosecha?formato=horizontal-v2");
 
     const [descarga] = await Promise.all([
       page.waitForEvent("download"),
       enlaceDescarga.click(),
     ]);
-    expect(descarga.suggestedFilename()).toBe("tarjetas-desafio-cierre-png.zip");
+    expect(descarga.suggestedFilename()).toBe("tarjetas-desafio-cierre-horizontales.zip");
     const rutaDescarga = await descarga.path();
     expect(rutaDescarga).toBeTruthy();
     const zip = await JSZip.loadAsync(await readFile(rutaDescarga!));
@@ -597,7 +597,7 @@ await expect.poll(async () => Boolean(
     expect(nombrePrimera).toBeTruthy();
     expect(nombresPng.some((nombre) => nombre.includes(`cosecha-segunda-${marca}`))).toBe(true);
     const metadata = await sharp(await zip.file(nombrePrimera!)!.async("nodebuffer")).metadata();
-    expect(metadata).toMatchObject({ format: "png", width: 1200, height: 1500 });
+    expect(metadata).toMatchObject({ format: "png", width: 1600, height: 1000 });
 
     await page.goto("/admin/proyeccion/cierre");
     await expect(page.getByRole("link", { name: "Descargar tarjetas PNG" })).toBeVisible();
