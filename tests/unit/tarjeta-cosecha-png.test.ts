@@ -22,7 +22,7 @@ describe("tarjetas PNG del desafío de cierre", () => {
       evento: "Encuentro de experiencia",
       respuestas: {
         meLlevo: "Una conversación que transforma.",
-        agradezco: "La generosidad del equipo.",
+        agradezco: "La generosidad del equipo. 🙌🏽✨💚",
         activo: "Escuchar antes de actuar.",
       },
       urlFoto: "/uploads/tests-cosecha-png/foto.png",

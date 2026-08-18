@@ -16,6 +16,7 @@ const ANCHO = 1200;
 const ALTO = 1500;
 const FUENTE_REGULAR = join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf");
 const FUENTE_SEMIBOLD = join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf");
+const FUENTE_EMOJI = join(process.cwd(), "public", "fuentes", "NotoColorEmoji.ttf");
 
 export function nombreCosechaSeguro(valor: string) {
   return valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "participante";
@@ -27,6 +28,10 @@ function escaparPango(valor: string) {
 
 type TextoRenderizado = { buffer: Buffer; ancho: number; alto: number };
 
+async function cargarFuenteEmoji() {
+  await sharp({ text: { text: "😀", font: "Noto Color Emoji 16", fontfile: FUENTE_EMOJI, rgba: true } }).png().toBuffer();
+}
+
 async function renderizarTexto(
   valor: string,
   ancho: number,
@@ -35,9 +40,10 @@ async function renderizarTexto(
   semibold = false,
   alineacion: "left" | "centre" = "left",
 ): Promise<TextoRenderizado> {
+  const contenido = valor.trim() || " ";
   const buffer = await sharp({
     text: {
-      text: `<span foreground="${color}">${escaparPango(valor.trim() || " ")}</span>`,
+      text: `<span foreground="${color}" weight="${semibold ? 600 : 400}" font_family="Poppins, Noto Color Emoji">${escaparPango(contenido)}</span>`,
       font: `Poppins ${tamano}`,
       fontfile: semibold ? FUENTE_SEMIBOLD : FUENTE_REGULAR,
       width: ancho,
@@ -103,6 +109,7 @@ async function avatar(url: string | null | undefined, nombre: string, tamano: nu
 }
 
 export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
+  await cargarFuenteEmoji();
   const avatarTamano = 160;
   const posiciones = [600, 855, 1110];
   const respuestas = [datos.respuestas.meLlevo, datos.respuestas.agradezco, datos.respuestas.activo];
@@ -132,6 +139,7 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   const subtituloY = empresaY + empresa.alto + 5;
   const reflexionY = 1380;
   const puntoFooterY = reflexionY + Math.round(reflexion.alto / 2);
+  const centrarHorizontal = (texto: TextoRenderizado) => Math.round((ANCHO - texto.ancho) / 2);
 
   const fondo = Buffer.from(`<svg width="${ANCHO}" height="${ALTO}" viewBox="0 0 ${ANCHO} ${ALTO}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -163,14 +171,14 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   </svg>`);
 
   const overlays: sharp.OverlayOptions[] = [
-    { input: logo, left: 480, top: 91 },
-    { input: titulo.buffer, left: 150, top: 159 },
-    { input: evento.buffer, left: 160, top: 267 },
+    { input: logo, left: Math.round((ANCHO - 240) / 2), top: 91 },
+    { input: titulo.buffer, left: centrarHorizontal(titulo), top: 159 },
+    { input: evento.buffer, left: centrarHorizontal(evento), top: 267 },
     { input: foto, left: 150, top: 380 },
     { input: nombre.buffer, left: 350, top: perfilTextoY },
     { input: empresa.buffer, left: 350, top: empresaY },
     { input: subtitulo.buffer, left: 350, top: subtituloY },
-    { input: reflexion.buffer, left: 180, top: reflexionY },
+    { input: reflexion.buffer, left: centrarHorizontal(reflexion), top: reflexionY },
   ];
 
   posiciones.forEach((y, indice) => {
