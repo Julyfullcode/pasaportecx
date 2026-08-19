@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { db } from "@/lib/db";
 import { PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO } from "@/lib/encuesta-mixta";
-import { crearParticipanteConToken, iniciarAdmin } from "./ayudas";
+import { crearParticipanteConToken } from "./ayudas";
 
 test("la presentación final reúne cifras, fotos, controles y música", async ({ page }) => {
   await db.configuracionEvento.update({ where: { id: "evento" }, data: { nombreEvento: "Encuentro experiencia y comunicaciones" } });
@@ -49,8 +49,13 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
     db.empresa.count({ where: { participantes: { some: { activo: true } } } }),
     db.desafio.count({ where: { estado: { not: "BORRADOR" } } }),
   ]);
-  await iniciarAdmin(page);
   await page.goto("/admin/proyeccion/resumen");
+  await expect(page.getByRole("heading", { name: "El evento en cifras y recuerdos" })).toBeVisible();
+  await page.getByLabel("Código de acceso").fill("Incorrecto");
+  await page.getByRole("button", { name: "Ingresar a la presentación" }).click();
+  await expect(page.getByText("El código no es correcto. Inténtalo de nuevo.", { exact: true })).toBeVisible();
+  await page.getByLabel("Código de acceso").fill("Experiencia");
+  await page.getByRole("button", { name: "Ingresar a la presentación" }).click();
 
   await expect(page.getByRole("heading", { name: "El evento en cifras y recuerdos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeVisible();
@@ -110,7 +115,17 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
     return { left: caja.left, right: caja.right, top: caja.top, bottom: caja.bottom };
   }));
   expect(cartelRegistro && avataresRegistro.every((avatar) => avatar.right <= cartelRegistro.x || avatar.left >= cartelRegistro.x + cartelRegistro.width || avatar.bottom <= cartelRegistro.y || avatar.top >= cartelRegistro.y + cartelRegistro.height)).toBeTruthy();
+  expect(avataresRegistro.some((avatar, indice) => avataresRegistro.slice(indice + 1).some((otro) => avatar.left < otro.right && avatar.right > otro.left && avatar.top < otro.bottom && avatar.bottom > otro.top))).toBe(false);
+  const ubicacionesPrimerGrupo = await page.locator(".avatar-registro-animado img").evaluateAll((imagenes) => imagenes.map((imagen) => {
+    const caja = imagen.getBoundingClientRect();
+    return `${(imagen as HTMLImageElement).alt}:${Math.round(caja.left)}:${Math.round(caja.top)}:${Math.round(caja.width)}`;
+  }));
   await expect(page.getByText(/Rostros 9–\d+ de/), "las fotos deben rotar para mostrar a todas las personas").toBeVisible({ timeout: 4_000 });
+  const ubicacionesSegundoGrupo = await page.locator(".avatar-registro-animado img").evaluateAll((imagenes) => imagenes.map((imagen) => {
+    const caja = imagen.getBoundingClientRect();
+    return `${(imagen as HTMLImageElement).alt}:${Math.round(caja.left)}:${Math.round(caja.top)}:${Math.round(caja.width)}`;
+  }));
+  expect(ubicacionesSegundoGrupo).not.toEqual(ubicacionesPrimerGrupo);
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "La experiencia se puso en movimiento" })).toBeVisible();
@@ -120,6 +135,9 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await expect(page.getByRole("heading", { name: "Un solo equipo, muchas voces" })).toBeVisible();
   expect(await page.getByTestId("empresa-participantes").first().evaluate((elemento) => getComputedStyle(elemento).color)).toBe("rgb(255, 255, 255)");
   await expect(page.getByTestId("empresa-personas")).toHaveCount(0);
+  await expect(page.getByTestId("barra-empresa")).toHaveCount(empresasConPersonas);
+  expect(await page.getByTestId("barra-empresa").first().evaluate((barra) => barra.getBoundingClientRect().height)).toBeGreaterThan(10);
+  expect(await page.getByTestId("barra-empresa").first().locator("div").evaluate((barra) => barra.getBoundingClientRect().width)).toBeGreaterThan(0);
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Imágenes que cuentan nuestra historia" })).toBeVisible();
@@ -132,6 +150,7 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Personas que dejaron huella" })).toBeVisible();
   expect(await page.getByRole("img", { name: /Foto de/ }).first().evaluate((imagen) => imagen.getBoundingClientRect().width)).toBeGreaterThan(200);
+  await expect(page.getByText("¡pero la verdadera victoria fue la participación de todos!")).toBeVisible();
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Las voces que nos impulsan" })).toBeVisible();
@@ -140,4 +159,12 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: /La tecnología cobra sentido/ })).toBeVisible();
+
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByRole("heading", { name: /Cada cifra tiene una historia/ })).toBeVisible();
+  const [distintivoCierre, pieCierre] = await Promise.all([
+    page.getByTestId("distintivo-cierre").boundingBox(),
+    page.locator("footer").boundingBox(),
+  ]);
+  expect(distintivoCierre && pieCierre && distintivoCierre.y + distintivoCierre.height < pieCierre.y).toBeTruthy();
 });
