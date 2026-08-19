@@ -38,7 +38,11 @@ export default async function ResumenEvento() {
       include: { _count: { select: { participantes: { where: { activo: true } } } } },
       orderBy: { orden: "asc" },
     }),
-    db.desafio.count({ where: { estado: { not: "BORRADOR" } } }),
+    db.desafio.findMany({
+      where: { estado: { not: "BORRADOR" } },
+      orderBy: [{ dia: "asc" }, { orden: "asc" }],
+      select: { id: true, titulo: true, urlImagen: true, tipo: true },
+    }),
     db.completitud.count({ where: { estado: "APROBADO" } }),
     db.completitud.findMany({
       where: { estado: "APROBADO" },
@@ -76,7 +80,7 @@ export default async function ResumenEvento() {
 
   const empresasConParticipantes = empresas
     .filter((empresa) => empresa._count.participantes > 0)
-    .map((empresa) => ({ nombre: empresa.nombre, participantes: empresa._count.participantes }));
+    .map((empresa) => ({ nombre: empresa.nombre, urlLogo: empresa.urlLogo, participantes: empresa._count.participantes }));
   const fotos = [
     ...fotosRecuerdos.map((foto) => ({
       id: `recuerdo-${foto.id}`,
@@ -100,7 +104,7 @@ export default async function ResumenEvento() {
       participantes,
       staff,
       empresas: empresasConParticipantes.length,
-      desafios,
+      desafios: desafios.length,
       completitudes,
       participantesConDesafios: participantesConDesafios.length,
       actividades,
@@ -111,6 +115,7 @@ export default async function ResumenEvento() {
       puntos: puntos._sum.puntosTotales ?? 0,
     },
     personas: personasRegistradas,
+    desafios,
     empresas: empresasConParticipantes,
     podio,
     fotos,
