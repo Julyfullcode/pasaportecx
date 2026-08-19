@@ -7,5 +7,5 @@ export async function ingresarPresentacionResumen(formulario: FormData) {
   const codigo = String(formulario.get("codigo") ?? "");
   if (!codigoResumenCorrecto(codigo)) redirect("/admin/proyeccion/resumen?error=codigo");
   await concederAccesoResumen();
-  redirect("/admin/proyeccion/resumen");
+  redirect("/admin/proyeccion/resumen/presentacion");
 }

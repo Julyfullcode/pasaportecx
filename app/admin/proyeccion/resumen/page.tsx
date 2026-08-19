@@ -5,7 +5,7 @@ import { tieneAccesoResumen } from "@/lib/acceso-resumen";
 import { ingresarPresentacionResumen } from "./actions";
 import { LogoBlanco } from "@/components/marca/Logo";
 import { TexturaArcos } from "@/components/marca/TexturaArcos";
-import { MarcoPresentacionResumen } from "@/components/proyeccion/MarcoPresentacionResumen";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function ResumenEvento({ searchParams }: { searchParams: Pr
     return <main className="marca-gradiente relative grid min-h-screen place-items-center overflow-hidden p-6 text-white"><TexturaArcos /><div className="relative z-10 w-full max-w-lg rounded-[2.5rem] border border-white/20 bg-[var(--epm-azul-profundo)]/70 p-[clamp(28px,4vw,48px)] text-center shadow-2xl backdrop-blur-xl"><LogoBlanco className="mx-auto h-14 w-auto" /><p className="mt-8 font-extrabold uppercase tracking-[.22em] text-[var(--epm-verde)]">Presentación final</p><h1 className="mt-3 font-display text-[clamp(34px,5vw,52px)] font-extrabold leading-tight">El evento en cifras y recuerdos</h1><p className="mt-4 text-white/65">Ingresa el código compartido para ver la presentación.</p><form action={ingresarPresentacionResumen} className="mt-8"><label htmlFor="codigo-resumen" className="sr-only">Código de acceso</label><input id="codigo-resumen" name="codigo" type="password" autoComplete="off" autoFocus required placeholder="Código de acceso" className="h-14 w-full rounded-2xl border border-white/20 bg-white/10 px-5 text-center text-lg font-bold text-white outline-none placeholder:text-white/40 focus:border-[var(--epm-verde)]" />{parametros.error === "codigo" && <p role="alert" className="mt-3 font-bold text-rose-200">El código no es correcto. Inténtalo de nuevo.</p>}<button type="submit" className="mt-5 h-14 w-full rounded-full bg-[var(--epm-verde)] px-6 font-extrabold text-[var(--epm-azul-profundo)] shadow-xl transition hover:scale-[1.02]">Ingresar a la presentación</button></form></div></main>;
   }
 
-  if (parametros.lienzo !== "1") return <MarcoPresentacionResumen />;
+  if (parametros.lienzo !== "1") redirect("/admin/proyeccion/resumen/presentacion");
 
   const [
     configuracion,

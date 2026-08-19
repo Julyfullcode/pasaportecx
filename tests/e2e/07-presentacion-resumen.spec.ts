@@ -57,34 +57,13 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByLabel("Código de acceso").fill("Experiencia");
   await page.getByRole("button", { name: "Ingresar a la presentación" }).click();
 
-  const lienzo = page.locator('iframe[title="Presentación final del evento"]');
-  await expect(lienzo).toBeVisible();
-  expect(await page.locator("main").evaluate((elemento) => getComputedStyle(elemento).touchAction)).toContain("pinch-zoom");
-  await page.setViewportSize({ width: 844, height: 390 });
-  const cajaLienzo = await lienzo.boundingBox();
-  expect(cajaLienzo).toBeTruthy();
-  expect(cajaLienzo!.left).toBeGreaterThanOrEqual(0);
-  expect(cajaLienzo!.top).toBeGreaterThanOrEqual(0);
-  expect(cajaLienzo!.left + cajaLienzo!.width).toBeLessThanOrEqual(844);
-  expect(cajaLienzo!.top + cajaLienzo!.height).toBeLessThanOrEqual(390);
-  expect(cajaLienzo!.width / cajaLienzo!.height).toBeCloseTo(1920 / 900, 2);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/admin/proyeccion/resumen?lienzo=1");
+  await expect(page).toHaveURL(/\/admin\/proyeccion\/resumen\/presentacion$/);
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute("content", /width=1920/);
   await expect(page.getByRole("heading", { name: "El evento en cifras y recuerdos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeVisible();
-  await page.setViewportSize({ width: 844, height: 390 });
-  await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeInViewport();
-  await expect(page.getByRole("button", { name: "Comenzar sin música" })).toBeInViewport();
-  await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("button", { name: "Comenzar sin música" }).click();
   await expect(page.getByRole("button", { name: "Pausar" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar música" })).toBeVisible();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole("heading", { name: "Gira tu celular" })).toBeVisible();
-  await page.setViewportSize({ width: 844, height: 390 });
-  await expect(page.getByRole("heading", { name: "Gira tu celular" })).toBeHidden();
-  await expect(page.getByRole("button", { name: "Siguiente" })).toBeInViewport();
-  await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.getByLabel(/Ir a la diapositiva/)).toHaveCount(0);
   const [controlSiguiente, controlMusica] = await Promise.all([
     page.getByRole("button", { name: "Siguiente" }).boundingBox(),

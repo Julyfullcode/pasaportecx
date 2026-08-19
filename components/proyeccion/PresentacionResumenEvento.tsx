@@ -363,7 +363,7 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         @media (prefers-reduced-motion: reduce) {
           .avatar-registro-animado, .miniatura-cifra-animada, .foto-historia-animada, .nodo-conexion-animado { animation: none !important; opacity: 1 !important; }
         }
-        @media (orientation: portrait) and (max-width: 900px) {
+        @media (orientation: portrait) {
           .aviso-orientacion { display: grid; }
         }
       `}</style>
