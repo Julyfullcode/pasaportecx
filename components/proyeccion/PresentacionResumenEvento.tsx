@@ -209,8 +209,8 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
     const duracionRegistro = Math.max(12_000, Math.ceil(datos.personas.length / 8) * 3_000);
     const duracionCifras = Math.max(
       12_000,
-      Math.ceil(datos.personas.length / 4) * 2_600,
-      Math.ceil(datos.desafios.length / 2) * 3_200,
+      Math.ceil(datos.personas.length / 6) * 2_800,
+      Math.ceil(datos.desafios.length / 3) * 3_600,
       Math.ceil(datos.fotos.length / 4) * 3_200,
     );
     const fotos: Diapositiva[] = datos.fotos.length ? [{
@@ -226,7 +226,7 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
       { tipo: "empresas", duracion: 10_000 },
       ...fotos,
       ...(datos.podio.length ? [{ tipo: "podio" as const, duracion: 11_000 }] : []),
-      { tipo: "satisfaccion", duracion: Math.max(12_000, Math.ceil(Math.max(1, datos.satisfaccion.comentarios.length) / 3) * 4_500) },
+      { tipo: "satisfaccion", duracion: Math.max(12_000, Math.ceil(Math.max(1, datos.satisfaccion.comentarios.length) / 6) * 5_200) },
       { tipo: "reflexion", duracion: 12_000 },
       { tipo: "cierre", duracion: 12_000 },
     ];
@@ -379,30 +379,30 @@ function Cifras({ datos }: { datos: DatosResumenEvento }) {
 }
 
 function PersonasCifra({ personas }: { personas: DatosResumenEvento["personas"] }) {
-  const grupos = useMemo(() => agrupar(personas, 4), [personas]);
+  const grupos = useMemo(() => agrupar(personas, 6), [personas]);
   const [pagina, setPagina] = useState(0);
   useEffect(() => {
     if (grupos.length <= 1) return;
-    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 2_600);
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 2_800);
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
-  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-2 grid-rows-2 place-items-center gap-[clamp(8px,1vw,16px)]">{(grupos[pagina] ?? []).map((persona, indice) => <div key={`${persona.id}-${pagina}`} className="miniatura-cifra-animada grid h-full w-full place-items-center" style={{ animation: `avatar-registro-ciclo 2.35s ${indice * .08}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(88px,7.2vw,126px)] w-[clamp(88px,7.2vw,126px)] border-[4px] shadow-xl" /></div>)}</div>;
+  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-2 grid-rows-3 place-items-center gap-x-[clamp(10px,1vw,18px)] gap-y-2">{(grupos[pagina] ?? []).map((persona, indice) => <div key={`${persona.id}-${pagina}`} className="miniatura-cifra-animada grid h-full w-full place-items-center" style={{ animation: `avatar-registro-ciclo 2.55s ${indice * .055}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(94px,6.7vw,116px)] w-[clamp(94px,6.7vw,116px)] border-[4px] shadow-xl" /></div>)}</div>;
 }
 
 function EmpresasCifra({ empresas }: { empresas: DatosResumenEvento["empresas"] }) {
-  const filas = Math.max(1, Math.ceil(empresas.length / 3));
-  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-3 content-center gap-x-3 gap-y-2" style={{ gridTemplateRows: `repeat(${filas}, minmax(38px, 58px))` }}>{empresas.map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid min-h-0 w-full place-items-center overflow-hidden px-1.5 py-1" style={{ animation: `miniatura-cifra-entrada .42s ${Math.min(indice * .055, .7)}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="h-full w-full object-contain opacity-95 [filter:brightness(0)_invert(1)_drop-shadow(0_2px_5px_rgba(0,0,0,.32))]" /> : <span className="line-clamp-2 text-center font-display text-[clamp(10px,.8vw,13px)] font-extrabold leading-tight text-white">{empresa.nombre}</span>}</div>)}</div>;
+  const filas = Math.max(1, Math.ceil(empresas.length / 2));
+  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-2 gap-x-[clamp(18px,1.8vw,30px)] gap-y-1.5 overflow-hidden py-2" style={{ gridTemplateRows: `repeat(${filas}, minmax(0, 1fr))` }}>{empresas.map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid min-h-0 min-w-0 place-items-center overflow-hidden px-1 py-0.5" style={{ animation: `miniatura-cifra-entrada .42s ${Math.min(indice * .055, .7)}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="block max-h-full max-w-full object-contain opacity-95 [filter:brightness(0)_invert(1)_drop-shadow(0_2px_5px_rgba(0,0,0,.32))]" /> : <span className="line-clamp-2 text-center font-display text-[clamp(12px,.95vw,16px)] font-extrabold leading-tight text-white">{empresa.nombre}</span>}</div>)}</div>;
 }
 
 function DesafiosCifra({ desafios }: { desafios: DatosResumenEvento["desafios"] }) {
-  const grupos = useMemo(() => agrupar(desafios, 2), [desafios]);
+  const grupos = useMemo(() => agrupar(desafios, 3), [desafios]);
   const [pagina, setPagina] = useState(0);
   useEffect(() => {
     if (grupos.length <= 1) return;
-    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_200);
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_600);
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
-  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-rows-2 gap-3">{(grupos[pagina] ?? []).map((desafio, indice) => { const color = PALETA[(pagina * 2 + indice) % PALETA.length]; return <div key={`${desafio.id}-${pagina}`} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-3 overflow-hidden rounded-2xl border border-white/20 p-3 text-left shadow-xl" style={{ animation: `miniatura-cifra-entrada .5s ${indice * .12}s ease-out both`, background: `linear-gradient(135deg, ${color}7a, rgba(5,35,54,.78))` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-[clamp(58px,4.5vw,76px)] w-[clamp(58px,4.5vw,76px)] shrink-0 rounded-2xl object-cover shadow-lg" /> : <span className="grid h-[clamp(58px,4.5vw,76px)] w-[clamp(58px,4.5vw,76px)] shrink-0 place-items-center rounded-2xl bg-white/15"><Zap size={30} style={{ color }} /></span>}<span className="min-w-0"><strong className="line-clamp-2 block text-[clamp(13px,1vw,17px)] font-extrabold leading-tight text-white">{desafio.titulo}</strong><small className="mt-1.5 line-clamp-3 block text-[clamp(10px,.76vw,13px)] leading-snug text-white/68">{desafio.descripcion}</small></span></div>; })}</div>;
+  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-rows-3">{(grupos[pagina] ?? []).map((desafio, indice) => { const color = PALETA[(pagina * 3 + indice) % PALETA.length]; return <div key={`${desafio.id}-${pagina}`} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-[clamp(12px,1vw,18px)] overflow-hidden border-b border-white/[.18] px-1 py-3 text-left last:border-b-0" style={{ animation: `miniatura-cifra-entrada .5s ${indice * .12}s ease-out both` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-[clamp(62px,4.7vw,82px)] w-[clamp(62px,4.7vw,82px)] shrink-0 rounded-2xl object-cover shadow-lg" /> : <span className="grid h-[clamp(62px,4.7vw,82px)] w-[clamp(62px,4.7vw,82px)] shrink-0 place-items-center rounded-full border-2 border-white/20"><Zap size={34} style={{ color }} /></span>}<span className="min-w-0"><strong className="line-clamp-2 block font-display text-[clamp(18px,1.35vw,23px)] font-extrabold leading-tight text-white">{desafio.titulo}</strong><small className="mt-2 line-clamp-3 block text-[clamp(13px,.95vw,16px)] font-medium leading-snug text-white/72">{desafio.descripcion}</small></span></div>; })}</div>;
 }
 
 function MomentosCifra({ fotos }: { fotos: FotoResumen[] }) {
@@ -475,18 +475,18 @@ function PodioResumen({ personas }: { personas: DatosResumenEvento["podio"] }) {
 }
 
 function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["satisfaccion"] }) {
-  const grupos = useMemo(() => agrupar(satisfaccion.comentarios, 3), [satisfaccion.comentarios]);
+  const grupos = useMemo(() => agrupar(satisfaccion.comentarios, 6), [satisfaccion.comentarios]);
   const [pagina, setPagina] = useState(0);
   useEffect(() => {
     if (grupos.length <= 1) return;
-    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 4_500);
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 5_200);
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
   const comentarios = grupos[pagina] ?? [];
   const porcentaje = (valor: number) => satisfaccion.respuestasNps ? Math.round(valor * 100 / satisfaccion.respuestasNps) : 0;
   const nps = satisfaccion.nps;
   const colorNps = nps === null ? "#ffffff" : nps >= 50 ? "#8cc63f" : nps >= 0 ? "#f7c948" : "#fb7185";
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion="Lo que las personas valoraron del encuentro y una lectura conjunta de su experiencia." /><div className="grid min-h-0 flex-1 grid-cols-[.78fr_1.22fr] gap-[clamp(18px,2.5vw,38px)]"><article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.5vw,40px)] text-center shadow-2xl backdrop-blur"><div className="grid h-[clamp(210px,21vw,310px)] w-[clamp(210px,21vw,310px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorNps }}><div><span className="block text-sm font-extrabold uppercase tracking-[.2em] text-white/60">NPS total</span><strong data-testid="nps-total" className="mt-1 block font-display text-[clamp(72px,7vw,108px)] font-extrabold leading-none" style={{ color: colorNps }}>{nps === null ? "—" : nps > 0 ? `+${nps}` : nps}</strong><span className="mt-2 block text-sm font-bold text-white/55">{satisfaccion.respuestasNps} respuestas</span></div></div><div className="mt-6 grid w-full grid-cols-3 gap-2"><div className="rounded-2xl bg-[var(--epm-verde)]/15 p-3"><strong className="block text-2xl text-[var(--epm-verde)]">{porcentaje(satisfaccion.promotores)}%</strong><span className="text-xs font-bold text-white/60">promotores</span></div><div className="rounded-2xl bg-amber-300/15 p-3"><strong className="block text-2xl text-amber-300">{porcentaje(satisfaccion.pasivos)}%</strong><span className="text-xs font-bold text-white/60">pasivos</span></div><div className="rounded-2xl bg-rose-400/15 p-3"><strong className="block text-2xl text-rose-300">{porcentaje(satisfaccion.detractores)}%</strong><span className="text-xs font-bold text-white/60">detractores</span></div></div><p className="mt-4 text-xs text-white/45">NPS = % de promotores − % de detractores, sobre respuestas de 0 a 10.</p></article><div data-testid="comentarios-satisfaccion" className="grid min-h-0 grid-rows-3 gap-[clamp(10px,1.4vh,18px)]">{comentarios.length ? comentarios.map((comentario, indice) => <blockquote key={`${pagina}-${comentario}`} className="miniatura-cifra-animada relative flex min-h-0 items-center overflow-hidden rounded-[clamp(20px,1.8vw,30px)] border border-white/15 bg-white/10 px-[clamp(22px,2vw,34px)] py-4 shadow-xl backdrop-blur" style={{ animation: `miniatura-cifra-entrada .55s ${indice * .13}s ease-out both` }}><MessageCircleHeart className="mr-5 shrink-0 text-[var(--epm-verde)]" size={42} /><p className="line-clamp-3 font-display text-[clamp(17px,1.5vw,25px)] font-bold leading-snug text-white/90">“{comentario}”</p></blockquote>) : <div className="row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios positivos aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}</div></div></section>;
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios positivos recogen lo que las personas más valoraron del encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(18px,2.2vw,34px)]"><article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.2vw,36px)] text-center shadow-2xl backdrop-blur"><div className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorNps }}><div><span className="block text-sm font-extrabold uppercase tracking-[.2em] text-white/60">NPS total</span><strong data-testid="nps-total" className="mt-1 block font-display text-[clamp(72px,7vw,108px)] font-extrabold leading-none" style={{ color: colorNps }}>{nps === null ? "—" : nps > 0 ? `+${nps}` : nps}</strong><span className="mt-2 block text-sm font-bold text-white/55">{satisfaccion.respuestasNps} respuestas</span></div></div><div className="mt-6 grid w-full grid-cols-3 gap-2"><div className="rounded-2xl bg-[var(--epm-verde)]/15 p-3"><strong className="block text-2xl text-[var(--epm-verde)]">{porcentaje(satisfaccion.promotores)}%</strong><span className="text-xs font-bold text-white/60">promotores</span></div><div className="rounded-2xl bg-amber-300/15 p-3"><strong className="block text-2xl text-amber-300">{porcentaje(satisfaccion.pasivos)}%</strong><span className="text-xs font-bold text-white/60">pasivos</span></div><div className="rounded-2xl bg-rose-400/15 p-3"><strong className="block text-2xl text-rose-300">{porcentaje(satisfaccion.detractores)}%</strong><span className="text-xs font-bold text-white/60">detractores</span></div></div><p className="mt-4 text-xs text-white/45">NPS = % de promotores − % de detractores, sobre respuestas de 0 a 10.</p></article><div data-testid="comentarios-satisfaccion" className="grid min-h-0 grid-cols-2 grid-rows-3 gap-[clamp(10px,1.2vw,17px)]">{comentarios.length ? comentarios.map((comentario, indice) => <blockquote key={`${pagina}-${comentario}`} className="miniatura-cifra-animada relative flex min-h-0 items-center overflow-hidden rounded-[clamp(18px,1.5vw,25px)] border border-white/15 bg-white/10 px-[clamp(16px,1.4vw,24px)] py-3 shadow-xl backdrop-blur" style={{ animation: `miniatura-cifra-entrada .55s ${indice * .09}s ease-out both` }}><MessageCircleHeart className="mr-3 shrink-0 text-[var(--epm-verde)]" size={34} /><p className="line-clamp-4 font-display text-[clamp(15px,1.15vw,20px)] font-bold leading-snug text-white/90">“{comentario}”</p></blockquote>) : <div className="col-span-2 row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios positivos aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}</div></div></section>;
 }
 
 function ReflexionTecnologia() {

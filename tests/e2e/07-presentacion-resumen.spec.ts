@@ -61,10 +61,10 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByRole("button", { name: "Silenciar música" }).click();
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Una experiencia construida entre todos" })).toBeVisible();
-  await expect(page.getByTestId("cifras-personas-fotos").locator("img")).toHaveCount(4);
+  await expect(page.getByTestId("cifras-personas-fotos").locator("img")).toHaveCount(6);
   expect(await page.getByTestId("cifras-personas-fotos").locator("img").first().evaluate((imagen) => imagen.getBoundingClientRect().width)).toBeGreaterThan(80);
   const primerasPersonas = await page.getByTestId("cifras-personas-fotos").locator("img").evaluateAll((imagenes) => imagenes.map((imagen) => (imagen as HTMLImageElement).alt));
-  await page.waitForTimeout(2_700);
+  await page.waitForTimeout(2_900);
   const siguientesPersonas = await page.getByTestId("cifras-personas-fotos").locator("img").evaluateAll((imagenes) => imagenes.map((imagen) => (imagen as HTMLImageElement).alt));
   expect(siguientesPersonas).not.toEqual(primerasPersonas);
   await expect(page.getByTestId("cifras-empresas-logos")).toBeVisible();
@@ -72,7 +72,7 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   const logos = page.getByTestId("cifras-empresas-logos").locator("img");
   if (await logos.count()) await expect(logos.first()).toHaveCSS("filter", /invert/);
   await expect(page.getByTestId("cifras-desafios")).toBeVisible();
-  await expect(page.getByTestId("cifras-desafios").locator(":scope > div")).toHaveCount(Math.min(2, desafiosPublicados));
+  await expect(page.getByTestId("cifras-desafios").locator(":scope > div")).toHaveCount(Math.min(3, desafiosPublicados));
   await expect(page.getByTestId("cifras-desafios").locator("small").first()).not.toBeEmpty();
   await expect(page.getByTestId("cifras-momentos-fotos").locator("img")).not.toHaveCount(0);
 

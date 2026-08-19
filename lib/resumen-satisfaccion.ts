@@ -76,6 +76,6 @@ export function resumirSatisfaccion(registros: RegistroEncuesta[]): ResumenSatis
     promotores,
     pasivos,
     detractores,
-    comentarios: [...new Set(comentarios)].slice(0, 12),
+    comentarios: [...new Set(comentarios)],
   };
 }
