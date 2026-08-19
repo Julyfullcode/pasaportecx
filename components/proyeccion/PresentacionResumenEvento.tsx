@@ -50,6 +50,7 @@ export type DatosResumenEvento = {
     reacciones: number;
     puntos: number;
   };
+  personas: { id: string; nombre: string; urlFoto: string; empresa: { nombre: string } }[];
   empresas: { nombre: string; participantes: number }[];
   podio: { id: string; nombre: string; urlFoto: string; puntosTotales: number; empresa: { nombre: string } }[];
   fotos: FotoResumen[];
@@ -58,6 +59,8 @@ export type DatosResumenEvento = {
 type Diapositiva =
   | { tipo: "portada"; duracion: number }
   | { tipo: "cifras"; duracion: number }
+  | { tipo: "registro"; duracion: number }
+  | { tipo: "personas"; duracion: number; personas: DatosResumenEvento["personas"]; tanda: number }
   | { tipo: "participacion"; duracion: number }
   | { tipo: "empresas"; duracion: number }
   | { tipo: "fotos"; duracion: number; fotos: FotoResumen[]; tanda: number }
@@ -146,16 +149,24 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
       fotos: grupo,
       tanda: indice + 1,
     }));
+    const personas = agrupar(datos.personas, 15).map((grupo, indice) => ({
+      tipo: "personas" as const,
+      duracion: 8_500,
+      personas: grupo,
+      tanda: indice + 1,
+    }));
     return [
       { tipo: "portada", duracion: 8_000 },
       { tipo: "cifras", duracion: 10_000 },
+      { tipo: "registro", duracion: 7_000 },
+      ...personas,
       { tipo: "participacion", duracion: 10_000 },
       { tipo: "empresas", duracion: 10_000 },
       ...fotos,
       ...(datos.podio.length ? [{ tipo: "podio" as const, duracion: 11_000 }] : []),
       { tipo: "cierre", duracion: 12_000 },
     ];
-  }, [datos.fotos, datos.podio.length]);
+  }, [datos.fotos, datos.personas, datos.podio.length]);
   const [iniciada, setIniciada] = useState(false);
   const [indice, setIndice] = useState(0);
   const [reproduciendo, setReproduciendo] = useState(true);
@@ -228,6 +239,8 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
       <div key={`${actual.tipo}-${indice}`} className="entrada-suave relative z-10 h-full px-[clamp(24px,5vw,92px)] pb-[clamp(78px,10vh,112px)] pt-[clamp(88px,12vh,126px)]">
         {actual.tipo === "portada" && <Portada nombre={datos.nombreEvento} />}
         {actual.tipo === "cifras" && <Cifras datos={datos} />}
+        {actual.tipo === "registro" && <RegistroPersonas datos={datos} />}
+        {actual.tipo === "personas" && <PersonasRegistradas personas={actual.personas} tanda={actual.tanda} total={Math.ceil(datos.personas.length / 15)} />}
         {actual.tipo === "participacion" && <Participacion datos={datos} />}
         {actual.tipo === "empresas" && <Empresas empresas={datos.empresas} total={datos.cifras.participantes} />}
         {actual.tipo === "fotos" && <Fotos fotos={actual.fotos} tanda={actual.tanda} total={Math.ceil(datos.fotos.length / 8)} />}
@@ -249,6 +262,21 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
           <span className="text-right text-sm font-bold text-white/60">Vicepresidencia Experiencia Usuario-Cliente</span>
         </div>
       </footer>
+      <style jsx global>{`
+        @keyframes ficha-persona-entrada {
+          0% { opacity: 0; transform: translateY(34px) scale(.82) rotate(var(--giro-inicial)); filter: blur(8px); }
+          65% { opacity: 1; transform: translateY(-5px) scale(1.025) rotate(0deg); filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); filter: blur(0); }
+        }
+        @keyframes avatar-registro-entrada {
+          0% { opacity: 0; transform: scale(.3) translateY(30px); }
+          70% { opacity: 1; transform: scale(1.08) translateY(-4px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ficha-persona-animada, .avatar-registro-animado { animation: none !important; opacity: 1 !important; }
+        }
+      `}</style>
     </main>
   );
 }
@@ -273,6 +301,15 @@ function Cifras({ datos }: { datos: DatosResumenEvento }) {
     { valor: datos.cifras.recuerdos, etiqueta: "momentos compartidos", Icono: Camera, color: "#fb7185" },
   ];
   return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="El encuentro" titulo="Una experiencia construida entre todos" descripcion={`${datos.cifras.staff.toLocaleString("es-CO")} integrantes del equipo Staff acompañaron la experiencia.`} /><div className="grid min-h-0 flex-1 grid-cols-4 gap-[clamp(12px,1.8vw,26px)]">{cifras.map((cifra) => <TarjetaCifra key={cifra.etiqueta} {...cifra} />)}</div></section>;
+}
+
+function RegistroPersonas({ datos }: { datos: DatosResumenEvento }) {
+  const muestra = datos.personas.slice(0, 8);
+  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-6xl"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)] backdrop-blur"><Users size={22} /> Una comunidad que creció</div><strong className="mt-7 block font-display text-[clamp(92px,14vw,190px)] font-extrabold leading-[.75] text-[var(--epm-verde)]">93<span className="text-[.55em]">+</span></strong><h2 className="mx-auto mt-8 max-w-5xl font-display text-[clamp(40px,5.4vw,78px)] font-extrabold leading-[.96]">Más de 93 personas se registraron en la app</h2><p className="mx-auto mt-6 max-w-3xl text-[clamp(17px,1.7vw,26px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p><div className="mx-auto mt-7 w-fit rounded-full border border-white/15 bg-slate-950/25 px-5 py-2 font-bold text-white/65 backdrop-blur">{datos.cifras.participantes.toLocaleString("es-CO")} registros activos</div></div>{muestra.map((persona, indice) => { const posiciones = ["left-[3%] top-[10%]", "left-[12%] bottom-[9%]", "right-[4%] top-[13%]", "right-[12%] bottom-[8%]", "left-[25%] top-[3%]", "right-[25%] top-[4%]", "left-[28%] bottom-[1%]", "right-[28%] bottom-[1%]"]; return <div key={persona.id} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden rounded-full border-4 border-white/25 bg-white/10 p-1 shadow-2xl backdrop-blur lg:block`} style={{ animation: `avatar-registro-entrada .65s ${.35 + indice * .16}s cubic-bezier(.2,.9,.25,1.2) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(66px,7vw,108px)] w-[clamp(66px,7vw,108px)]" /></div>; })}</section>;
+}
+
+function PersonasRegistradas({ personas, tanda, total }: { personas: DatosResumenEvento["personas"]; tanda: number; total: number }) {
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta={`Personas ${tanda} de ${total}`} titulo="Quienes hicieron parte de esta historia" descripcion="Sus rostros, nombres y empresas le dieron vida a la experiencia." /><div className="grid min-h-0 flex-1 grid-cols-5 grid-rows-3 gap-[clamp(9px,1.2vw,18px)]">{personas.map((persona, indice) => <article key={persona.id} className="ficha-persona-animada relative flex min-h-0 items-center gap-[clamp(9px,1vw,16px)] overflow-hidden rounded-[clamp(16px,1.5vw,24px)] border border-white/15 bg-white/10 p-[clamp(10px,1.1vw,17px)] shadow-xl backdrop-blur" style={{ animation: `ficha-persona-entrada .62s ${.12 + indice * .115}s cubic-bezier(.2,.9,.25,1.15) both`, "--giro-inicial": `${indice % 2 === 0 ? -3 : 3}deg` } as React.CSSProperties}><div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-[var(--epm-verde)]/10 blur-xl" /><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(52px,5vw,78px)] w-[clamp(52px,5vw,78px)] shrink-0 border-2" /><div className="relative min-w-0 text-left"><h3 className="line-clamp-2 text-[clamp(12px,1.05vw,17px)] font-extrabold leading-tight">{persona.nombre}</h3><p className="mt-1 line-clamp-2 text-[clamp(10px,.82vw,13px)] leading-tight text-white/60">{persona.empresa.nombre}</p></div></article>)}</div></section>;
 }
 
 function Participacion({ datos }: { datos: DatosResumenEvento }) {

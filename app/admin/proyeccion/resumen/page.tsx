@@ -10,6 +10,7 @@ export default async function ResumenEvento() {
   const [
     configuracion,
     participantes,
+    personasRegistradas,
     staff,
     empresas,
     desafios,
@@ -27,6 +28,11 @@ export default async function ResumenEvento() {
   ] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { nombreEvento: true } }),
     db.participante.count({ where: { activo: true } }),
+    db.participante.findMany({
+      where: { activo: true },
+      orderBy: { creadoEn: "asc" },
+      select: { id: true, nombre: true, urlFoto: true, empresa: { select: { nombre: true } } },
+    }),
     db.participante.count({ where: { activo: true, esStaff: true } }),
     db.empresa.findMany({
       include: { _count: { select: { participantes: { where: { activo: true } } } } },
@@ -104,6 +110,7 @@ export default async function ResumenEvento() {
       reacciones,
       puntos: puntos._sum.puntosTotales ?? 0,
     },
+    personas: personasRegistradas,
     empresas: empresasConParticipantes,
     podio,
     fotos,

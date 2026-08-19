@@ -12,4 +12,10 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await expect(page.getByRole("button", { name: "Activar música" })).toBeVisible();
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Una experiencia construida entre todos" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByRole("heading", { name: "Más de 93 personas se registraron en la app" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByRole("heading", { name: "Quienes hicieron parte de esta historia" })).toBeVisible();
 });
