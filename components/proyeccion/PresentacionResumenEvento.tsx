@@ -13,6 +13,7 @@ import {
   Images,
   Medal,
   Music,
+  Network,
   Pause,
   Play,
   Sparkles,
@@ -21,6 +22,7 @@ import {
   Users,
   Volume2,
   VolumeX,
+  Zap,
 } from "lucide-react";
 import { LogoBlanco } from "@/components/marca/Logo";
 import { FotoCircular } from "@/components/marca/FotoCircular";
@@ -63,8 +65,9 @@ type Diapositiva =
   | { tipo: "registro"; duracion: number }
   | { tipo: "participacion"; duracion: number }
   | { tipo: "empresas"; duracion: number }
-  | { tipo: "fotos"; duracion: number; fotos: FotoResumen[]; tanda: number }
+  | { tipo: "fotos"; duracion: number; fotos: FotoResumen[] }
   | { tipo: "podio"; duracion: number }
+  | { tipo: "reflexion"; duracion: number }
   | { tipo: "cierre"; duracion: number };
 
 const PALETA = ["#3fa9e0", "#8cc63f", "#12b886", "#f7c948", "#f78c6b", "#a78bfa", "#38bdf8", "#fb7185"];
@@ -82,38 +85,83 @@ function useMusicaAmbiental() {
   const iniciar = useCallback(() => {
     if (motor.current) {
       void motor.current.contexto.resume();
-      motor.current.ganancia.gain.setTargetAtTime(0.11, motor.current.contexto.currentTime, 0.3);
+      motor.current.ganancia.gain.setTargetAtTime(0.13, motor.current.contexto.currentTime, 0.3);
       setActiva(true);
       return;
     }
     const contexto = new AudioContext();
     const ganancia = contexto.createGain();
     ganancia.gain.setValueAtTime(0.0001, contexto.currentTime);
-    ganancia.gain.exponentialRampToValueAtTime(0.11, contexto.currentTime + 1.5);
+    ganancia.gain.exponentialRampToValueAtTime(0.13, contexto.currentTime + 1.2);
     ganancia.connect(contexto.destination);
-    const notas = [261.63, 329.63, 392, 523.25, 440, 392, 329.63, 293.66];
-    const tocar = (frecuencia: number, duracion = 1.7, volumen = 0.16, tipo: OscillatorType = "sine") => {
-      const ahora = contexto.currentTime;
+    const ruido = contexto.createBuffer(1, contexto.sampleRate, contexto.sampleRate);
+    const canalRuido = ruido.getChannelData(0);
+    for (let indice = 0; indice < canalRuido.length; indice += 1) canalRuido[indice] = Math.random() * 2 - 1;
+    const melodia = [523.25, 659.25, 783.99, 659.25, 587.33, 659.25, 880, 783.99, 659.25, 523.25, 587.33, 659.25, 698.46, 659.25, 587.33, 493.88];
+    const raices = [130.81, 98, 110, 87.31];
+    const acordes = [
+      [261.63, 329.63, 392],
+      [196, 246.94, 392],
+      [220, 261.63, 329.63],
+      [174.61, 220, 349.23],
+    ];
+    const tocar = (frecuencia: number, cuando: number, duracion: number, volumen: number, tipo: OscillatorType = "triangle") => {
       const oscilador = contexto.createOscillator();
       const envolvente = contexto.createGain();
       oscilador.type = tipo;
-      oscilador.frequency.setValueAtTime(frecuencia, ahora);
-      envolvente.gain.setValueAtTime(0.0001, ahora);
-      envolvente.gain.exponentialRampToValueAtTime(volumen, ahora + 0.09);
-      envolvente.gain.exponentialRampToValueAtTime(0.0001, ahora + duracion);
+      oscilador.frequency.setValueAtTime(frecuencia, cuando);
+      envolvente.gain.setValueAtTime(0.0001, cuando);
+      envolvente.gain.exponentialRampToValueAtTime(volumen, cuando + 0.025);
+      envolvente.gain.exponentialRampToValueAtTime(0.0001, cuando + duracion);
       oscilador.connect(envolvente);
       envolvente.connect(ganancia);
-      oscilador.start(ahora);
-      oscilador.stop(ahora + duracion + 0.05);
+      oscilador.start(cuando);
+      oscilador.stop(cuando + duracion + 0.04);
+    };
+    const golpe = (cuando: number) => {
+      const oscilador = contexto.createOscillator();
+      const envolvente = contexto.createGain();
+      oscilador.type = "sine";
+      oscilador.frequency.setValueAtTime(135, cuando);
+      oscilador.frequency.exponentialRampToValueAtTime(46, cuando + 0.2);
+      envolvente.gain.setValueAtTime(0.24, cuando);
+      envolvente.gain.exponentialRampToValueAtTime(0.0001, cuando + 0.23);
+      oscilador.connect(envolvente);
+      envolvente.connect(ganancia);
+      oscilador.start(cuando);
+      oscilador.stop(cuando + 0.24);
+    };
+    const percusion = (cuando: number, tipo: "hat" | "clap") => {
+      const fuente = contexto.createBufferSource();
+      const filtro = contexto.createBiquadFilter();
+      const envolvente = contexto.createGain();
+      fuente.buffer = ruido;
+      filtro.type = tipo === "hat" ? "highpass" : "bandpass";
+      filtro.frequency.value = tipo === "hat" ? 6_500 : 1_650;
+      filtro.Q.value = tipo === "hat" ? 0.8 : 1.2;
+      envolvente.gain.setValueAtTime(tipo === "hat" ? 0.045 : 0.11, cuando);
+      envolvente.gain.exponentialRampToValueAtTime(0.0001, cuando + (tipo === "hat" ? 0.07 : 0.18));
+      fuente.connect(filtro);
+      filtro.connect(envolvente);
+      envolvente.connect(ganancia);
+      fuente.start(cuando);
+      fuente.stop(cuando + (tipo === "hat" ? 0.08 : 0.19));
     };
     const estado = { contexto, ganancia, temporizador: 0, paso: 0 };
     const pulso = () => {
-      tocar(notas[estado.paso % notas.length]);
-      if (estado.paso % 4 === 0) tocar(notas[estado.paso % notas.length] / 2, 3.2, 0.08, "triangle");
+      const ahora = contexto.currentTime + 0.025;
+      const pasoCompas = estado.paso % 8;
+      const compas = Math.floor(estado.paso / 8) % acordes.length;
+      percusion(ahora, "hat");
+      if (pasoCompas === 0 || pasoCompas === 4 || (pasoCompas === 6 && compas % 2 === 1)) golpe(ahora);
+      if (pasoCompas === 2 || pasoCompas === 6) percusion(ahora, "clap");
+      if ([0, 3, 4, 7].includes(pasoCompas)) tocar(raices[compas], ahora, 0.42, 0.12, "triangle");
+      tocar(melodia[estado.paso % melodia.length], ahora, 0.19, pasoCompas % 2 === 0 ? 0.055 : 0.035, "square");
+      if (pasoCompas === 0) acordes[compas].forEach((frecuencia) => tocar(frecuencia, ahora, 1.85, 0.018, "sine"));
       estado.paso += 1;
     };
     pulso();
-    estado.temporizador = window.setInterval(pulso, 780);
+    estado.temporizador = window.setInterval(pulso, 268);
     motor.current = estado;
     setActiva(true);
   }, []);
@@ -127,7 +175,7 @@ function useMusicaAmbiental() {
       setActiva(false);
     } else {
       void actual.contexto.resume();
-      actual.ganancia.gain.setTargetAtTime(0.11, actual.contexto.currentTime, 0.22);
+      actual.ganancia.gain.setTargetAtTime(0.13, actual.contexto.currentTime, 0.22);
       setActiva(true);
     }
   }, [activa, iniciar]);
@@ -143,23 +191,24 @@ function useMusicaAmbiental() {
 
 export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento }) {
   const diapositivas = useMemo<Diapositiva[]>(() => {
-    const fotos = agrupar(datos.fotos, 8).map((grupo, indice) => ({
-      tipo: "fotos" as const,
-      duracion: 12_500,
-      fotos: grupo,
-      tanda: indice + 1,
-    }));
+    const duracionRegistro = Math.max(12_000, Math.ceil(datos.personas.length / 12) * 3_000);
+    const fotos: Diapositiva[] = datos.fotos.length ? [{
+      tipo: "fotos",
+      duracion: Math.max(14_000, Math.ceil(datos.fotos.length / 6) * 4_800),
+      fotos: datos.fotos,
+    }] : [];
     return [
       { tipo: "portada", duracion: 8_000 },
       { tipo: "cifras", duracion: 10_000 },
-      { tipo: "registro", duracion: 7_000 },
+      { tipo: "registro", duracion: duracionRegistro },
       { tipo: "participacion", duracion: 10_000 },
       { tipo: "empresas", duracion: 10_000 },
       ...fotos,
       ...(datos.podio.length ? [{ tipo: "podio" as const, duracion: 11_000 }] : []),
+      { tipo: "reflexion", duracion: 12_000 },
       { tipo: "cierre", duracion: 12_000 },
     ];
-  }, [datos.fotos, datos.podio.length]);
+  }, [datos.fotos, datos.personas.length, datos.podio.length]);
   const [iniciada, setIniciada] = useState(false);
   const [indice, setIndice] = useState(0);
   const [reproduciendo, setReproduciendo] = useState(true);
@@ -235,8 +284,9 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         {actual.tipo === "registro" && <RegistroPersonas datos={datos} />}
         {actual.tipo === "participacion" && <Participacion datos={datos} />}
         {actual.tipo === "empresas" && <Empresas empresas={datos.empresas} total={datos.cifras.participantes} />}
-        {actual.tipo === "fotos" && <Fotos fotos={actual.fotos} tanda={actual.tanda} total={Math.ceil(datos.fotos.length / 8)} />}
+        {actual.tipo === "fotos" && <Fotos fotos={actual.fotos} />}
         {actual.tipo === "podio" && <PodioResumen personas={datos.podio} />}
+        {actual.tipo === "reflexion" && <ReflexionTecnologia />}
         {actual.tipo === "cierre" && <Cierre datos={datos} />}
       </div>
 
@@ -255,10 +305,11 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         </div>
       </footer>
       <style jsx global>{`
-        @keyframes avatar-registro-entrada {
-          0% { opacity: 0; transform: scale(.3) translateY(30px); }
-          70% { opacity: 1; transform: scale(1.08) translateY(-4px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
+        @keyframes avatar-registro-ciclo {
+          0% { opacity: 0; transform: scale(.5) translateY(24px); filter: blur(6px); }
+          16% { opacity: 1; transform: scale(1.04) translateY(-3px); filter: blur(0); }
+          76% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+          100% { opacity: 0; transform: scale(.82) translateY(-18px); filter: blur(5px); }
         }
         @keyframes miniatura-cifra-entrada {
           0% { opacity: 0; transform: translateY(14px) scale(.76); }
@@ -270,8 +321,12 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
           72% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); filter: blur(0); }
           100% { opacity: 0; transform: translateY(-22px) scale(.9) rotate(calc(var(--giro-foto) * -1)); filter: blur(5px); }
         }
+        @keyframes nodo-conexion {
+          0%, 100% { transform: scale(.92); box-shadow: 0 0 0 0 rgba(140,198,63,.35); }
+          50% { transform: scale(1.07); box-shadow: 0 0 0 22px rgba(140,198,63,0); }
+        }
         @media (prefers-reduced-motion: reduce) {
-          .avatar-registro-animado, .miniatura-cifra-animada, .foto-historia-animada { animation: none !important; opacity: 1 !important; }
+          .avatar-registro-animado, .miniatura-cifra-animada, .foto-historia-animada, .nodo-conexion-animado { animation: none !important; opacity: 1 !important; }
         }
       `}</style>
     </main>
@@ -292,44 +347,92 @@ function TarjetaCifra({ valor, etiqueta, Icono, color, contenido }: { valor: num
 
 function Cifras({ datos }: { datos: DatosResumenEvento }) {
   const cifras = [
-    { valor: datos.cifras.participantes, etiqueta: "personas hicieron parte", Icono: Users, color: "#8cc63f", contenido: <div data-testid="cifras-personas-fotos" className="flex h-full items-center justify-center -space-x-[clamp(12px,1.4vw,22px)]">{datos.personas.slice(0, 6).map((persona, indice) => <div key={persona.id} className="miniatura-cifra-animada relative rounded-full" style={{ animation: `miniatura-cifra-entrada .45s ${indice * .1}s ease-out both`, zIndex: indice + 1 }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(48px,4.8vw,76px)] w-[clamp(48px,4.8vw,76px)] border-[3px] shadow-xl" /></div>)}</div> },
-    { valor: datos.cifras.empresas, etiqueta: "empresas conectadas", Icono: Building2, color: "#3fa9e0", contenido: <div data-testid="cifras-empresas-logos" className="grid h-full grid-cols-3 place-items-center gap-2">{datos.empresas.slice(0, 6).map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid h-[clamp(38px,4.2vw,64px)] w-full place-items-center rounded-xl bg-white/95 p-2 shadow-lg" style={{ animation: `miniatura-cifra-entrada .45s ${indice * .1}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="max-h-full max-w-full object-contain" /> : <span className="font-display text-[clamp(11px,1vw,16px)] font-extrabold text-[var(--epm-azul-profundo)]">{empresa.nombre.slice(0, 5)}</span>}</div>)}</div> },
-    { valor: datos.cifras.desafios, etiqueta: "desafíos del recorrido", Icono: Target, color: "#f7c948", contenido: <div data-testid="cifras-desafios" className="flex h-full flex-col justify-center gap-1.5">{datos.desafios.slice(0, 4).map((desafio, indice) => <div key={desafio.id} className="miniatura-cifra-animada flex min-h-0 items-center gap-2 rounded-lg bg-slate-950/25 px-2 py-1.5 text-left" style={{ animation: `miniatura-cifra-entrada .45s ${indice * .11}s ease-out both` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-7 w-7 shrink-0 rounded-md object-cover" /> : <Target size={15} className="shrink-0 text-amber-300" />}<span className="line-clamp-1 text-[clamp(9px,.75vw,12px)] font-bold text-white/80">{desafio.titulo}</span></div>)}</div> },
-    { valor: datos.cifras.recuerdos, etiqueta: "momentos compartidos", Icono: Camera, color: "#fb7185", contenido: <div data-testid="cifras-momentos-fotos" className="grid h-full grid-cols-2 grid-rows-2 gap-1.5">{datos.fotos.slice(0, 4).map((foto, indice) => <img key={foto.id} src={foto.url} alt={foto.texto || "Momento del encuentro"} className="miniatura-cifra-animada h-full min-h-0 w-full rounded-lg object-cover shadow-lg" style={{ animation: `miniatura-cifra-entrada .45s ${indice * .12}s ease-out both` }} />)}</div> },
+    { valor: datos.cifras.participantes, etiqueta: "personas hicieron parte", Icono: Users, color: "#8cc63f", contenido: <PersonasCifra personas={datos.personas} /> },
+    { valor: datos.cifras.empresas, etiqueta: "empresas conectadas", Icono: Building2, color: "#3fa9e0", contenido: <EmpresasCifra empresas={datos.empresas} /> },
+    { valor: datos.cifras.desafios, etiqueta: "desafíos del recorrido", Icono: Target, color: "#f7c948", contenido: <DesafiosCifra desafios={datos.desafios} /> },
+    { valor: datos.cifras.recuerdos, etiqueta: "momentos compartidos", Icono: Camera, color: "#fb7185", contenido: <MomentosCifra fotos={datos.fotos} /> },
   ];
   return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="El encuentro" titulo="Una experiencia construida entre todos" descripcion={`${datos.cifras.staff.toLocaleString("es-CO")} integrantes del equipo Staff acompañaron la experiencia.`} /><div className="grid min-h-0 flex-1 grid-cols-4 gap-[clamp(12px,1.8vw,26px)]">{cifras.map((cifra) => <TarjetaCifra key={cifra.etiqueta} {...cifra} />)}</div></section>;
 }
 
+function PersonasCifra({ personas }: { personas: DatosResumenEvento["personas"] }) {
+  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-3 grid-rows-2 place-items-center gap-2">{personas.slice(0, 6).map((persona, indice) => <div key={persona.id} className="miniatura-cifra-animada grid h-full w-full place-items-center" style={{ animation: `miniatura-cifra-entrada .48s ${indice * .09}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(58px,5.4vw,88px)] w-[clamp(58px,5.4vw,88px)] border-[3px] shadow-xl" /></div>)}</div>;
+}
+
+function EmpresasCifra({ empresas }: { empresas: DatosResumenEvento["empresas"] }) {
+  const filas = Math.max(1, Math.ceil(empresas.length / 3));
+  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-3 content-center gap-1.5" style={{ gridTemplateRows: `repeat(${filas}, minmax(34px, 52px))` }}>{empresas.map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid min-h-0 w-full place-items-center overflow-hidden rounded-lg bg-white px-2 py-1.5 shadow-md" style={{ animation: `miniatura-cifra-entrada .42s ${Math.min(indice * .055, .7)}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="h-full w-full object-contain" /> : <span className="line-clamp-1 text-center font-display text-[clamp(8px,.68vw,11px)] font-extrabold text-[var(--epm-azul-profundo)]">{empresa.nombre}</span>}</div>)}</div>;
+}
+
+function DesafiosCifra({ desafios }: { desafios: DatosResumenEvento["desafios"] }) {
+  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-cols-2 content-center gap-1.5">{desafios.map((desafio, indice) => { const color = PALETA[indice % PALETA.length]; return <div key={desafio.id} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-2 overflow-hidden rounded-xl border border-white/15 px-2 py-1.5 text-left shadow-lg" style={{ animation: `miniatura-cifra-entrada .46s ${Math.min(indice * .075, .75)}s ease-out both`, background: `linear-gradient(135deg, ${color}66, rgba(5,35,54,.72))` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/15"><Zap size={16} style={{ color }} /></span>}<span className="line-clamp-2 text-[clamp(8px,.68vw,11px)] font-extrabold leading-tight text-white">{desafio.titulo}</span></div>; })}</div>;
+}
+
+function MomentosCifra({ fotos }: { fotos: FotoResumen[] }) {
+  return <div data-testid="cifras-momentos-fotos" className="grid h-full grid-cols-2 grid-rows-2 gap-1.5">{fotos.slice(0, 4).map((foto, indice) => <img key={foto.id} src={foto.url} alt={foto.texto || "Momento del encuentro"} className="miniatura-cifra-animada h-full min-h-0 w-full rounded-lg object-cover shadow-lg" style={{ animation: `miniatura-cifra-entrada .45s ${indice * .12}s ease-out both` }} />)}</div>;
+}
+
 function RegistroPersonas({ datos }: { datos: DatosResumenEvento }) {
-  const muestra = datos.personas.slice(0, 20);
-  const posiciones = ["left-[1%] top-[5%]", "left-[11%] top-[2%]", "left-[2%] top-[33%]", "left-[13%] top-[29%]", "left-[2%] bottom-[8%]", "left-[14%] bottom-[4%]", "right-[1%] top-[5%]", "right-[11%] top-[2%]", "right-[2%] top-[33%]", "right-[13%] top-[29%]", "right-[2%] bottom-[8%]", "right-[14%] bottom-[4%]", "left-[25%] top-[0%]", "left-[36%] top-[3%]", "right-[25%] top-[0%]", "right-[36%] top-[3%]", "left-[27%] bottom-[0%]", "left-[38%] bottom-[2%]", "right-[27%] bottom-[0%]", "right-[38%] bottom-[2%]"];
-  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-5xl rounded-[3rem] bg-[var(--epm-azul-profundo)]/48 px-[clamp(28px,4vw,64px)] py-[clamp(22px,3vh,42px)] shadow-[0_0_80px_rgba(4,29,49,.7)] backdrop-blur-sm"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)]"><Users size={22} /> Una comunidad que creció</div><strong className="mt-5 block font-display text-[clamp(78px,11vw,150px)] font-extrabold leading-[.75] text-[var(--epm-verde)]">93<span className="text-[.55em]">+</span></strong><h2 className="mx-auto mt-7 max-w-4xl font-display text-[clamp(36px,4.6vw,66px)] font-extrabold leading-[.96]">Más de 93 personas se registraron en la app</h2><p className="mx-auto mt-5 max-w-3xl text-[clamp(15px,1.4vw,22px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p></div>{muestra.map((persona, indice) => <div key={persona.id} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden rounded-full border-[3px] border-white/30 bg-white/10 p-1 shadow-2xl backdrop-blur lg:block`} style={{ animation: `avatar-registro-entrada .6s ${.18 + indice * .08}s cubic-bezier(.2,.9,.25,1.2) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(48px,5.2vw,80px)] w-[clamp(48px,5.2vw,80px)]" /></div>)}</section>;
+  const grupos = useMemo(() => agrupar(datos.personas, 12), [datos.personas]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_000);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  const muestra = grupos[pagina] ?? [];
+  const posiciones = ["left-[2%] top-[3%]", "left-[22%] top-[0%]", "right-[22%] top-[0%]", "right-[2%] top-[3%]", "left-[1%] top-[38%]", "left-[13%] top-[48%]", "right-[13%] top-[48%]", "right-[1%] top-[38%]", "left-[4%] bottom-[1%]", "left-[27%] bottom-[0%]", "right-[27%] bottom-[0%]", "right-[4%] bottom-[1%]"];
+  const inicio = pagina * 12 + 1;
+  const fin = Math.min((pagina + 1) * 12, datos.personas.length);
+  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-4xl rounded-[3rem] bg-[var(--epm-azul-profundo)]/52 px-[clamp(26px,3.6vw,56px)] py-[clamp(20px,2.7vh,36px)] shadow-[0_0_80px_rgba(4,29,49,.72)] backdrop-blur-sm"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)]"><Users size={22} /> Una comunidad que creció</div><strong className="mt-4 block font-display text-[clamp(72px,9vw,126px)] font-extrabold leading-[.76] text-[var(--epm-verde)]">93<span className="text-[.55em]">+</span></strong><h2 className="mx-auto mt-6 max-w-4xl font-display text-[clamp(34px,4vw,58px)] font-extrabold leading-[.98]">Más de 93 personas se registraron en la app</h2><p className="mx-auto mt-4 max-w-3xl text-[clamp(14px,1.2vw,19px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p><p className="mt-4 text-sm font-extrabold text-[var(--epm-verde)]">Rostros {inicio}–{fin} de {datos.personas.length}</p></div>{muestra.map((persona, indice) => <div key={`${persona.id}-${pagina}`} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden rounded-full border-4 border-white/35 bg-white/10 p-1 shadow-[0_14px_34px_rgba(0,0,0,.3)] backdrop-blur lg:block`} style={{ animation: `avatar-registro-ciclo 2.65s ${indice * .025}s cubic-bezier(.2,.9,.25,1.1) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(84px,7.2vw,124px)] w-[clamp(84px,7.2vw,124px)]" /></div>)}</section>;
 }
 
 function Participacion({ datos }: { datos: DatosResumenEvento }) {
   const porcentaje = datos.cifras.participantes ? Math.round(datos.cifras.participantesConDesafios * 100 / datos.cifras.participantes) : 0;
+  const promedioDesafios = datos.cifras.participantesConDesafios ? (datos.cifras.completitudes / datos.cifras.participantesConDesafios).toFixed(1) : "0";
+  const promedioPuntos = datos.cifras.participantes ? Math.round(datos.cifras.puntos / datos.cifras.participantes) : 0;
+  const promedioReacciones = datos.cifras.recuerdos ? (datos.cifras.reacciones / datos.cifras.recuerdos).toFixed(1) : "0";
   const items = [
-    { valor: datos.cifras.completitudes, etiqueta: "desafíos completados", Icono: CheckCircle2, color: "#8cc63f" },
-    { valor: datos.cifras.puntos, etiqueta: "puntos acumulados", Icono: Trophy, color: "#f7c948" },
-    { valor: datos.cifras.participacionesActividad + datos.cifras.resultadosJuego, etiqueta: "participaciones en actividades", Icono: Award, color: "#3fa9e0" },
-    { valor: datos.cifras.reacciones, etiqueta: "reacciones a los recuerdos", Icono: Heart, color: "#fb7185" },
+    { valor: datos.cifras.completitudes, etiqueta: "desafíos completados", Icono: CheckCircle2, color: "#8cc63f", destacado: datos.cifras.participantesConDesafios.toLocaleString("es-CO"), detalle: "personas participaron", apoyo: `${promedioDesafios} retos por persona` },
+    { valor: datos.cifras.puntos, etiqueta: "puntos acumulados", Icono: Trophy, color: "#f7c948", destacado: promedioPuntos.toLocaleString("es-CO"), detalle: "puntos por participante", apoyo: "logros convertidos en avance" },
+    { valor: datos.cifras.participacionesActividad + datos.cifras.resultadosJuego, etiqueta: "participaciones en actividades", Icono: Award, color: "#3fa9e0", destacado: datos.cifras.actividades.toLocaleString("es-CO"), detalle: "actividades activadas", apoyo: `${datos.cifras.resultadosJuego.toLocaleString("es-CO")} resultados de juego` },
+    { valor: datos.cifras.reacciones, etiqueta: "reacciones a los recuerdos", Icono: Heart, color: "#fb7185", destacado: datos.cifras.recuerdos.toLocaleString("es-CO"), detalle: "momentos compartidos", apoyo: `${promedioReacciones} reacciones por recuerdo` },
   ];
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Participación" titulo="La experiencia se puso en movimiento" /><div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(16px,2.5vw,38px)]"><article className="grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-8 text-center shadow-2xl backdrop-blur"><div><div className="relative mx-auto grid h-[clamp(220px,27vw,350px)] w-[clamp(220px,27vw,350px)] place-items-center rounded-full" style={{ background: `conic-gradient(var(--epm-verde) ${porcentaje}%, rgba(255,255,255,.13) 0)` }}><div className="absolute inset-5 rounded-full bg-[var(--epm-azul-profundo)]/95" /><strong className="relative font-display text-[clamp(58px,7vw,104px)] font-extrabold">{porcentaje}%</strong></div><p className="mt-5 text-xl font-bold text-white/70">participó en al menos un desafío</p></div></article><div className="grid grid-cols-2 gap-[clamp(12px,1.7vw,24px)]">{items.map((item) => <TarjetaCifra key={item.etiqueta} {...item} />)}</div></div></section>;
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Participación" titulo="La experiencia se puso en movimiento" /><div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(16px,2.5vw,38px)]"><article className="grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-8 text-center shadow-2xl backdrop-blur"><div><div className="relative mx-auto grid h-[clamp(220px,25vw,330px)] w-[clamp(220px,25vw,330px)] place-items-center rounded-full" style={{ background: `conic-gradient(var(--epm-verde) ${porcentaje}%, rgba(255,255,255,.13) 0)` }}><div className="absolute inset-5 rounded-full bg-[var(--epm-azul-profundo)]/95" /><strong className="relative font-display text-[clamp(58px,7vw,104px)] font-extrabold">{porcentaje}%</strong></div><p className="mt-5 text-xl font-bold text-white/75">participó en al menos un desafío</p><div className="mx-auto mt-5 grid max-w-sm grid-cols-2 gap-3"><div className="rounded-2xl bg-white/10 p-3"><strong className="block font-display text-3xl text-[var(--epm-verde)]">{datos.cifras.participantesConDesafios}</strong><span className="text-xs font-bold text-white/55">personas activas</span></div><div className="rounded-2xl bg-white/10 p-3"><strong className="block font-display text-3xl text-white">{datos.cifras.participantes}</strong><span className="text-xs font-bold text-white/55">registros totales</span></div></div></div></article><div className="grid grid-cols-2 gap-[clamp(12px,1.7vw,24px)]">{items.map((item) => <TarjetaParticipacion key={item.etiqueta} {...item} />)}</div></div></section>;
+}
+
+function TarjetaParticipacion({ valor, etiqueta, Icono, color, destacado, detalle, apoyo }: { valor: number; etiqueta: string; Icono: typeof Users; color: string; destacado: string; detalle: string; apoyo: string }) {
+  return <article className="relative flex min-h-0 flex-col overflow-hidden rounded-[clamp(22px,2vw,32px)] border border-white/15 bg-white/10 p-[clamp(16px,1.6vw,25px)] shadow-2xl backdrop-blur"><Icono className="absolute -bottom-8 -right-6 opacity-[.07]" size={150} /><div className="relative flex items-start justify-between gap-3"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-[var(--epm-azul-profundo)] shadow-lg" style={{ background: color }}><Icono size={24} /></span><strong className="font-display text-[clamp(38px,4.2vw,66px)] font-extrabold leading-none text-white">{valor.toLocaleString("es-CO")}</strong></div><h3 className="relative mt-3 text-[clamp(13px,1vw,17px)] font-extrabold text-white/75">{etiqueta}</h3><div className="relative mt-auto grid grid-cols-[auto_1fr] items-center gap-3 rounded-2xl bg-slate-950/20 p-3"><strong className="font-display text-[clamp(27px,2.5vw,42px)] font-extrabold" style={{ color }}>{destacado}</strong><div className="min-w-0 text-left"><p className="text-[clamp(10px,.8vw,13px)] font-extrabold text-white/80">{detalle}</p><p className="mt-1 text-[clamp(9px,.7vw,11px)] text-white/50">{apoyo}</p></div></div></article>;
 }
 
 function Empresas({ empresas, total }: { empresas: DatosResumenEvento["empresas"]; total: number }) {
   const maximo = Math.max(1, ...empresas.map((empresa) => empresa.participantes));
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Conexiones" titulo="Un solo equipo, muchas voces" descripcion={`${empresas.length} empresas representadas en el encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-2 gap-x-10 gap-y-3 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-[clamp(20px,2.3vw,36px)] backdrop-blur">{empresas.map((empresa, indice) => <div key={empresa.nombre} className="flex min-h-0 flex-col justify-center"><div className="mb-2 flex items-end justify-between gap-3"><strong className="truncate text-[clamp(13px,1.2vw,19px)]">{empresa.nombre}</strong><span className="font-display text-xl font-extrabold text-[var(--epm-verde)]">{empresa.participantes}</span></div><div className="h-3 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, empresa.participantes * 100 / maximo)}%`, background: PALETA[indice % PALETA.length] }} /></div></div>)}</div><p className="mt-3 text-right text-sm text-white/50">{total.toLocaleString("es-CO")} participantes en total</p></section>;
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Conexiones" titulo="Un solo equipo, muchas voces" descripcion={`${empresas.length} empresas representadas en el encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-2 gap-x-10 gap-y-3 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-[clamp(20px,2.3vw,36px)] backdrop-blur">{empresas.map((empresa, indice) => <div key={empresa.nombre} className="flex min-h-0 flex-col justify-center"><div className="mb-2 flex items-end justify-between gap-3"><strong className="truncate text-[clamp(13px,1.2vw,19px)]">{empresa.nombre}</strong><span data-testid="empresa-participantes" className="font-display text-xl font-extrabold text-white drop-shadow-md">{empresa.participantes}</span></div><div className="h-3 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, empresa.participantes * 100 / maximo)}%`, background: PALETA[indice % PALETA.length] }} /></div></div>)}</div><p className="mt-3 text-right text-sm text-white/60">{total.toLocaleString("es-CO")} participantes en total</p></section>;
 }
 
-function Fotos({ fotos, tanda, total }: { fotos: FotoResumen[]; tanda: number; total: number }) {
-  const estructura = fotos.length === 1 ? "grid-cols-1 grid-rows-1" : fotos.length === 2 ? "grid-cols-2 grid-rows-1" : fotos.length <= 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-4 grid-rows-2";
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta={`Momentos ${tanda} de ${total}`} titulo="Imágenes que cuentan nuestra historia" descripcion="Los recuerdos aparecen y se transforman, como los instantes que vivimos juntos." /><div className={`grid min-h-0 flex-1 ${estructura} gap-[clamp(9px,1.2vw,18px)]`}>{fotos.map((foto, indice) => <figure key={foto.id} className={`foto-historia-animada relative min-h-0 overflow-hidden rounded-[clamp(18px,1.8vw,28px)] bg-slate-950 shadow-2xl ${fotos.length === 3 && indice === 0 ? "row-span-2" : ""}`} style={{ animation: `foto-historia-viva 9.2s ${.15 + indice * .42}s cubic-bezier(.2,.8,.2,1) both`, "--giro-foto": `${indice % 2 === 0 ? -2.5 : 2.5}deg` } as CSSProperties}><img src={foto.url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-xl" /><img src={foto.url} alt={foto.texto || `Momento compartido por ${foto.autoria}`} className="relative z-[1] h-full w-full object-contain" /><figcaption className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-slate-950 via-slate-950/75 to-transparent p-4 pt-12"><p className="line-clamp-2 text-[clamp(11px,1vw,16px)] font-bold">{foto.texto || "Un momento para recordar"}</p><div className="mt-1 flex justify-between gap-2 text-[clamp(10px,.85vw,13px)] text-white/65"><span className="truncate">{foto.autoria}</span>{foto.reacciones > 0 && <span className="shrink-0">♥ {foto.reacciones}</span>}</div></figcaption></figure>)}</div></section>;
+function Fotos({ fotos }: { fotos: FotoResumen[] }) {
+  const grupos = useMemo(() => agrupar(fotos, 6), [fotos]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 4_800);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  const visibles = grupos[pagina] ?? [];
+  const inicio = pagina * 6 + 1;
+  const fin = Math.min((pagina + 1) * 6, fotos.length);
+  const estructura = visibles.length === 1 ? "grid-cols-1 grid-rows-1" : visibles.length === 2 ? "grid-cols-2 grid-rows-1" : visibles.length === 3 ? "grid-cols-3 grid-rows-1" : visibles.length === 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-3 grid-rows-2";
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Momentos del encuentro" titulo="Imágenes que cuentan nuestra historia" descripcion={`Las fotos ${inicio}–${fin} de ${fotos.length} aparecen y dan paso a nuevos recuerdos en esta misma pantalla.`} /><div data-testid="galeria-rotativa" className={`grid min-h-0 flex-1 ${estructura} gap-[clamp(10px,1.2vw,18px)]`}>{visibles.map((foto, indice) => <figure key={`${foto.id}-${pagina}`} className="foto-historia-animada relative min-h-0 overflow-hidden rounded-[clamp(18px,1.8vw,28px)] bg-slate-950 shadow-2xl" style={{ animation: `foto-historia-viva 4.3s ${indice * .08}s cubic-bezier(.2,.8,.2,1) both`, "--giro-foto": `${indice % 2 === 0 ? -2.2 : 2.2}deg` } as CSSProperties}><img src={foto.url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-xl" /><img src={foto.url} alt={foto.texto || `Momento compartido por ${foto.autoria}`} className="relative z-[1] h-full w-full object-contain" /><figcaption className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-slate-950 via-slate-950/75 to-transparent p-4 pt-12"><p className="line-clamp-2 text-[clamp(11px,1vw,16px)] font-bold">{foto.texto || "Un momento para recordar"}</p><div className="mt-1 flex justify-between gap-2 text-[clamp(10px,.85vw,13px)] text-white/65"><span className="truncate">{foto.autoria}</span>{foto.reacciones > 0 && <span className="shrink-0">♥ {foto.reacciones}</span>}</div></figcaption></figure>)}</div></section>;
 }
 
 function PodioResumen({ personas }: { personas: DatosResumenEvento["podio"] }) {
   const orden = [personas[1], personas[0], personas[2]].filter(Boolean);
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Reconocimiento" titulo="Personas que dejaron huella" /><div className="grid min-h-0 flex-1 grid-cols-3 items-end gap-[clamp(16px,2.2vw,34px)]">{orden.map((persona) => { const puesto = personas.findIndex((item) => item.id === persona.id) + 1; const primero = puesto === 1; return <article key={persona.id} className={`relative flex min-h-0 flex-col items-center justify-center rounded-[2.4rem] border p-6 text-center shadow-2xl backdrop-blur ${primero ? "h-full border-amber-300 bg-amber-300/20" : "h-[88%] border-white/15 bg-white/10"}`}><span className={`absolute right-5 top-5 grid h-12 w-12 place-items-center rounded-full font-display text-2xl font-extrabold ${primero ? "bg-amber-300 text-amber-950" : "bg-white/15"}`}>{puesto}</span>{primero ? <Medal className="mb-3 text-amber-300" size={38} /> : <Award className="mb-3 text-[var(--epm-verde)]" size={34} />}<FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className={`${primero ? "h-[clamp(170px,22vh,280px)] w-[clamp(170px,22vh,280px)]" : "h-[clamp(145px,19vh,235px)] w-[clamp(145px,19vh,235px)]"} border-4`} /><h3 className="mt-5 text-[clamp(21px,2.2vw,35px)] font-extrabold leading-tight">{persona.nombre}</h3><p className="mt-2 text-white/60">{persona.empresa.nombre}</p><strong className={`mt-5 font-display text-[clamp(38px,4vw,64px)] ${primero ? "text-amber-300" : "text-[var(--epm-verde)]"}`}>{persona.puntosTotales.toLocaleString("es-CO")} <small className="text-[.35em] text-white/60">pts</small></strong></article>; })}</div></section>;
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Reconocimiento" titulo="Personas que dejaron huella" /><div className="grid min-h-0 flex-1 grid-cols-3 items-end gap-[clamp(16px,2.2vw,34px)]">{orden.map((persona) => { const puesto = personas.findIndex((item) => item.id === persona.id) + 1; const primero = puesto === 1; return <article key={persona.id} className={`relative flex min-h-0 flex-col items-center justify-center rounded-[2.4rem] border p-5 text-center shadow-2xl backdrop-blur ${primero ? "h-full border-amber-300 bg-amber-300/20" : "h-[94%] border-white/15 bg-white/10"}`}><span className={`absolute right-5 top-5 grid h-12 w-12 place-items-center rounded-full font-display text-2xl font-extrabold ${primero ? "bg-amber-300 text-amber-950" : "bg-white/15"}`}>{puesto}</span>{primero ? <Medal className="mb-2 text-amber-300" size={38} /> : <Award className="mb-2 text-[var(--epm-verde)]" size={34} />}<FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className={`${primero ? "h-[clamp(230px,30vh,360px)] w-[clamp(230px,30vh,360px)]" : "h-[clamp(205px,26vh,315px)] w-[clamp(205px,26vh,315px)]"} border-[5px]`} /><h3 className="mt-4 text-[clamp(21px,2.1vw,34px)] font-extrabold leading-tight">{persona.nombre}</h3><p className="mt-1 text-white/60">{persona.empresa.nombre}</p><strong className={`mt-3 font-display text-[clamp(36px,3.7vw,58px)] ${primero ? "text-amber-300" : "text-[var(--epm-verde)]"}`}>{persona.puntosTotales.toLocaleString("es-CO")} <small className="text-[.35em] text-white/60">pts</small></strong></article>; })}</div></section>;
+}
+
+function ReflexionTecnologia() {
+  const nodos = ["Personas", "Conversaciones", "Empresas", "Aprendizajes"];
+  return <section className="grid h-full place-items-center text-center"><div className="max-w-6xl"><div className="relative mx-auto grid h-[clamp(170px,19vw,240px)] w-[clamp(170px,19vw,240px)] place-items-center"><div className="absolute inset-0 rounded-full border border-[var(--epm-verde)]/25" /><div className="absolute inset-[15%] rounded-full border border-white/15" /><div className="nodo-conexion-animado relative z-10 grid h-[clamp(88px,9vw,120px)] w-[clamp(88px,9vw,120px)] place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-[0_0_70px_rgba(140,198,63,.4)]" style={{ animation: "nodo-conexion 2.6s ease-in-out infinite" }}><Network size={54} /></div>{nodos.map((nodo, indice) => { const posiciones = ["left-[-30%] top-[38%]", "right-[-40%] top-[38%]", "left-[25%] top-[-18%]", "left-[25%] bottom-[2%]"]; return <span key={nodo} className={`absolute ${posiciones[indice]} rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-extrabold backdrop-blur`}>{nodo}</span>; })}</div><p className="mt-8 font-extrabold uppercase tracking-[.22em] text-[var(--epm-verde)]">Una reflexión para continuar</p><h2 className="mx-auto mt-4 max-w-5xl font-display text-[clamp(42px,5.6vw,80px)] font-extrabold leading-[.96]">La tecnología cobra sentido cuando <span className="text-[var(--epm-verde)]">nos acerca.</span></h2><p className="mx-auto mt-7 max-w-4xl text-[clamp(18px,1.8vw,27px)] leading-relaxed text-white/70">No fue solo una app: fue un puente para unir personas, multiplicar conversaciones y movilizarnos alrededor de un mismo objetivo.</p></div></section>;
 }
 
 function Cierre({ datos }: { datos: DatosResumenEvento }) {
