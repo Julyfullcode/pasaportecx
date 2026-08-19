@@ -59,6 +59,7 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
 
   const lienzo = page.locator('iframe[title="Presentación final del evento"]');
   await expect(lienzo).toBeVisible();
+  expect(await page.locator("main").evaluate((elemento) => getComputedStyle(elemento).touchAction)).toContain("pinch-zoom");
   await page.setViewportSize({ width: 844, height: 390 });
   const cajaLienzo = await lienzo.boundingBox();
   expect(cajaLienzo).toBeTruthy();

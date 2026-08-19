@@ -15,8 +15,10 @@ type AjusteLienzo = {
 };
 
 function medirLienzo(): AjusteLienzo {
-  const anchoDisponible = window.visualViewport?.width ?? window.innerWidth;
-  const altoDisponible = window.visualViewport?.height ?? window.innerHeight;
+  // El viewport visual cambia continuamente durante el gesto de pellizco.
+  // Usamos el viewport de diseño para que el zoom no reajuste el lienzo.
+  const anchoDisponible = window.innerWidth;
+  const altoDisponible = window.innerHeight;
   const esCelularHorizontal = altoDisponible <= 600 && anchoDisponible <= 1100;
   const anchoLienzo = esCelularHorizontal ? ANCHO_PC_MOVIL : anchoDisponible;
   const altoLienzo = esCelularHorizontal ? ALTO_PC_MOVIL : altoDisponible;
@@ -32,15 +34,22 @@ function medirLienzo(): AjusteLienzo {
 export function MarcoPresentacionResumen() {
   const [ajuste, setAjuste] = useState<AjusteLienzo>({ escala: 0, anchoDisponible: 0, altoDisponible: 0, anchoLienzo: 0, altoLienzo: 0 });
 
-  const actualizar = useCallback(() => setAjuste(medirLienzo()), []);
+  const actualizar = useCallback(() => setAjuste((actual) => {
+    const siguiente = medirLienzo();
+    return actual.escala === siguiente.escala
+      && actual.anchoDisponible === siguiente.anchoDisponible
+      && actual.altoDisponible === siguiente.altoDisponible
+      ? actual
+      : siguiente;
+  }), []);
 
   useEffect(() => {
     actualizar();
     window.addEventListener("resize", actualizar);
-    window.visualViewport?.addEventListener("resize", actualizar);
+    screen.orientation?.addEventListener("change", actualizar);
     return () => {
       window.removeEventListener("resize", actualizar);
-      window.visualViewport?.removeEventListener("resize", actualizar);
+      screen.orientation?.removeEventListener("change", actualizar);
     };
   }, [actualizar]);
 
@@ -55,7 +64,7 @@ export function MarcoPresentacionResumen() {
   }
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-[var(--epm-azul-profundo)]">
+    <main className="fixed inset-0 overflow-hidden bg-[var(--epm-azul-profundo)]" style={{ touchAction: "pan-x pan-y pinch-zoom" }}>
       <iframe
         src="/admin/proyeccion/resumen?lienzo=1"
         title="Presentación final del evento"
@@ -69,6 +78,7 @@ export function MarcoPresentacionResumen() {
           transform: `translate(-50%, -50%) scale(${ajuste.escala})`,
           transformOrigin: "center",
           opacity: ajuste.escala > 0 ? 1 : 0,
+          touchAction: "pan-x pan-y pinch-zoom",
         }}
       />
       <div className="aviso-orientacion-marco absolute inset-0 z-20 hidden place-items-center bg-[var(--epm-azul-profundo)] p-7 text-center text-white">
