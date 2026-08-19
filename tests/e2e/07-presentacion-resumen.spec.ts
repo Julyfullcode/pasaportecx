@@ -62,11 +62,18 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByRole("button", { name: "Comenzar sin música" }).click();
   await expect(page.getByRole("button", { name: "Pausar" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar música" })).toBeVisible();
-  const [frasePortada, piePortada] = await Promise.all([
-    page.getByText("Personas, conversaciones y momentos que dejan huella.").boundingBox(),
-    page.locator("footer").boundingBox(),
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("heading", { name: "Gira tu celular" })).toBeVisible();
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(page.getByRole("heading", { name: "Gira tu celular" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Siguiente" })).toBeInViewport();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.getByLabel(/Ir a la diapositiva/)).toHaveCount(0);
+  const [controlSiguiente, controlMusica] = await Promise.all([
+    page.getByRole("button", { name: "Siguiente" }).boundingBox(),
+    page.getByRole("button", { name: "Activar música" }).boundingBox(),
   ]);
-  expect(frasePortada && piePortada && frasePortada.y + frasePortada.height < piePortada.y).toBeTruthy();
+  expect(controlSiguiente && controlMusica && controlSiguiente.y === controlMusica.y && controlSiguiente.x < controlMusica.x).toBeTruthy();
   await page.getByRole("button", { name: "Activar música" }).click();
   await expect(page.getByRole("button", { name: "Silenciar música" })).toBeVisible();
   await page.getByRole("button", { name: "Silenciar música" }).click();
@@ -154,7 +161,7 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Las voces que nos impulsan" })).toBeVisible();
-  await expect(page.getByTestId("nps-total")).toHaveText("+100");
+  await expect(page.getByTestId("promedio-satisfaccion")).toHaveText(/10[,.]0/);
   await expect(page.getByText(/La conexión genuina con personas/)).toBeVisible();
 
   await page.getByRole("button", { name: "Siguiente" }).click();
@@ -162,9 +169,6 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: /Cada cifra tiene una historia/ })).toBeVisible();
-  const [distintivoCierre, pieCierre] = await Promise.all([
-    page.getByTestId("distintivo-cierre").boundingBox(),
-    page.locator("footer").boundingBox(),
-  ]);
-  expect(distintivoCierre && pieCierre && distintivoCierre.y + distintivoCierre.height < pieCierre.y).toBeTruthy();
+  const distintivoCierre = await page.getByTestId("distintivo-cierre").boundingBox();
+  expect(distintivoCierre && distintivoCierre.y + distintivoCierre.height < page.viewportSize()!.height).toBeTruthy();
 });

@@ -3,7 +3,7 @@ import { PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO } from "@/lib/encuesta-mixta";
 import { resumirSatisfaccion } from "@/lib/resumen-satisfaccion";
 
 describe("resumen de satisfacción para la presentación", () => {
-  test("calcula NPS total y conserva únicamente comentarios positivos", () => {
+  test("calcula el promedio de la pregunta exacta de satisfacción y conserva únicamente comentarios positivos", () => {
     const configuracion = { formato: "mixta" as const, preguntas: PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO };
     const registro = (calificacion: number, valioso: string, ajuste: string) => ({
       configuracion,
@@ -24,9 +24,21 @@ describe("resumen de satisfacción para la presentación", () => {
       registro(5, "La energía y disposición de los participantes.", "Cambiar el almuerzo."),
     ]);
 
-    expect(resumen.nps).toBe(25);
-    expect(resumen).toMatchObject({ respuestasNps: 4, promotores: 2, pasivos: 1, detractores: 1 });
+    expect(resumen.promedio).toBe(8);
+    expect(resumen).toMatchObject({ respuestas: 4, sumaCalificaciones: 32 });
     expect(resumen.comentarios).toHaveLength(4);
     expect(resumen.comentarios.join(" ")).not.toContain("horarios");
+  });
+
+  test("no usa otra pregunta de escala como reemplazo", () => {
+    const configuracion = {
+      formato: "mixta" as const,
+      preguntas: [{ id: "otra-escala", tipo: "ESCALA_0_10" as const, titulo: "¿Recomendarías el encuentro?", descripcion: "", elementos: [] }],
+    };
+    expect(resumirSatisfaccion([{ configuracion, respuesta: { formato: "mixta", respuestas: { "otra-escala": 10 } } }])).toMatchObject({
+      promedio: null,
+      respuestas: 0,
+      sumaCalificaciones: 0,
+    });
   });
 });

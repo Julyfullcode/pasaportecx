@@ -17,6 +17,7 @@ import {
   Network,
   Pause,
   Play,
+  RotateCw,
   Sparkles,
   Target,
   Trophy,
@@ -59,11 +60,9 @@ export type DatosResumenEvento = {
   podio: { id: string; nombre: string; urlFoto: string; puntosTotales: number; empresa: { nombre: string } }[];
   fotos: FotoResumen[];
   satisfaccion: {
-    nps: number | null;
-    respuestasNps: number;
-    promotores: number;
-    pasivos: number;
-    detractores: number;
+    promedio: number | null;
+    respuestas: number;
+    sumaCalificaciones: number;
     comentarios: string[];
   };
 };
@@ -204,6 +203,18 @@ function useMusicaAmbiental() {
   return { activa, iniciar, alternar };
 }
 
+async function activarPantallaHorizontal() {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    const orientacion = screen.orientation as ScreenOrientation & {
+      lock?: (modo: "landscape") => Promise<void>;
+    };
+    await orientacion.lock?.("landscape");
+  } catch {
+    // Safari y algunos navegadores móviles no permiten bloquear la orientación.
+  }
+}
+
 export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento }) {
   const diapositivas = useMemo<Diapositiva[]>(() => {
     const duracionRegistro = Math.max(12_000, Math.ceil(datos.personas.length / 8) * 3_000);
@@ -256,7 +267,7 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         setReproduciendo((actual) => !actual);
       }
       if (evento.key.toLowerCase() === "m") alternarMusica();
-      if (evento.key.toLowerCase() === "f") void document.documentElement.requestFullscreen().catch(() => undefined);
+      if (evento.key.toLowerCase() === "f") void activarPantallaHorizontal();
     };
     window.addEventListener("keydown", teclado);
     return () => window.removeEventListener("keydown", teclado);
@@ -266,12 +277,12 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
     setIniciada(true);
     setReproduciendo(true);
     if (conMusica) iniciarMusica();
-    void document.documentElement.requestFullscreen().catch(() => undefined);
+    void activarPantallaHorizontal();
   }
 
   const actual = diapositivas[indice];
   return (
-    <main className="marca-gradiente relative h-screen overflow-hidden text-white">
+    <main className="presentacion-resumen marca-gradiente relative h-screen h-[100dvh] overflow-hidden text-white">
       <TexturaArcos />
       <div className="pointer-events-none absolute -left-[10vw] top-[45%] h-[35vw] w-[35vw] rounded-full bg-sky-400/15 blur-3xl" />
       <div className="pointer-events-none absolute -right-[8vw] -top-[12vw] h-[38vw] w-[38vw] rounded-full bg-lime-300/15 blur-3xl" />
@@ -293,15 +304,27 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         </div>
       )}
 
-      <header className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-[clamp(20px,3vw,52px)] py-[clamp(18px,2.5vh,30px)]">
+      <div className="aviso-orientacion absolute inset-0 z-[70] hidden place-items-center bg-[var(--epm-azul-profundo)] p-7 text-center">
+        <div className="max-w-sm">
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]"><RotateCw size={40} /></div>
+          <h2 className="mt-6 font-display text-3xl font-extrabold">Gira tu celular</h2>
+          <p className="mt-3 text-white/70">Esta presentación está diseñada para verse horizontalmente.</p>
+          <button type="button" onClick={() => void activarPantallaHorizontal()} className="mt-6 rounded-full border border-white/25 bg-white/10 px-6 py-3 font-extrabold">Intentar modo horizontal</button>
+        </div>
+      </div>
+
+      <header className="controles-presentacion absolute inset-x-0 top-0 z-30 flex items-center justify-between px-[clamp(20px,3vw,52px)] py-[clamp(18px,2.5vh,30px)]">
         <LogoBlanco className="h-[clamp(32px,3.4vw,54px)] w-auto" />
         <div className="flex items-center gap-2">
+          <button type="button" onClick={() => mover(-1)} aria-label="Anterior" title="Anterior" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur hover:bg-white/20"><ArrowLeft size={20} /></button>
+          <button type="button" onClick={() => setReproduciendo((actual) => !actual)} aria-label={reproduciendo ? "Pausar" : "Reproducir"} title={reproduciendo ? "Pausar" : "Reproducir"} className="grid h-11 w-11 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]">{reproduciendo ? <Pause size={20} /> : <Play size={20} />}</button>
+          <button type="button" onClick={() => mover(1)} aria-label="Siguiente" title="Siguiente" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur hover:bg-white/20"><ArrowRight size={20} /></button>
           <button type="button" onClick={alternarMusica} aria-label={musicaActiva ? "Silenciar música" : "Activar música"} title={musicaActiva ? "Silenciar música" : "Activar música"} className={`grid h-11 w-11 place-items-center rounded-full border border-white/15 backdrop-blur ${musicaActiva ? "bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]" : "bg-white/10"}`}>{musicaActiva ? <Volume2 size={20} /> : <VolumeX size={20} />}</button>
-          <button type="button" onClick={() => void document.documentElement.requestFullscreen().catch(() => undefined)} aria-label="Pantalla completa" title="Pantalla completa" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur"><Expand size={20} /></button>
+          <button type="button" onClick={() => void activarPantallaHorizontal()} aria-label="Pantalla completa" title="Pantalla completa horizontal" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 backdrop-blur"><Expand size={20} /></button>
         </div>
       </header>
 
-      <div key={`${actual.tipo}-${indice}`} className="entrada-suave relative z-10 h-full px-[clamp(24px,5vw,92px)] pb-[clamp(78px,10vh,112px)] pt-[clamp(88px,12vh,126px)]">
+      <div key={`${actual.tipo}-${indice}`} className="contenido-presentacion entrada-suave relative z-10 h-full px-[clamp(24px,5vw,92px)] pb-[clamp(22px,3.5vh,42px)] pt-[clamp(88px,12vh,126px)]">
         {actual.tipo === "portada" && <Portada nombre={datos.nombreEvento} />}
         {actual.tipo === "cifras" && <Cifras datos={datos} />}
         {actual.tipo === "registro" && <RegistroPersonas datos={datos} />}
@@ -314,20 +337,6 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         {actual.tipo === "cierre" && <Cierre datos={datos} />}
       </div>
 
-      <footer className="absolute inset-x-0 bottom-0 z-30 px-[clamp(18px,3vw,48px)] pb-[clamp(14px,2vh,24px)]">
-        <div className="mb-3 flex gap-1.5">
-          {diapositivas.map((diapositiva, posicion) => <button key={`${diapositiva.tipo}-${posicion}`} type="button" aria-label={`Ir a la diapositiva ${posicion + 1}`} onClick={() => setIndice(posicion)} className={`h-1.5 min-h-0 flex-1 rounded-full transition ${posicion === indice ? "bg-[var(--epm-verde)]" : posicion < indice ? "bg-white/45" : "bg-white/15"}`} />)}
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-sm font-bold text-white/60">{indice + 1} de {diapositivas.length}</span>
-          <div className="flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/25 p-1.5 backdrop-blur">
-            <button type="button" onClick={() => mover(-1)} aria-label="Anterior" className="grid h-10 w-10 place-items-center rounded-full hover:bg-white/15"><ArrowLeft /></button>
-            <button type="button" onClick={() => setReproduciendo((actual) => !actual)} aria-label={reproduciendo ? "Pausar" : "Reproducir"} className="grid h-11 w-11 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)]">{reproduciendo ? <Pause /> : <Play />}</button>
-            <button type="button" onClick={() => mover(1)} aria-label="Siguiente" className="grid h-10 w-10 place-items-center rounded-full hover:bg-white/15"><ArrowRight /></button>
-          </div>
-          <span className="text-right text-sm font-bold text-white/60">Vicepresidencia Experiencia Usuario-Cliente</span>
-        </div>
-      </footer>
       <style jsx global>{`
         @keyframes avatar-registro-ciclo {
           0% { opacity: 0; transform: scale(.5) translateY(24px); filter: blur(6px); }
@@ -351,6 +360,41 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         }
         @media (prefers-reduced-motion: reduce) {
           .avatar-registro-animado, .miniatura-cifra-animada, .foto-historia-animada, .nodo-conexion-animado { animation: none !important; opacity: 1 !important; }
+        }
+        @media (orientation: portrait) and (max-width: 900px) {
+          .aviso-orientacion { display: grid; }
+        }
+        @media (orientation: landscape) and (max-height: 560px) {
+          .controles-presentacion {
+            padding: max(8px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left));
+          }
+          .controles-presentacion > img,
+          .controles-presentacion > svg {
+            height: 28px !important;
+            max-width: 120px;
+          }
+          .controles-presentacion button {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .contenido-presentacion {
+            padding: 56px max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important;
+          }
+          .contenido-presentacion section > div:first-child {
+            margin-bottom: 10px;
+          }
+          .contenido-presentacion section > div:first-child > p:first-child {
+            font-size: 11px;
+          }
+          .contenido-presentacion section > div:first-child > h2 {
+            margin-top: 3px;
+            font-size: clamp(25px, 5.5vh, 32px);
+          }
+          .contenido-presentacion section > div:first-child > h2 + p {
+            margin-top: 5px;
+            font-size: 12px;
+            line-height: 1.25;
+          }
         }
       `}</style>
     </main>
@@ -504,10 +548,33 @@ function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["sati
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
   const comentarios = grupos[pagina] ?? [];
-  const porcentaje = (valor: number) => satisfaccion.respuestasNps ? Math.round(valor * 100 / satisfaccion.respuestasNps) : 0;
-  const nps = satisfaccion.nps;
-  const colorNps = nps === null ? "#ffffff" : nps >= 50 ? "#8cc63f" : nps >= 0 ? "#f7c948" : "#fb7185";
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios positivos recogen lo que las personas más valoraron del encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(18px,2.2vw,34px)]"><article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.2vw,36px)] text-center shadow-2xl backdrop-blur"><div className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorNps }}><div><span className="block text-sm font-extrabold uppercase tracking-[.2em] text-white/60">NPS total</span><strong data-testid="nps-total" className="mt-1 block font-display text-[clamp(72px,7vw,108px)] font-extrabold leading-none" style={{ color: colorNps }}>{nps === null ? "—" : nps > 0 ? `+${nps}` : nps}</strong><span className="mt-2 block text-sm font-bold text-white/55">{satisfaccion.respuestasNps} respuestas</span></div></div><div className="mt-6 grid w-full grid-cols-3 gap-2"><div className="rounded-2xl bg-[var(--epm-verde)]/15 p-3"><strong className="block text-2xl text-[var(--epm-verde)]">{porcentaje(satisfaccion.promotores)}%</strong><span className="text-xs font-bold text-white/60">promotores</span></div><div className="rounded-2xl bg-amber-300/15 p-3"><strong className="block text-2xl text-amber-300">{porcentaje(satisfaccion.pasivos)}%</strong><span className="text-xs font-bold text-white/60">pasivos</span></div><div className="rounded-2xl bg-rose-400/15 p-3"><strong className="block text-2xl text-rose-300">{porcentaje(satisfaccion.detractores)}%</strong><span className="text-xs font-bold text-white/60">detractores</span></div></div><p className="mt-4 text-xs text-white/45">NPS = % de promotores − % de detractores, sobre respuestas de 0 a 10.</p></article><div data-testid="comentarios-satisfaccion" className="grid min-h-0 grid-cols-2 grid-rows-3 gap-[clamp(10px,1.2vw,17px)]">{comentarios.length ? comentarios.map((comentario, indice) => <blockquote key={`${pagina}-${comentario}`} className="miniatura-cifra-animada relative flex min-h-0 items-center overflow-hidden rounded-[clamp(18px,1.5vw,25px)] border border-white/15 bg-white/10 px-[clamp(16px,1.4vw,24px)] py-3 shadow-xl backdrop-blur" style={{ animation: `miniatura-cifra-entrada .55s ${indice * .09}s ease-out both` }}><MessageCircleHeart className="mr-3 shrink-0 text-[var(--epm-verde)]" size={34} /><p className="line-clamp-4 font-display text-[clamp(15px,1.15vw,20px)] font-bold leading-snug text-white/90">“{comentario}”</p></blockquote>) : <div className="col-span-2 row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios positivos aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}</div></div></section>;
+  const promedio = satisfaccion.promedio;
+  const promedioFormateado = promedio === null ? "—" : promedio.toLocaleString("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const colorPromedio = promedio === null ? "#ffffff" : promedio >= 9 ? "#8cc63f" : promedio >= 7 ? "#f7c948" : "#fb7185";
+  return (
+    <section className="flex h-full min-h-0 flex-col">
+      <Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios positivos recogen lo que las personas más valoraron del encuentro.`} />
+      <div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(18px,2.2vw,34px)]">
+        <article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.2vw,36px)] text-center shadow-2xl backdrop-blur">
+          <div className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorPromedio }}>
+            <div>
+              <span className="block text-sm font-extrabold uppercase tracking-[.2em] text-white/60">Satisfacción general</span>
+              <strong data-testid="promedio-satisfaccion" className="mt-1 block font-display text-[clamp(68px,6.5vw,102px)] font-extrabold leading-none" style={{ color: colorPromedio }}>{promedioFormateado}</strong>
+              <span className="mt-2 block text-lg font-extrabold text-white/70">sobre 10</span>
+            </div>
+          </div>
+          <div className="mt-6 grid w-full grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white/10 p-3"><strong className="block text-2xl text-[var(--epm-verde)]">{satisfaccion.sumaCalificaciones.toLocaleString("es-CO")}</strong><span className="text-xs font-bold text-white/60">puntos sumados</span></div>
+            <div className="rounded-2xl bg-white/10 p-3"><strong className="block text-2xl text-white">{satisfaccion.respuestas}</strong><span className="text-xs font-bold text-white/60">calificaciones</span></div>
+          </div>
+          <p className="mt-4 max-w-sm text-xs leading-relaxed text-white/50">Promedio = suma de las respuestas ÷ cantidad de respuestas a “En general, ¿qué tan satisfecho(a) te encuentras con la jornada de hoy?”.</p>
+        </article>
+        <div data-testid="comentarios-satisfaccion" className="grid min-h-0 grid-cols-2 grid-rows-3 gap-[clamp(10px,1.2vw,17px)]">
+          {comentarios.length ? comentarios.map((comentario, indice) => <blockquote key={`${pagina}-${comentario}`} className="miniatura-cifra-animada relative flex min-h-0 items-center overflow-hidden rounded-[clamp(18px,1.5vw,25px)] border border-white/15 bg-white/10 px-[clamp(16px,1.4vw,24px)] py-3 shadow-xl backdrop-blur" style={{ animation: `miniatura-cifra-entrada .55s ${indice * .09}s ease-out both` }}><MessageCircleHeart className="mr-3 shrink-0 text-[var(--epm-verde)]" size={34} /><p className="line-clamp-4 font-display text-[clamp(15px,1.15vw,20px)] font-bold leading-snug text-white/90">“{comentario}”</p></blockquote>) : <div className="col-span-2 row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios positivos aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function ReflexionTecnologia() {
