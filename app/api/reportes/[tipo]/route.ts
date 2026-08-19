@@ -28,13 +28,18 @@ export async function GET(
     const datos = await db.completitud.findMany({ include: { participante: true, desafio: true }, orderBy: { completadoEn: "asc" } });
     filas = [["Participante", "Staff", "Desafío", "Tipo", "Día", "Estado", "Puntos", "Fecha"], ...datos.map((c) => [c.participante.nombre, c.participante.esStaff ? "Sí" : "No", c.desafio.titulo, esConfiguracionPuntualidad(c.desafio.configuracion) ? "PUNTUALIDAD" : c.desafio.tipo, etiquetaDiaDesafio(c.desafio.dia), c.estado, c.puntosOtorgados, c.completadoEn.toISOString()])];
   } else if (tipo === "encuestas") {
-    const datos = await db.completitud.findMany({ where: { desafio: { tipo: "ENCUESTA" } }, include: { participante: true, desafio: true } });
+    const datos = await db.completitud.findMany({
+      where: { desafio: { tipo: "ENCUESTA" } },
+      include: { participante: true, desafio: true },
+      orderBy: [{ desafio: { dia: "asc" } }, { completadoEn: "asc" }],
+    });
     filas = [
-      ["Participante", "Staff", "Encuesta", "Pregunta", "Descripción o contexto", "Elemento evaluado", "Respuesta", "Puntos", "Estado", "Fecha"],
+      ["Participante", "Staff", "Encuesta", "Día de referencia", "Pregunta", "Descripción o contexto", "Elemento evaluado", "Respuesta", "Puntos", "Estado", "Fecha"],
       ...datos.flatMap((completitud) => detallarRespuestasEncuesta(completitud.desafio.configuracion, completitud.respuesta).map((detalle) => [
         completitud.participante.nombre,
         completitud.participante.esStaff ? "Sí" : "No",
         completitud.desafio.titulo,
+        etiquetaDiaDesafio(completitud.desafio.dia),
         detalle.pregunta,
         detalle.descripcion,
         detalle.elemento,

@@ -4,7 +4,7 @@ const reportes = [
   ["participantes", "Participantes con puntajes", "Listado completo, empresa y estado."],
   ["ranking-individual", "Ranking individual final", "Posiciones ordenadas por puntaje."],
   ["completitudes", "Completitudes por desafío", "Detalle de estado, puntos y hora."],
-  ["encuestas", "Respuestas de encuestas", "Respuestas libres y escalas exportables."],
+  ["encuestas", "Respuestas de encuestas", "Identifica cada respuesta por encuesta y día de referencia."],
   ["actividades", "Respuestas de actividades", "Detalle de cada respuesta, actividad e insight."],
   ["empresas", "Participación por empresa", "Totales agregados por filial."],
 ];

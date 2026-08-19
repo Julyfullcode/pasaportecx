@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Image, Target, Users } from "lucide-react";
+import { CheckCircle2, Image, Presentation, Target, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { FotoCircular } from "@/components/marca/FotoCircular";
 import { ActualizacionEnVivo } from "@/components/admin/ActualizacionEnVivo";
@@ -25,7 +25,7 @@ export default async function DashboardAdmin() {
     <div className="p-4 md:p-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><p className="font-extrabold text-[var(--epm-verde-medio)]">Centro de control</p><h1 className="text-3xl font-extrabold text-[var(--epm-azul-profundo)]">El encuentro, ahora</h1></div>
-        <ActualizacionEnVivo />
+        <div className="flex flex-wrap items-center gap-2"><Link href="/admin/proyeccion/resumen" target="_blank" className="boton-primario"><Presentation size={19} /> Presentar resumen final</Link><ActualizacionEnVivo /></div>
       </div>
       <section className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {metricas.map(([etiqueta, valor, Icono, color]) => (

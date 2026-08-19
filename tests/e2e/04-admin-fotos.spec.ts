@@ -513,6 +513,8 @@ await expect.poll(async () => Boolean(
     const excelEncuestas = await JSZip.loadAsync(Uint8Array.from(reporteEncuestas.bytes));
     const hojaEncuestas = await excelEncuestas.file("xl/worksheets/sheet1.xml")!.async("string");
     expect(hojaEncuestas).toContain(participante.nombre);
+    expect(hojaEncuestas).toContain("Día de referencia");
+    expect(hojaEncuestas).toContain("Permanente");
     for (const pregunta of preguntas) {
       expect(hojaEncuestas).toContain(pregunta.titulo);
       for (const elemento of pregunta.elementos) expect(hojaEncuestas).toContain(elemento.texto);
