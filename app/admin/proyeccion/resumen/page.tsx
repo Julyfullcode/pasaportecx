@@ -1,6 +1,7 @@
 import { requerirAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PresentacionResumenEvento, type DatosResumenEvento } from "@/components/proyeccion/PresentacionResumenEvento";
+import { resumirSatisfaccion } from "@/lib/resumen-satisfaccion";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function ResumenEvento() {
     podio,
     fotosRecuerdos,
     fotosAgenda,
+    respuestasEncuestas,
   ] = await Promise.all([
     db.configuracionEvento.findUniqueOrThrow({ where: { id: "evento" }, select: { nombreEvento: true } }),
     db.participante.count({ where: { activo: true } }),
@@ -35,13 +37,20 @@ export default async function ResumenEvento() {
     }),
     db.participante.count({ where: { activo: true, esStaff: true } }),
     db.empresa.findMany({
-      include: { _count: { select: { participantes: { where: { activo: true } } } } },
+      include: {
+        _count: { select: { participantes: { where: { activo: true } } } },
+        participantes: {
+          where: { activo: true },
+          orderBy: { creadoEn: "asc" },
+          select: { id: true, nombre: true, urlFoto: true },
+        },
+      },
       orderBy: { orden: "asc" },
     }),
     db.desafio.findMany({
       where: { estado: { not: "BORRADOR" } },
       orderBy: [{ dia: "asc" }, { orden: "asc" }],
-      select: { id: true, titulo: true, urlImagen: true, tipo: true },
+      select: { id: true, titulo: true, descripcion: true, urlImagen: true, tipo: true },
     }),
     db.completitud.count({ where: { estado: "APROBADO" } }),
     db.completitud.findMany({
@@ -76,11 +85,21 @@ export default async function ResumenEvento() {
       orderBy: [{ dia: { orden: "asc" } }, { orden: "asc" }],
       select: { id: true, urlFoto: true, dia: { select: { nombre: true } } },
     }),
+    db.completitud.findMany({
+      where: { estado: "APROBADO", desafio: { tipo: "ENCUESTA" } },
+      orderBy: { completadoEn: "asc" },
+      select: { respuesta: true, desafio: { select: { configuracion: true } } },
+    }),
   ]);
 
   const empresasConParticipantes = empresas
     .filter((empresa) => empresa._count.participantes > 0)
-    .map((empresa) => ({ nombre: empresa.nombre, urlLogo: empresa.urlLogo, participantes: empresa._count.participantes }));
+    .map((empresa) => ({
+      nombre: empresa.nombre,
+      urlLogo: empresa.urlLogo,
+      participantes: empresa._count.participantes,
+      personas: empresa.participantes,
+    }));
   const fotos = [
     ...fotosRecuerdos.map((foto) => ({
       id: `recuerdo-${foto.id}`,
@@ -119,6 +138,10 @@ export default async function ResumenEvento() {
     empresas: empresasConParticipantes,
     podio,
     fotos,
+    satisfaccion: resumirSatisfaccion(respuestasEncuestas.map((registro) => ({
+      configuracion: registro.desafio.configuracion,
+      respuesta: registro.respuesta,
+    }))),
   };
 
   return <PresentacionResumenEvento datos={datos} />;

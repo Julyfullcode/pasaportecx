@@ -12,6 +12,7 @@ import {
   Heart,
   Images,
   Medal,
+  MessageCircleHeart,
   Music,
   Network,
   Pause,
@@ -53,10 +54,23 @@ export type DatosResumenEvento = {
     puntos: number;
   };
   personas: { id: string; nombre: string; urlFoto: string; empresa: { nombre: string } }[];
-  desafios: { id: string; titulo: string; urlImagen: string | null; tipo: string }[];
-  empresas: { nombre: string; urlLogo: string | null; participantes: number }[];
+  desafios: { id: string; titulo: string; descripcion: string; urlImagen: string | null; tipo: string }[];
+  empresas: {
+    nombre: string;
+    urlLogo: string | null;
+    participantes: number;
+    personas: { id: string; nombre: string; urlFoto: string }[];
+  }[];
   podio: { id: string; nombre: string; urlFoto: string; puntosTotales: number; empresa: { nombre: string } }[];
   fotos: FotoResumen[];
+  satisfaccion: {
+    nps: number | null;
+    respuestasNps: number;
+    promotores: number;
+    pasivos: number;
+    detractores: number;
+    comentarios: string[];
+  };
 };
 
 type Diapositiva =
@@ -67,6 +81,7 @@ type Diapositiva =
   | { tipo: "empresas"; duracion: number }
   | { tipo: "fotos"; duracion: number; fotos: FotoResumen[] }
   | { tipo: "podio"; duracion: number }
+  | { tipo: "satisfaccion"; duracion: number }
   | { tipo: "reflexion"; duracion: number }
   | { tipo: "cierre"; duracion: number };
 
@@ -191,7 +206,13 @@ function useMusicaAmbiental() {
 
 export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento }) {
   const diapositivas = useMemo<Diapositiva[]>(() => {
-    const duracionRegistro = Math.max(12_000, Math.ceil(datos.personas.length / 12) * 3_000);
+    const duracionRegistro = Math.max(12_000, Math.ceil(datos.personas.length / 8) * 3_000);
+    const duracionCifras = Math.max(
+      12_000,
+      Math.ceil(datos.personas.length / 4) * 2_600,
+      Math.ceil(datos.desafios.length / 2) * 3_200,
+      Math.ceil(datos.fotos.length / 4) * 3_200,
+    );
     const fotos: Diapositiva[] = datos.fotos.length ? [{
       tipo: "fotos",
       duracion: Math.max(14_000, Math.ceil(datos.fotos.length / 6) * 4_800),
@@ -199,16 +220,17 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
     }] : [];
     return [
       { tipo: "portada", duracion: 8_000 },
-      { tipo: "cifras", duracion: 10_000 },
+      { tipo: "cifras", duracion: duracionCifras },
       { tipo: "registro", duracion: duracionRegistro },
       { tipo: "participacion", duracion: 10_000 },
       { tipo: "empresas", duracion: 10_000 },
       ...fotos,
       ...(datos.podio.length ? [{ tipo: "podio" as const, duracion: 11_000 }] : []),
+      { tipo: "satisfaccion", duracion: Math.max(12_000, Math.ceil(Math.max(1, datos.satisfaccion.comentarios.length) / 3) * 4_500) },
       { tipo: "reflexion", duracion: 12_000 },
       { tipo: "cierre", duracion: 12_000 },
     ];
-  }, [datos.fotos, datos.personas.length, datos.podio.length]);
+  }, [datos.desafios.length, datos.fotos, datos.personas.length, datos.podio.length, datos.satisfaccion.comentarios.length]);
   const [iniciada, setIniciada] = useState(false);
   const [indice, setIndice] = useState(0);
   const [reproduciendo, setReproduciendo] = useState(true);
@@ -286,6 +308,7 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         {actual.tipo === "empresas" && <Empresas empresas={datos.empresas} total={datos.cifras.participantes} />}
         {actual.tipo === "fotos" && <Fotos fotos={actual.fotos} />}
         {actual.tipo === "podio" && <PodioResumen personas={datos.podio} />}
+        {actual.tipo === "satisfaccion" && <Satisfaccion satisfaccion={datos.satisfaccion} />}
         {actual.tipo === "reflexion" && <ReflexionTecnologia />}
         {actual.tipo === "cierre" && <Cierre datos={datos} />}
       </div>
@@ -342,7 +365,7 @@ function Portada({ nombre }: { nombre: string }) {
 }
 
 function TarjetaCifra({ valor, etiqueta, Icono, color, contenido }: { valor: number; etiqueta: string; Icono: typeof Users; color: string; contenido?: ReactNode }) {
-  return <article className="relative flex min-h-0 flex-col overflow-hidden rounded-[clamp(22px,2.2vw,34px)] border border-white/15 bg-white/10 p-[clamp(16px,1.7vw,27px)] shadow-2xl backdrop-blur"><div className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-20 blur-2xl" style={{ background: color }} /><div className="relative flex items-center justify-between gap-3"><span className="grid h-[clamp(42px,3.6vw,58px)] w-[clamp(42px,3.6vw,58px)] place-items-center rounded-2xl text-[var(--epm-azul-profundo)] shadow-lg" style={{ background: color }}><Icono size={26} /></span><strong className="font-display text-[clamp(40px,4.5vw,70px)] font-extrabold leading-none">{valor.toLocaleString("es-CO")}</strong></div>{contenido && <div className="relative my-[clamp(10px,1.4vh,18px)] min-h-0 flex-1">{contenido}</div>}<p className="relative text-[clamp(13px,1.15vw,19px)] font-bold text-white/70">{etiqueta}</p></article>;
+  return <article className="relative flex min-h-0 flex-col overflow-hidden rounded-[clamp(22px,2.2vw,34px)] border border-white/15 bg-white/10 p-[clamp(16px,1.7vw,27px)] shadow-2xl backdrop-blur"><div className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-20 blur-2xl" style={{ background: color }} /><div className="relative flex items-center justify-between gap-3"><span className="grid h-[clamp(42px,3.6vw,58px)] w-[clamp(42px,3.6vw,58px)] place-items-center rounded-2xl text-[var(--epm-azul-profundo)] shadow-lg" style={{ background: color }}><Icono size={26} /></span><strong className="font-display text-[clamp(40px,4.5vw,70px)] font-extrabold leading-none">{valor.toLocaleString("es-CO")}</strong></div>{contenido && <div className="relative my-[clamp(10px,1.4vh,18px)] min-h-0 flex-1">{contenido}</div>}<p className="relative border-t border-white/15 pt-3 font-display text-[clamp(18px,1.35vw,24px)] font-extrabold leading-tight text-white">{etiqueta}</p></article>;
 }
 
 function Cifras({ datos }: { datos: DatosResumenEvento }) {
@@ -356,24 +379,45 @@ function Cifras({ datos }: { datos: DatosResumenEvento }) {
 }
 
 function PersonasCifra({ personas }: { personas: DatosResumenEvento["personas"] }) {
-  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-3 grid-rows-2 place-items-center gap-2">{personas.slice(0, 6).map((persona, indice) => <div key={persona.id} className="miniatura-cifra-animada grid h-full w-full place-items-center" style={{ animation: `miniatura-cifra-entrada .48s ${indice * .09}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(58px,5.4vw,88px)] w-[clamp(58px,5.4vw,88px)] border-[3px] shadow-xl" /></div>)}</div>;
+  const grupos = useMemo(() => agrupar(personas, 4), [personas]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 2_600);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-2 grid-rows-2 place-items-center gap-[clamp(8px,1vw,16px)]">{(grupos[pagina] ?? []).map((persona, indice) => <div key={`${persona.id}-${pagina}`} className="miniatura-cifra-animada grid h-full w-full place-items-center" style={{ animation: `avatar-registro-ciclo 2.35s ${indice * .08}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(88px,7.2vw,126px)] w-[clamp(88px,7.2vw,126px)] border-[4px] shadow-xl" /></div>)}</div>;
 }
 
 function EmpresasCifra({ empresas }: { empresas: DatosResumenEvento["empresas"] }) {
   const filas = Math.max(1, Math.ceil(empresas.length / 3));
-  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-3 content-center gap-1.5" style={{ gridTemplateRows: `repeat(${filas}, minmax(34px, 52px))` }}>{empresas.map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid min-h-0 w-full place-items-center overflow-hidden rounded-lg bg-white px-2 py-1.5 shadow-md" style={{ animation: `miniatura-cifra-entrada .42s ${Math.min(indice * .055, .7)}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="h-full w-full object-contain" /> : <span className="line-clamp-1 text-center font-display text-[clamp(8px,.68vw,11px)] font-extrabold text-[var(--epm-azul-profundo)]">{empresa.nombre}</span>}</div>)}</div>;
+  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-3 content-center gap-x-3 gap-y-2" style={{ gridTemplateRows: `repeat(${filas}, minmax(38px, 58px))` }}>{empresas.map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid min-h-0 w-full place-items-center overflow-hidden px-1.5 py-1" style={{ animation: `miniatura-cifra-entrada .42s ${Math.min(indice * .055, .7)}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="h-full w-full object-contain opacity-95 [filter:brightness(0)_invert(1)_drop-shadow(0_2px_5px_rgba(0,0,0,.32))]" /> : <span className="line-clamp-2 text-center font-display text-[clamp(10px,.8vw,13px)] font-extrabold leading-tight text-white">{empresa.nombre}</span>}</div>)}</div>;
 }
 
 function DesafiosCifra({ desafios }: { desafios: DatosResumenEvento["desafios"] }) {
-  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-cols-2 content-center gap-1.5">{desafios.map((desafio, indice) => { const color = PALETA[indice % PALETA.length]; return <div key={desafio.id} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-2 overflow-hidden rounded-xl border border-white/15 px-2 py-1.5 text-left shadow-lg" style={{ animation: `miniatura-cifra-entrada .46s ${Math.min(indice * .075, .75)}s ease-out both`, background: `linear-gradient(135deg, ${color}66, rgba(5,35,54,.72))` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/15"><Zap size={16} style={{ color }} /></span>}<span className="line-clamp-2 text-[clamp(8px,.68vw,11px)] font-extrabold leading-tight text-white">{desafio.titulo}</span></div>; })}</div>;
+  const grupos = useMemo(() => agrupar(desafios, 2), [desafios]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_200);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-rows-2 gap-3">{(grupos[pagina] ?? []).map((desafio, indice) => { const color = PALETA[(pagina * 2 + indice) % PALETA.length]; return <div key={`${desafio.id}-${pagina}`} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-3 overflow-hidden rounded-2xl border border-white/20 p-3 text-left shadow-xl" style={{ animation: `miniatura-cifra-entrada .5s ${indice * .12}s ease-out both`, background: `linear-gradient(135deg, ${color}7a, rgba(5,35,54,.78))` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-[clamp(58px,4.5vw,76px)] w-[clamp(58px,4.5vw,76px)] shrink-0 rounded-2xl object-cover shadow-lg" /> : <span className="grid h-[clamp(58px,4.5vw,76px)] w-[clamp(58px,4.5vw,76px)] shrink-0 place-items-center rounded-2xl bg-white/15"><Zap size={30} style={{ color }} /></span>}<span className="min-w-0"><strong className="line-clamp-2 block text-[clamp(13px,1vw,17px)] font-extrabold leading-tight text-white">{desafio.titulo}</strong><small className="mt-1.5 line-clamp-3 block text-[clamp(10px,.76vw,13px)] leading-snug text-white/68">{desafio.descripcion}</small></span></div>; })}</div>;
 }
 
 function MomentosCifra({ fotos }: { fotos: FotoResumen[] }) {
-  return <div data-testid="cifras-momentos-fotos" className="grid h-full grid-cols-2 grid-rows-2 gap-1.5">{fotos.slice(0, 4).map((foto, indice) => <img key={foto.id} src={foto.url} alt={foto.texto || "Momento del encuentro"} className="miniatura-cifra-animada h-full min-h-0 w-full rounded-lg object-cover shadow-lg" style={{ animation: `miniatura-cifra-entrada .45s ${indice * .12}s ease-out both` }} />)}</div>;
+  const grupos = useMemo(() => agrupar(fotos, 4), [fotos]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_200);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  return <div data-testid="cifras-momentos-fotos" className="grid h-full grid-cols-2 grid-rows-2 gap-2">{(grupos[pagina] ?? []).map((foto, indice) => <img key={`${foto.id}-${pagina}`} src={foto.url} alt={foto.texto || "Momento del encuentro"} className="miniatura-cifra-animada h-full min-h-0 w-full rounded-xl object-cover shadow-lg" style={{ animation: `foto-historia-viva 2.9s ${indice * .08}s ease-out both`, "--giro-foto": "0deg" } as CSSProperties} />)}</div>;
 }
 
 function RegistroPersonas({ datos }: { datos: DatosResumenEvento }) {
-  const grupos = useMemo(() => agrupar(datos.personas, 12), [datos.personas]);
+  const grupos = useMemo(() => agrupar(datos.personas, 8), [datos.personas]);
   const [pagina, setPagina] = useState(0);
   useEffect(() => {
     if (grupos.length <= 1) return;
@@ -381,10 +425,10 @@ function RegistroPersonas({ datos }: { datos: DatosResumenEvento }) {
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
   const muestra = grupos[pagina] ?? [];
-  const posiciones = ["left-[2%] top-[3%]", "left-[22%] top-[0%]", "right-[22%] top-[0%]", "right-[2%] top-[3%]", "left-[1%] top-[38%]", "left-[13%] top-[48%]", "right-[13%] top-[48%]", "right-[1%] top-[38%]", "left-[4%] bottom-[1%]", "left-[27%] bottom-[0%]", "right-[27%] bottom-[0%]", "right-[4%] bottom-[1%]"];
-  const inicio = pagina * 12 + 1;
-  const fin = Math.min((pagina + 1) * 12, datos.personas.length);
-  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-4xl rounded-[3rem] bg-[var(--epm-azul-profundo)]/52 px-[clamp(26px,3.6vw,56px)] py-[clamp(20px,2.7vh,36px)] shadow-[0_0_80px_rgba(4,29,49,.72)] backdrop-blur-sm"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)]"><Users size={22} /> Una comunidad que creció</div><strong className="mt-4 block font-display text-[clamp(72px,9vw,126px)] font-extrabold leading-[.76] text-[var(--epm-verde)]">93<span className="text-[.55em]">+</span></strong><h2 className="mx-auto mt-6 max-w-4xl font-display text-[clamp(34px,4vw,58px)] font-extrabold leading-[.98]">Más de 93 personas se registraron en la app</h2><p className="mx-auto mt-4 max-w-3xl text-[clamp(14px,1.2vw,19px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p><p className="mt-4 text-sm font-extrabold text-[var(--epm-verde)]">Rostros {inicio}–{fin} de {datos.personas.length}</p></div>{muestra.map((persona, indice) => <div key={`${persona.id}-${pagina}`} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden rounded-full border-4 border-white/35 bg-white/10 p-1 shadow-[0_14px_34px_rgba(0,0,0,.3)] backdrop-blur lg:block`} style={{ animation: `avatar-registro-ciclo 2.65s ${indice * .025}s cubic-bezier(.2,.9,.25,1.1) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(84px,7.2vw,124px)] w-[clamp(84px,7.2vw,124px)]" /></div>)}</section>;
+  const posiciones = ["left-[1%] top-[1%]", "left-[24%] top-[-1%]", "right-[24%] top-[-1%]", "right-[1%] top-[1%]", "left-[3%] bottom-[0%]", "left-[28%] bottom-[-2%]", "right-[28%] bottom-[-2%]", "right-[3%] bottom-[0%]"];
+  const inicio = pagina * 8 + 1;
+  const fin = Math.min((pagina + 1) * 8, datos.personas.length);
+  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-[760px] rounded-[3rem] bg-[var(--epm-azul-profundo)]/58 px-[clamp(26px,3.6vw,56px)] py-[clamp(20px,2.5vh,32px)] shadow-[0_0_80px_rgba(4,29,49,.72)] backdrop-blur-sm"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)]"><Users size={22} /> Una comunidad que creció</div><strong className="mt-4 block font-display text-[clamp(72px,8vw,118px)] font-extrabold leading-[.76] text-[var(--epm-verde)]">{datos.cifras.participantes.toLocaleString("es-CO")}</strong><h2 className="mx-auto mt-5 font-display text-[clamp(32px,3.5vw,52px)] font-extrabold leading-[.98]">personas se registraron en la app</h2><p className="mx-auto mt-3 max-w-2xl text-[clamp(14px,1.1vw,18px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p><p className="mt-3 text-sm font-extrabold text-[var(--epm-verde)]">Rostros {inicio}–{fin} de {datos.personas.length}</p></div>{muestra.map((persona, indice) => <div key={`${persona.id}-${pagina}`} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden rounded-full border-4 border-white/35 bg-white/10 p-1 shadow-[0_14px_34px_rgba(0,0,0,.3)] backdrop-blur lg:block`} style={{ animation: `avatar-registro-ciclo 2.65s ${indice * .025}s cubic-bezier(.2,.9,.25,1.1) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(132px,10.2vw,188px)] w-[clamp(132px,10.2vw,188px)]" /></div>)}</section>;
 }
 
 function Participacion({ datos }: { datos: DatosResumenEvento }) {
@@ -407,7 +451,7 @@ function TarjetaParticipacion({ valor, etiqueta, Icono, color, destacado, detall
 
 function Empresas({ empresas, total }: { empresas: DatosResumenEvento["empresas"]; total: number }) {
   const maximo = Math.max(1, ...empresas.map((empresa) => empresa.participantes));
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Conexiones" titulo="Un solo equipo, muchas voces" descripcion={`${empresas.length} empresas representadas en el encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-2 gap-x-10 gap-y-3 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-[clamp(20px,2.3vw,36px)] backdrop-blur">{empresas.map((empresa, indice) => <div key={empresa.nombre} className="flex min-h-0 flex-col justify-center"><div className="mb-2 flex items-end justify-between gap-3"><strong className="truncate text-[clamp(13px,1.2vw,19px)]">{empresa.nombre}</strong><span data-testid="empresa-participantes" className="font-display text-xl font-extrabold text-white drop-shadow-md">{empresa.participantes}</span></div><div className="h-3 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, empresa.participantes * 100 / maximo)}%`, background: PALETA[indice % PALETA.length] }} /></div></div>)}</div><p className="mt-3 text-right text-sm text-white/60">{total.toLocaleString("es-CO")} participantes en total</p></section>;
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Conexiones" titulo="Un solo equipo, muchas voces" descripcion={`${empresas.length} empresas representadas en el encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-2 gap-x-10 gap-y-2 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-[clamp(18px,2vw,32px)] backdrop-blur">{empresas.map((empresa, indice) => <div key={empresa.nombre} className="flex min-h-0 flex-col justify-center"><div className="flex items-end justify-between gap-3"><strong className="truncate text-[clamp(13px,1.05vw,17px)]">{empresa.nombre}</strong><span data-testid="empresa-participantes" className="font-display text-xl font-extrabold text-white drop-shadow-md">{empresa.participantes}</span></div><div data-testid="empresa-personas" aria-label={`Personas registradas de ${empresa.nombre}`} className="mt-1 grid min-h-0 items-end gap-0.5" style={{ gridTemplateColumns: `repeat(${empresa.personas.length}, minmax(20px, 30px))` }}>{empresa.personas.map((persona) => <FotoCircular key={persona.id} src={persona.urlFoto} alt={`${persona.nombre}, ${empresa.nombre}`} className="aspect-square h-auto w-full !border-2 shadow-md" />)}</div><div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, empresa.participantes * 100 / maximo)}%`, background: PALETA[indice % PALETA.length] }} /></div></div>)}</div><p className="mt-3 text-right text-sm text-white/60">{total.toLocaleString("es-CO")} participantes en total</p></section>;
 }
 
 function Fotos({ fotos }: { fotos: FotoResumen[] }) {
@@ -428,6 +472,21 @@ function Fotos({ fotos }: { fotos: FotoResumen[] }) {
 function PodioResumen({ personas }: { personas: DatosResumenEvento["podio"] }) {
   const orden = [personas[1], personas[0], personas[2]].filter(Boolean);
   return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Reconocimiento" titulo="Personas que dejaron huella" /><div className="grid min-h-0 flex-1 grid-cols-3 items-end gap-[clamp(16px,2.2vw,34px)]">{orden.map((persona) => { const puesto = personas.findIndex((item) => item.id === persona.id) + 1; const primero = puesto === 1; return <article key={persona.id} className={`relative flex min-h-0 flex-col items-center justify-center rounded-[2.4rem] border p-5 text-center shadow-2xl backdrop-blur ${primero ? "h-full border-amber-300 bg-amber-300/20" : "h-[94%] border-white/15 bg-white/10"}`}><span className={`absolute right-5 top-5 grid h-12 w-12 place-items-center rounded-full font-display text-2xl font-extrabold ${primero ? "bg-amber-300 text-amber-950" : "bg-white/15"}`}>{puesto}</span>{primero ? <Medal className="mb-2 text-amber-300" size={38} /> : <Award className="mb-2 text-[var(--epm-verde)]" size={34} />}<FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className={`${primero ? "h-[clamp(230px,30vh,360px)] w-[clamp(230px,30vh,360px)]" : "h-[clamp(205px,26vh,315px)] w-[clamp(205px,26vh,315px)]"} border-[5px]`} /><h3 className="mt-4 text-[clamp(21px,2.1vw,34px)] font-extrabold leading-tight">{persona.nombre}</h3><p className="mt-1 text-white/60">{persona.empresa.nombre}</p><strong className={`mt-3 font-display text-[clamp(36px,3.7vw,58px)] ${primero ? "text-amber-300" : "text-[var(--epm-verde)]"}`}>{persona.puntosTotales.toLocaleString("es-CO")} <small className="text-[.35em] text-white/60">pts</small></strong></article>; })}</div></section>;
+}
+
+function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["satisfaccion"] }) {
+  const grupos = useMemo(() => agrupar(satisfaccion.comentarios, 3), [satisfaccion.comentarios]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 4_500);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  const comentarios = grupos[pagina] ?? [];
+  const porcentaje = (valor: number) => satisfaccion.respuestasNps ? Math.round(valor * 100 / satisfaccion.respuestasNps) : 0;
+  const nps = satisfaccion.nps;
+  const colorNps = nps === null ? "#ffffff" : nps >= 50 ? "#8cc63f" : nps >= 0 ? "#f7c948" : "#fb7185";
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion="Lo que las personas valoraron del encuentro y una lectura conjunta de su experiencia." /><div className="grid min-h-0 flex-1 grid-cols-[.78fr_1.22fr] gap-[clamp(18px,2.5vw,38px)]"><article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.5vw,40px)] text-center shadow-2xl backdrop-blur"><div className="grid h-[clamp(210px,21vw,310px)] w-[clamp(210px,21vw,310px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorNps }}><div><span className="block text-sm font-extrabold uppercase tracking-[.2em] text-white/60">NPS total</span><strong data-testid="nps-total" className="mt-1 block font-display text-[clamp(72px,7vw,108px)] font-extrabold leading-none" style={{ color: colorNps }}>{nps === null ? "—" : nps > 0 ? `+${nps}` : nps}</strong><span className="mt-2 block text-sm font-bold text-white/55">{satisfaccion.respuestasNps} respuestas</span></div></div><div className="mt-6 grid w-full grid-cols-3 gap-2"><div className="rounded-2xl bg-[var(--epm-verde)]/15 p-3"><strong className="block text-2xl text-[var(--epm-verde)]">{porcentaje(satisfaccion.promotores)}%</strong><span className="text-xs font-bold text-white/60">promotores</span></div><div className="rounded-2xl bg-amber-300/15 p-3"><strong className="block text-2xl text-amber-300">{porcentaje(satisfaccion.pasivos)}%</strong><span className="text-xs font-bold text-white/60">pasivos</span></div><div className="rounded-2xl bg-rose-400/15 p-3"><strong className="block text-2xl text-rose-300">{porcentaje(satisfaccion.detractores)}%</strong><span className="text-xs font-bold text-white/60">detractores</span></div></div><p className="mt-4 text-xs text-white/45">NPS = % de promotores − % de detractores, sobre respuestas de 0 a 10.</p></article><div data-testid="comentarios-satisfaccion" className="grid min-h-0 grid-rows-3 gap-[clamp(10px,1.4vh,18px)]">{comentarios.length ? comentarios.map((comentario, indice) => <blockquote key={`${pagina}-${comentario}`} className="miniatura-cifra-animada relative flex min-h-0 items-center overflow-hidden rounded-[clamp(20px,1.8vw,30px)] border border-white/15 bg-white/10 px-[clamp(22px,2vw,34px)] py-4 shadow-xl backdrop-blur" style={{ animation: `miniatura-cifra-entrada .55s ${indice * .13}s ease-out both` }}><MessageCircleHeart className="mr-5 shrink-0 text-[var(--epm-verde)]" size={42} /><p className="line-clamp-3 font-display text-[clamp(17px,1.5vw,25px)] font-bold leading-snug text-white/90">“{comentario}”</p></blockquote>) : <div className="row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios positivos aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}</div></div></section>;
 }
 
 function ReflexionTecnologia() {
