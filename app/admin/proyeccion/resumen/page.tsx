@@ -37,14 +37,7 @@ export default async function ResumenEvento() {
     }),
     db.participante.count({ where: { activo: true, esStaff: true } }),
     db.empresa.findMany({
-      include: {
-        _count: { select: { participantes: { where: { activo: true } } } },
-        participantes: {
-          where: { activo: true },
-          orderBy: { creadoEn: "asc" },
-          select: { id: true, nombre: true, urlFoto: true },
-        },
-      },
+      include: { _count: { select: { participantes: { where: { activo: true } } } } },
       orderBy: { orden: "asc" },
     }),
     db.desafio.findMany({
@@ -94,12 +87,7 @@ export default async function ResumenEvento() {
 
   const empresasConParticipantes = empresas
     .filter((empresa) => empresa._count.participantes > 0)
-    .map((empresa) => ({
-      nombre: empresa.nombre,
-      urlLogo: empresa.urlLogo,
-      participantes: empresa._count.participantes,
-      personas: empresa.participantes,
-    }));
+    .map((empresa) => ({ nombre: empresa.nombre, urlLogo: empresa.urlLogo, participantes: empresa._count.participantes }));
   const fotos = [
     ...fotosRecuerdos.map((foto) => ({
       id: `recuerdo-${foto.id}`,

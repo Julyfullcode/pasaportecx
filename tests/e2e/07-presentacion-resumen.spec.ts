@@ -4,6 +4,7 @@ import { PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO } from "@/lib/encuesta-mixta";
 import { crearParticipanteConToken, iniciarAdmin } from "./ayudas";
 
 test("la presentación final reúne cifras, fotos, controles y música", async ({ page }) => {
+  await db.configuracionEvento.update({ where: { id: "evento" }, data: { nombreEvento: "Encuentro experiencia y comunicaciones" } });
   const { participante } = await crearParticipanteConToken({ nombre: `Autor resumen ${Date.now()}` });
   await db.recuerdo.createMany({
     data: Array.from({ length: 8 }, (_, indice) => ({
@@ -56,31 +57,59 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByRole("button", { name: "Comenzar sin música" }).click();
   await expect(page.getByRole("button", { name: "Pausar" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar música" })).toBeVisible();
+  const [frasePortada, piePortada] = await Promise.all([
+    page.getByText("Personas, conversaciones y momentos que dejan huella.").boundingBox(),
+    page.locator("footer").boundingBox(),
+  ]);
+  expect(frasePortada && piePortada && frasePortada.y + frasePortada.height < piePortada.y).toBeTruthy();
   await page.getByRole("button", { name: "Activar música" }).click();
   await expect(page.getByRole("button", { name: "Silenciar música" })).toBeVisible();
   await page.getByRole("button", { name: "Silenciar música" }).click();
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Una experiencia construida entre todos" })).toBeVisible();
+  await page.waitForTimeout(600);
   await expect(page.getByTestId("cifras-personas-fotos").locator("img")).toHaveCount(6);
   expect(await page.getByTestId("cifras-personas-fotos").locator("img").first().evaluate((imagen) => imagen.getBoundingClientRect().width)).toBeGreaterThan(80);
   const primerasPersonas = await page.getByTestId("cifras-personas-fotos").locator("img").evaluateAll((imagenes) => imagenes.map((imagen) => (imagen as HTMLImageElement).alt));
   await page.waitForTimeout(2_900);
   const siguientesPersonas = await page.getByTestId("cifras-personas-fotos").locator("img").evaluateAll((imagenes) => imagenes.map((imagen) => (imagen as HTMLImageElement).alt));
   expect(siguientesPersonas).not.toEqual(primerasPersonas);
+  const fotosCifrasSeTraslapan = await page.getByTestId("cifras-personas-fotos").locator("img").evaluateAll((imagenes) => {
+    const cajas = imagenes.map((imagen) => imagen.getBoundingClientRect());
+    return cajas.some((caja, indice) => cajas.slice(indice + 1).some((otra) => caja.left < otra.right && caja.right > otra.left && caja.top < otra.bottom && caja.bottom > otra.top));
+  });
+  expect(fotosCifrasSeTraslapan).toBe(false);
   await expect(page.getByTestId("cifras-empresas-logos")).toBeVisible();
-  await expect(page.getByTestId("cifras-empresas-logos").locator(":scope > div")).toHaveCount(empresasConPersonas);
+  await expect(page.getByTestId("cifras-empresas-logos").locator(":scope > div")).toHaveCount(Math.min(4, empresasConPersonas));
   const logos = page.getByTestId("cifras-empresas-logos").locator("img");
   if (await logos.count()) await expect(logos.first()).toHaveCSS("filter", /invert/);
+  const logosSeTraslapan = await page.getByTestId("cifras-empresas-logos").locator(":scope > div").evaluateAll((elementos) => {
+    const cajas = elementos.map((elemento) => elemento.getBoundingClientRect());
+    return cajas.some((caja, indice) => cajas.slice(indice + 1).some((otra) => caja.left < otra.right && caja.right > otra.left && caja.top < otra.bottom && caja.bottom > otra.top));
+  });
+  expect(logosSeTraslapan).toBe(false);
   await expect(page.getByTestId("cifras-desafios")).toBeVisible();
-  await expect(page.getByTestId("cifras-desafios").locator(":scope > div")).toHaveCount(Math.min(3, desafiosPublicados));
+  await expect(page.getByTestId("cifras-desafios").locator(":scope > div")).toHaveCount(Math.min(2, desafiosPublicados));
   await expect(page.getByTestId("cifras-desafios").locator("small").first()).not.toBeEmpty();
+  const desafiosSeTraslapan = await page.getByTestId("cifras-desafios").locator(":scope > div").evaluateAll((elementos) => {
+    const cajas = elementos.map((elemento) => elemento.getBoundingClientRect());
+    return cajas.some((caja, indice) => cajas.slice(indice + 1).some((otra) => caja.top < otra.bottom && caja.bottom > otra.top));
+  });
+  expect(desafiosSeTraslapan).toBe(false);
   await expect(page.getByTestId("cifras-momentos-fotos").locator("img")).not.toHaveCount(0);
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "personas se registraron en la app" })).toBeVisible();
+  await page.waitForTimeout(600);
   await expect(page.getByText(/Rostros 1–8 de/)).toBeVisible();
   await expect(page.locator(".avatar-registro-animado")).toHaveCount(8);
   expect(await page.locator(".avatar-registro-animado img").first().evaluate((imagen) => imagen.getBoundingClientRect().width)).toBeGreaterThan(130);
+  const cartelRegistro = await page.getByRole("heading", { name: "personas se registraron en la app" }).locator("..").boundingBox();
+  const avataresRegistro = await page.locator(".avatar-registro-animado").evaluateAll((elementos) => elementos.map((elemento) => {
+    const caja = elemento.getBoundingClientRect();
+    return { left: caja.left, right: caja.right, top: caja.top, bottom: caja.bottom };
+  }));
+  expect(cartelRegistro && avataresRegistro.every((avatar) => avatar.right <= cartelRegistro.x || avatar.left >= cartelRegistro.x + cartelRegistro.width || avatar.bottom <= cartelRegistro.y || avatar.top >= cartelRegistro.y + cartelRegistro.height)).toBeTruthy();
   await expect(page.getByText(/Rostros 9–\d+ de/), "las fotos deben rotar para mostrar a todas las personas").toBeVisible({ timeout: 4_000 });
 
   await page.getByRole("button", { name: "Siguiente" }).click();
@@ -90,13 +119,7 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Un solo equipo, muchas voces" })).toBeVisible();
   expect(await page.getByTestId("empresa-participantes").first().evaluate((elemento) => getComputedStyle(elemento).color)).toBe("rgb(255, 255, 255)");
-  const avataresEmpresa = page.getByTestId("empresa-personas").first().locator("img");
-  await expect(avataresEmpresa).not.toHaveCount(0);
-  const posicionesEmpresa = await avataresEmpresa.evaluateAll((imagenes) => imagenes.map((imagen) => {
-    const rectangulo = imagen.getBoundingClientRect();
-    return { left: rectangulo.left, right: rectangulo.right };
-  }));
-  expect(posicionesEmpresa.every((posicion, indice) => indice === 0 || posicionesEmpresa[indice - 1].right <= posicion.left)).toBe(true);
+  await expect(page.getByTestId("empresa-personas")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Imágenes que cuentan nuestra historia" })).toBeVisible();

@@ -55,12 +55,7 @@ export type DatosResumenEvento = {
   };
   personas: { id: string; nombre: string; urlFoto: string; empresa: { nombre: string } }[];
   desafios: { id: string; titulo: string; descripcion: string; urlImagen: string | null; tipo: string }[];
-  empresas: {
-    nombre: string;
-    urlLogo: string | null;
-    participantes: number;
-    personas: { id: string; nombre: string; urlFoto: string }[];
-  }[];
+  empresas: { nombre: string; urlLogo: string | null; participantes: number }[];
   podio: { id: string; nombre: string; urlFoto: string; puntosTotales: number; empresa: { nombre: string } }[];
   fotos: FotoResumen[];
   satisfaccion: {
@@ -210,7 +205,8 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
     const duracionCifras = Math.max(
       12_000,
       Math.ceil(datos.personas.length / 6) * 2_800,
-      Math.ceil(datos.desafios.length / 3) * 3_600,
+      Math.ceil(datos.empresas.length / 4) * 3_400,
+      Math.ceil(datos.desafios.length / 2) * 4_000,
       Math.ceil(datos.fotos.length / 4) * 3_200,
     );
     const fotos: Diapositiva[] = datos.fotos.length ? [{
@@ -230,7 +226,7 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
       { tipo: "reflexion", duracion: 12_000 },
       { tipo: "cierre", duracion: 12_000 },
     ];
-  }, [datos.desafios.length, datos.fotos, datos.personas.length, datos.podio.length, datos.satisfaccion.comentarios.length]);
+  }, [datos.desafios.length, datos.empresas.length, datos.fotos, datos.personas.length, datos.podio.length, datos.satisfaccion.comentarios.length]);
   const [iniciada, setIniciada] = useState(false);
   const [indice, setIndice] = useState(0);
   const [reproduciendo, setReproduciendo] = useState(true);
@@ -361,7 +357,7 @@ function Titulo({ etiqueta, titulo, descripcion }: { etiqueta: string; titulo: s
 }
 
 function Portada({ nombre }: { nombre: string }) {
-  return <section className="grid h-full place-items-center text-center"><div><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)] backdrop-blur"><Sparkles size={21} /> Lo que vivimos juntos</div><h1 className="mx-auto mt-8 max-w-6xl font-display text-[clamp(50px,8vw,118px)] font-extrabold leading-[.9]"><span className="text-[var(--epm-verde)]">{nombre}</span><br />en cifras y recuerdos</h1><p className="mt-8 text-[clamp(18px,2vw,30px)] text-white/65">Personas, conversaciones y momentos que dejan huella.</p></div></section>;
+  return <section className="grid h-full place-items-center overflow-hidden pb-[clamp(24px,4vh,48px)] text-center"><div className="max-h-full"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)] backdrop-blur"><Sparkles size={21} /> Lo que vivimos juntos</div><h1 className="mx-auto mt-[clamp(18px,3vh,30px)] max-w-6xl font-display text-[clamp(42px,5.6vw,82px)] font-extrabold leading-[.9]"><span className="text-[var(--epm-verde)]">{nombre}</span><br />en cifras y recuerdos</h1><p className="mt-[clamp(16px,2.5vh,26px)] text-[clamp(17px,1.6vw,25px)] text-white/65">Personas, conversaciones y momentos que dejan huella.</p></div></section>;
 }
 
 function TarjetaCifra({ valor, etiqueta, Icono, color, contenido }: { valor: number; etiqueta: string; Icono: typeof Users; color: string; contenido?: ReactNode }) {
@@ -386,23 +382,29 @@ function PersonasCifra({ personas }: { personas: DatosResumenEvento["personas"] 
     const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 2_800);
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
-  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-2 grid-rows-3 place-items-center gap-x-[clamp(10px,1vw,18px)] gap-y-2">{(grupos[pagina] ?? []).map((persona, indice) => <div key={`${persona.id}-${pagina}`} className="miniatura-cifra-animada grid h-full w-full place-items-center" style={{ animation: `avatar-registro-ciclo 2.55s ${indice * .055}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(94px,6.7vw,116px)] w-[clamp(94px,6.7vw,116px)] border-[4px] shadow-xl" /></div>)}</div>;
+  return <div data-testid="cifras-personas-fotos" className="grid h-full grid-cols-2 grid-rows-3 place-items-center gap-x-[clamp(12px,1.2vw,20px)] gap-y-2 overflow-hidden">{(grupos[pagina] ?? []).map((persona, indice) => <div key={`${persona.id}-${pagina}`} className="miniatura-cifra-animada grid h-full w-full place-items-center overflow-hidden" style={{ animation: `avatar-registro-ciclo 2.55s ${indice * .055}s ease-out both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(86px,5.8vw,102px)] w-[clamp(86px,5.8vw,102px)] border-[4px] shadow-xl" /></div>)}</div>;
 }
 
 function EmpresasCifra({ empresas }: { empresas: DatosResumenEvento["empresas"] }) {
-  const filas = Math.max(1, Math.ceil(empresas.length / 2));
-  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-2 gap-x-[clamp(18px,1.8vw,30px)] gap-y-1.5 overflow-hidden py-2" style={{ gridTemplateRows: `repeat(${filas}, minmax(0, 1fr))` }}>{empresas.map((empresa, indice) => <div key={empresa.nombre} className="miniatura-cifra-animada grid min-h-0 min-w-0 place-items-center overflow-hidden px-1 py-0.5" style={{ animation: `miniatura-cifra-entrada .42s ${Math.min(indice * .055, .7)}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="block max-h-full max-w-full object-contain opacity-95 [filter:brightness(0)_invert(1)_drop-shadow(0_2px_5px_rgba(0,0,0,.32))]" /> : <span className="line-clamp-2 text-center font-display text-[clamp(12px,.95vw,16px)] font-extrabold leading-tight text-white">{empresa.nombre}</span>}</div>)}</div>;
-}
-
-function DesafiosCifra({ desafios }: { desafios: DatosResumenEvento["desafios"] }) {
-  const grupos = useMemo(() => agrupar(desafios, 3), [desafios]);
+  const grupos = useMemo(() => agrupar(empresas, 4), [empresas]);
   const [pagina, setPagina] = useState(0);
   useEffect(() => {
     if (grupos.length <= 1) return;
-    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_600);
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 3_400);
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
-  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-rows-3">{(grupos[pagina] ?? []).map((desafio, indice) => { const color = PALETA[(pagina * 3 + indice) % PALETA.length]; return <div key={`${desafio.id}-${pagina}`} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-[clamp(12px,1vw,18px)] overflow-hidden border-b border-white/[.18] px-1 py-3 text-left last:border-b-0" style={{ animation: `miniatura-cifra-entrada .5s ${indice * .12}s ease-out both` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-[clamp(62px,4.7vw,82px)] w-[clamp(62px,4.7vw,82px)] shrink-0 rounded-2xl object-cover shadow-lg" /> : <span className="grid h-[clamp(62px,4.7vw,82px)] w-[clamp(62px,4.7vw,82px)] shrink-0 place-items-center rounded-full border-2 border-white/20"><Zap size={34} style={{ color }} /></span>}<span className="min-w-0"><strong className="line-clamp-2 block font-display text-[clamp(18px,1.35vw,23px)] font-extrabold leading-tight text-white">{desafio.titulo}</strong><small className="mt-2 line-clamp-3 block text-[clamp(13px,.95vw,16px)] font-medium leading-snug text-white/72">{desafio.descripcion}</small></span></div>; })}</div>;
+  return <div data-testid="cifras-empresas-logos" className="grid h-full min-h-0 grid-cols-2 grid-rows-2 gap-[clamp(18px,1.6vw,28px)] overflow-hidden p-2">{(grupos[pagina] ?? []).map((empresa, indice) => <div key={`${empresa.nombre}-${pagina}`} className="miniatura-cifra-animada grid min-h-0 min-w-0 place-items-center overflow-hidden" style={{ animation: `miniatura-cifra-entrada .5s ${indice * .09}s ease-out both` }}>{empresa.urlLogo ? <img src={empresa.urlLogo} alt={`Logo ${empresa.nombre}`} className="block max-h-[72%] max-w-[86%] object-contain opacity-95 [filter:brightness(0)_invert(1)_drop-shadow(0_2px_5px_rgba(0,0,0,.32))]" /> : <span className="line-clamp-2 text-center font-display text-[clamp(16px,1.25vw,21px)] font-extrabold leading-tight text-white">{empresa.nombre}</span>}</div>)}</div>;
+}
+
+function DesafiosCifra({ desafios }: { desafios: DatosResumenEvento["desafios"] }) {
+  const grupos = useMemo(() => agrupar(desafios, 2), [desafios]);
+  const [pagina, setPagina] = useState(0);
+  useEffect(() => {
+    if (grupos.length <= 1) return;
+    const temporizador = window.setInterval(() => setPagina((actual) => (actual + 1) % grupos.length), 4_000);
+    return () => window.clearInterval(temporizador);
+  }, [grupos.length]);
+  return <div data-testid="cifras-desafios" className="grid h-full min-h-0 grid-rows-2 overflow-hidden">{(grupos[pagina] ?? []).map((desafio, indice) => { const color = PALETA[(pagina * 2 + indice) % PALETA.length]; return <div key={`${desafio.id}-${pagina}`} className="miniatura-cifra-animada relative flex min-h-0 items-center gap-[clamp(14px,1.2vw,20px)] overflow-hidden border-b border-white/[.18] px-1 py-4 text-left last:border-b-0" style={{ animation: `miniatura-cifra-entrada .5s ${indice * .12}s ease-out both` }}>{desafio.urlImagen ? <img src={desafio.urlImagen} alt="" className="h-[clamp(68px,5vw,88px)] w-[clamp(68px,5vw,88px)] shrink-0 rounded-2xl object-cover shadow-lg" /> : <span className="grid h-[clamp(68px,5vw,88px)] w-[clamp(68px,5vw,88px)] shrink-0 place-items-center rounded-full border-2 border-white/20"><Zap size={36} style={{ color }} /></span>}<span className="min-w-0 overflow-hidden"><strong className="line-clamp-2 block font-display text-[clamp(18px,1.35vw,23px)] font-extrabold leading-tight text-white">{desafio.titulo}</strong><small className="mt-2 line-clamp-2 block overflow-hidden text-[clamp(13px,.95vw,16px)] font-medium leading-snug text-white/72">{desafio.descripcion}</small></span></div>; })}</div>;
 }
 
 function MomentosCifra({ fotos }: { fotos: FotoResumen[] }) {
@@ -425,10 +427,10 @@ function RegistroPersonas({ datos }: { datos: DatosResumenEvento }) {
     return () => window.clearInterval(temporizador);
   }, [grupos.length]);
   const muestra = grupos[pagina] ?? [];
-  const posiciones = ["left-[1%] top-[1%]", "left-[24%] top-[-1%]", "right-[24%] top-[-1%]", "right-[1%] top-[1%]", "left-[3%] bottom-[0%]", "left-[28%] bottom-[-2%]", "right-[28%] bottom-[-2%]", "right-[3%] bottom-[0%]"];
+  const posiciones = ["left-[0%] top-[0%]", "left-[16%] top-[0%]", "right-[16%] top-[0%]", "right-[0%] top-[0%]", "left-[1%] bottom-[0%]", "left-[17%] bottom-[0%]", "right-[17%] bottom-[0%]", "right-[1%] bottom-[0%]"];
   const inicio = pagina * 8 + 1;
   const fin = Math.min((pagina + 1) * 8, datos.personas.length);
-  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-[760px] rounded-[3rem] bg-[var(--epm-azul-profundo)]/58 px-[clamp(26px,3.6vw,56px)] py-[clamp(20px,2.5vh,32px)] shadow-[0_0_80px_rgba(4,29,49,.72)] backdrop-blur-sm"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)]"><Users size={22} /> Una comunidad que creció</div><strong className="mt-4 block font-display text-[clamp(72px,8vw,118px)] font-extrabold leading-[.76] text-[var(--epm-verde)]">{datos.cifras.participantes.toLocaleString("es-CO")}</strong><h2 className="mx-auto mt-5 font-display text-[clamp(32px,3.5vw,52px)] font-extrabold leading-[.98]">personas se registraron en la app</h2><p className="mx-auto mt-3 max-w-2xl text-[clamp(14px,1.1vw,18px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p><p className="mt-3 text-sm font-extrabold text-[var(--epm-verde)]">Rostros {inicio}–{fin} de {datos.personas.length}</p></div>{muestra.map((persona, indice) => <div key={`${persona.id}-${pagina}`} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden rounded-full border-4 border-white/35 bg-white/10 p-1 shadow-[0_14px_34px_rgba(0,0,0,.3)] backdrop-blur lg:block`} style={{ animation: `avatar-registro-ciclo 2.65s ${indice * .025}s cubic-bezier(.2,.9,.25,1.1) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(132px,10.2vw,188px)] w-[clamp(132px,10.2vw,188px)]" /></div>)}</section>;
+  return <section className="relative grid h-full place-items-center overflow-hidden text-center"><div className="relative z-10 max-w-[720px] rounded-[3rem] bg-[var(--epm-azul-profundo)]/62 px-[clamp(26px,3.4vw,52px)] py-[clamp(18px,2.2vh,28px)] shadow-[0_0_80px_rgba(4,29,49,.72)] backdrop-blur-sm"><div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-2 font-extrabold text-[var(--epm-verde)]"><Users size={22} /> Una comunidad que creció</div><strong className="mt-3 block font-display text-[clamp(68px,7.5vw,108px)] font-extrabold leading-[.76] text-[var(--epm-verde)]">{datos.cifras.participantes.toLocaleString("es-CO")}</strong><h2 className="mx-auto mt-4 font-display text-[clamp(30px,3.2vw,48px)] font-extrabold leading-[.98]">personas se registraron en la app</h2><p className="mx-auto mt-3 max-w-2xl text-[clamp(13px,1vw,17px)] text-white/65">Cada registro representa una voz, una empresa y una historia que hizo parte del encuentro.</p><p className="mt-3 text-sm font-extrabold text-[var(--epm-verde)]">Rostros {inicio}–{fin} de {datos.personas.length}</p></div>{muestra.map((persona, indice) => <div key={`${persona.id}-${pagina}`} className={`avatar-registro-animado absolute ${posiciones[indice]} hidden overflow-hidden rounded-full border-4 border-white/35 bg-white/10 p-1 shadow-[0_14px_34px_rgba(0,0,0,.3)] backdrop-blur lg:block`} style={{ animation: `avatar-registro-ciclo 2.65s ${indice * .025}s cubic-bezier(.2,.9,.25,1.1) both` }}><FotoCircular src={persona.urlFoto} alt={`Foto de ${persona.nombre}`} className="h-[clamp(126px,9.3vw,174px)] w-[clamp(126px,9.3vw,174px)]" /></div>)}</section>;
 }
 
 function Participacion({ datos }: { datos: DatosResumenEvento }) {
@@ -451,7 +453,7 @@ function TarjetaParticipacion({ valor, etiqueta, Icono, color, destacado, detall
 
 function Empresas({ empresas, total }: { empresas: DatosResumenEvento["empresas"]; total: number }) {
   const maximo = Math.max(1, ...empresas.map((empresa) => empresa.participantes));
-  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Conexiones" titulo="Un solo equipo, muchas voces" descripcion={`${empresas.length} empresas representadas en el encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-2 gap-x-10 gap-y-2 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-[clamp(18px,2vw,32px)] backdrop-blur">{empresas.map((empresa, indice) => <div key={empresa.nombre} className="flex min-h-0 flex-col justify-center"><div className="flex items-end justify-between gap-3"><strong className="truncate text-[clamp(13px,1.05vw,17px)]">{empresa.nombre}</strong><span data-testid="empresa-participantes" className="font-display text-xl font-extrabold text-white drop-shadow-md">{empresa.participantes}</span></div><div data-testid="empresa-personas" aria-label={`Personas registradas de ${empresa.nombre}`} className="mt-1 grid min-h-0 items-end gap-0.5" style={{ gridTemplateColumns: `repeat(${empresa.personas.length}, minmax(20px, 30px))` }}>{empresa.personas.map((persona) => <FotoCircular key={persona.id} src={persona.urlFoto} alt={`${persona.nombre}, ${empresa.nombre}`} className="aspect-square h-auto w-full !border-2 shadow-md" />)}</div><div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, empresa.participantes * 100 / maximo)}%`, background: PALETA[indice % PALETA.length] }} /></div></div>)}</div><p className="mt-3 text-right text-sm text-white/60">{total.toLocaleString("es-CO")} participantes en total</p></section>;
+  return <section className="flex h-full min-h-0 flex-col"><Titulo etiqueta="Conexiones" titulo="Un solo equipo, muchas voces" descripcion={`${empresas.length} empresas representadas en el encuentro.`} /><div className="grid min-h-0 flex-1 grid-cols-2 gap-x-10 gap-y-3 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-[clamp(20px,2.3vw,36px)] backdrop-blur">{empresas.map((empresa, indice) => <div key={empresa.nombre} className="flex min-h-0 flex-col justify-center"><div className="mb-2 flex items-end justify-between gap-3"><strong className="truncate text-[clamp(13px,1.2vw,19px)]">{empresa.nombre}</strong><span data-testid="empresa-participantes" className="font-display text-xl font-extrabold text-white drop-shadow-md">{empresa.participantes}</span></div><div className="h-3 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, empresa.participantes * 100 / maximo)}%`, background: PALETA[indice % PALETA.length] }} /></div></div>)}</div><p className="mt-3 text-right text-sm text-white/60">{total.toLocaleString("es-CO")} participantes en total</p></section>;
 }
 
 function Fotos({ fotos }: { fotos: FotoResumen[] }) {
