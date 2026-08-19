@@ -57,6 +57,18 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByLabel("Código de acceso").fill("Experiencia");
   await page.getByRole("button", { name: "Ingresar a la presentación" }).click();
 
+  const lienzo = page.locator('iframe[title="Presentación final del evento"]');
+  await expect(lienzo).toBeVisible();
+  await page.setViewportSize({ width: 844, height: 390 });
+  const cajaLienzo = await lienzo.boundingBox();
+  expect(cajaLienzo).toBeTruthy();
+  expect(cajaLienzo!.left).toBeGreaterThanOrEqual(0);
+  expect(cajaLienzo!.top).toBeGreaterThanOrEqual(0);
+  expect(cajaLienzo!.left + cajaLienzo!.width).toBeLessThanOrEqual(844);
+  expect(cajaLienzo!.top + cajaLienzo!.height).toBeLessThanOrEqual(390);
+  expect(cajaLienzo!.width / cajaLienzo!.height).toBeCloseTo(1920 / 900, 2);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/admin/proyeccion/resumen?lienzo=1");
   await expect(page.getByRole("heading", { name: "El evento en cifras y recuerdos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeVisible();
   await page.setViewportSize({ width: 844, height: 390 });

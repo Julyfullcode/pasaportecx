@@ -205,8 +205,10 @@ function useMusicaAmbiental() {
 
 async function activarPantallaHorizontal() {
   try {
-    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-    const orientacion = screen.orientation as ScreenOrientation & {
+    const ventanaObjetivo = window.parent === window ? window : window.parent;
+    const documentoObjetivo = ventanaObjetivo.document;
+    if (!documentoObjetivo.fullscreenElement) await documentoObjetivo.documentElement.requestFullscreen();
+    const orientacion = ventanaObjetivo.screen.orientation as ScreenOrientation & {
       lock?: (modo: "landscape") => Promise<void>;
     };
     await orientacion.lock?.("landscape");
@@ -363,86 +365,6 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         }
         @media (orientation: portrait) and (max-width: 900px) {
           .aviso-orientacion { display: grid; }
-        }
-        @media (orientation: landscape) and (max-height: 560px) {
-          .inicio-presentacion {
-            align-items: start;
-            padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-          }
-          .inicio-presentacion-contenido {
-            margin: auto;
-            max-width: 760px;
-            padding: 4px 0;
-          }
-          .inicio-presentacion-contenido > img,
-          .inicio-presentacion-contenido > svg {
-            height: 25px !important;
-          }
-          .inicio-presentacion-icono {
-            display: none;
-          }
-          .inicio-presentacion-etiqueta {
-            margin-top: 5px;
-            font-size: 10px;
-          }
-          .inicio-presentacion-titulo {
-            margin-top: 3px;
-            font-size: clamp(28px, 9vh, 40px);
-            line-height: .95;
-          }
-          .inicio-presentacion-descripcion {
-            margin-top: 6px;
-            max-width: 660px;
-            font-size: 12px;
-            line-height: 1.25;
-          }
-          .inicio-presentacion-acciones {
-            margin-top: 10px;
-            flex-wrap: nowrap;
-          }
-          .inicio-presentacion-acciones button {
-            min-height: 40px;
-            padding: 7px 18px;
-            font-size: 12px;
-          }
-          .inicio-presentacion-acciones svg {
-            height: 18px;
-            width: 18px;
-          }
-          .inicio-presentacion-ayuda {
-            margin-top: 7px;
-            font-size: 9px;
-          }
-          .controles-presentacion {
-            padding: max(8px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left));
-          }
-          .controles-presentacion > img,
-          .controles-presentacion > svg {
-            height: 28px !important;
-            max-width: 120px;
-          }
-          .controles-presentacion button {
-            width: 36px !important;
-            height: 36px !important;
-          }
-          .contenido-presentacion {
-            padding: 56px max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important;
-          }
-          .contenido-presentacion section > div:first-child {
-            margin-bottom: 10px;
-          }
-          .contenido-presentacion section > div:first-child > p:first-child {
-            font-size: 11px;
-          }
-          .contenido-presentacion section > div:first-child > h2 {
-            margin-top: 3px;
-            font-size: clamp(25px, 5.5vh, 32px);
-          }
-          .contenido-presentacion section > div:first-child > h2 + p {
-            margin-top: 5px;
-            font-size: 12px;
-            line-height: 1.25;
-          }
         }
       `}</style>
     </main>
