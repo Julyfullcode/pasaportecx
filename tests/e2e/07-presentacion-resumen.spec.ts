@@ -59,6 +59,10 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
 
   await expect(page.getByRole("heading", { name: "El evento en cifras y recuerdos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeVisible();
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Comenzar sin música" })).toBeInViewport();
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("button", { name: "Comenzar sin música" }).click();
   await expect(page.getByRole("button", { name: "Pausar" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar música" })).toBeVisible();

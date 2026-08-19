@@ -288,18 +288,18 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
       <div className="pointer-events-none absolute -right-[8vw] -top-[12vw] h-[38vw] w-[38vw] rounded-full bg-lime-300/15 blur-3xl" />
 
       {!iniciada && (
-        <div className="absolute inset-0 z-50 grid place-items-center bg-[var(--epm-azul-profundo)]/88 p-6 backdrop-blur-xl">
-          <div className="w-full max-w-3xl text-center">
+        <div className="inicio-presentacion absolute inset-0 z-50 grid place-items-center overflow-y-auto bg-[var(--epm-azul-profundo)]/88 p-6 backdrop-blur-xl">
+          <div className="inicio-presentacion-contenido w-full max-w-3xl text-center">
             <LogoBlanco className="mx-auto h-[clamp(42px,6vw,74px)] w-auto" />
-            <div className="mx-auto mt-10 grid h-20 w-20 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-[0_0_50px_rgba(140,198,63,.45)]"><Music size={38} /></div>
-            <p className="mt-8 font-extrabold uppercase tracking-[.24em] text-[var(--epm-verde)]">Presentación final</p>
-            <h1 className="mt-3 font-display text-[clamp(38px,6vw,78px)] font-extrabold leading-[.98]">El evento en cifras y recuerdos</h1>
-            <p className="mx-auto mt-5 max-w-2xl text-[clamp(16px,1.5vw,23px)] text-white/70">Un recorrido automático por las personas, los logros y las fotos que hicieron parte de {datos.nombreEvento}.</p>
-            <div className="mt-10 flex flex-wrap justify-center gap-3">
+            <div className="inicio-presentacion-icono mx-auto mt-10 grid h-20 w-20 place-items-center rounded-full bg-[var(--epm-verde)] text-[var(--epm-azul-profundo)] shadow-[0_0_50px_rgba(140,198,63,.45)]"><Music size={38} /></div>
+            <p className="inicio-presentacion-etiqueta mt-8 font-extrabold uppercase tracking-[.24em] text-[var(--epm-verde)]">Presentación final</p>
+            <h1 className="inicio-presentacion-titulo mt-3 font-display text-[clamp(38px,6vw,78px)] font-extrabold leading-[.98]">El evento en cifras y recuerdos</h1>
+            <p className="inicio-presentacion-descripcion mx-auto mt-5 max-w-2xl text-[clamp(16px,1.5vw,23px)] text-white/70">Un recorrido automático por las personas, los logros y las fotos que hicieron parte de {datos.nombreEvento}.</p>
+            <div className="inicio-presentacion-acciones mt-10 flex flex-wrap justify-center gap-3">
               <button type="button" onClick={() => comenzar(true)} className="inline-flex min-h-14 items-center gap-3 rounded-full bg-[var(--epm-verde)] px-7 font-extrabold text-[var(--epm-azul-profundo)] shadow-xl transition hover:scale-105"><Volume2 /> Comenzar con música</button>
               <button type="button" onClick={() => comenzar(false)} className="inline-flex min-h-14 items-center gap-3 rounded-full border border-white/30 bg-white/10 px-7 font-extrabold backdrop-blur transition hover:bg-white/20"><VolumeX /> Comenzar sin música</button>
             </div>
-            <p className="mt-6 text-sm text-white/50">Flechas para navegar · Espacio para pausar · M para música · F para pantalla completa</p>
+            <p className="inicio-presentacion-ayuda mt-6 text-sm text-white/50">Flechas para navegar · Espacio para pausar · M para música · F para pantalla completa</p>
           </div>
         </div>
       )}
@@ -365,6 +365,54 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
           .aviso-orientacion { display: grid; }
         }
         @media (orientation: landscape) and (max-height: 560px) {
+          .inicio-presentacion {
+            align-items: start;
+            padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+          }
+          .inicio-presentacion-contenido {
+            margin: auto;
+            max-width: 760px;
+            padding: 4px 0;
+          }
+          .inicio-presentacion-contenido > img,
+          .inicio-presentacion-contenido > svg {
+            height: 25px !important;
+          }
+          .inicio-presentacion-icono {
+            display: none;
+          }
+          .inicio-presentacion-etiqueta {
+            margin-top: 5px;
+            font-size: 10px;
+          }
+          .inicio-presentacion-titulo {
+            margin-top: 3px;
+            font-size: clamp(28px, 9vh, 40px);
+            line-height: .95;
+          }
+          .inicio-presentacion-descripcion {
+            margin-top: 6px;
+            max-width: 660px;
+            font-size: 12px;
+            line-height: 1.25;
+          }
+          .inicio-presentacion-acciones {
+            margin-top: 10px;
+            flex-wrap: nowrap;
+          }
+          .inicio-presentacion-acciones button {
+            min-height: 40px;
+            padding: 7px 18px;
+            font-size: 12px;
+          }
+          .inicio-presentacion-acciones svg {
+            height: 18px;
+            width: 18px;
+          }
+          .inicio-presentacion-ayuda {
+            margin-top: 7px;
+            font-size: 9px;
+          }
           .controles-presentacion {
             padding: max(8px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left));
           }
