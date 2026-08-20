@@ -61,7 +61,7 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   const viewportPublicado = await page.locator('meta[name="viewport"]').getAttribute("content");
   expect(viewportPublicado).toContain("width=1920");
   expect(viewportPublicado).toContain("user-scalable=yes");
-  expect(viewportPublicado).not.toContain("initial-scale");
+  expect(viewportPublicado).not.toContain("maximum-scale=1");
   await expect(page.getByRole("heading", { name: "El evento en cifras y recuerdos" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Comenzar con música" })).toBeVisible();
   await page.getByRole("button", { name: "Comenzar sin música" }).click();
