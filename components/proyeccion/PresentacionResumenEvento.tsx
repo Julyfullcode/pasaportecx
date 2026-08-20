@@ -366,6 +366,48 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
         @media (orientation: portrait) {
           .aviso-orientacion { display: grid; }
         }
+        html.presentacion-movil .inicio-presentacion {
+          padding: var(--inicio-padding) !important;
+        }
+        html.presentacion-movil .inicio-presentacion-contenido {
+          max-width: var(--inicio-ancho) !important;
+        }
+        html.presentacion-movil .inicio-presentacion-contenido > img,
+        html.presentacion-movil .inicio-presentacion-contenido > svg {
+          height: var(--inicio-logo) !important;
+        }
+        html.presentacion-movil .inicio-presentacion-icono {
+          display: none;
+        }
+        html.presentacion-movil .inicio-presentacion-etiqueta {
+          margin-top: var(--inicio-espacio) !important;
+          font-size: var(--inicio-etiqueta) !important;
+        }
+        html.presentacion-movil .inicio-presentacion-titulo {
+          margin-top: var(--inicio-espacio) !important;
+          font-size: var(--inicio-titulo) !important;
+          line-height: .96 !important;
+        }
+        html.presentacion-movil .inicio-presentacion-descripcion {
+          margin-top: var(--inicio-espacio) !important;
+          max-width: var(--inicio-ancho) !important;
+          font-size: var(--inicio-descripcion) !important;
+          line-height: 1.3 !important;
+        }
+        html.presentacion-movil .inicio-presentacion-acciones {
+          margin-top: var(--inicio-espacio) !important;
+          flex-wrap: nowrap !important;
+        }
+        html.presentacion-movil .inicio-presentacion-acciones button {
+          min-height: var(--inicio-boton-alto) !important;
+          padding-left: var(--inicio-boton-lateral) !important;
+          padding-right: var(--inicio-boton-lateral) !important;
+          font-size: var(--inicio-boton-texto) !important;
+        }
+        html.presentacion-movil .inicio-presentacion-ayuda {
+          margin-top: var(--inicio-espacio) !important;
+          font-size: var(--inicio-ayuda) !important;
+        }
       `}</style>
     </main>
   );
