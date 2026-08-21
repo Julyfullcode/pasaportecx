@@ -133,8 +133,18 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   ]);
   const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => textoAjustado(etiqueta, 350, 42, 30, 25, colores[indice], true)));
 
-  const altoPerfil = nombre.alto + empresa.alto + subtitulo.alto + 22;
-  const perfilTextoY = 500 + Math.max(18, Math.round((330 - altoPerfil) / 2));
+  const panelPerfilX = 75;
+  const panelPerfilY = 260;
+  const panelPerfilAncho = 420;
+  const panelPerfilAlto = 625;
+  const anchoTextoPerfil = 350;
+  const separacionFotoPerfil = 36;
+  const altoPerfil = nombre.alto + 10 + empresa.alto + 8 + subtitulo.alto;
+  const altoContenidoPerfil = avatarTamano + separacionFotoPerfil + altoPerfil;
+  const fotoX = panelPerfilX + Math.round((panelPerfilAncho - avatarTamano) / 2);
+  const fotoY = panelPerfilY + Math.round((panelPerfilAlto - altoContenidoPerfil) / 2);
+  const perfilTextoX = panelPerfilX + Math.round((panelPerfilAncho - anchoTextoPerfil) / 2);
+  const perfilTextoY = fotoY + avatarTamano + separacionFotoPerfil;
   const empresaY = perfilTextoY + nombre.alto + 10;
   const subtituloY = empresaY + empresa.alto + 8;
   const reflexionY = 912;
@@ -174,10 +184,10 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
     { input: logo, left: 115, top: 113 },
     { input: titulo.buffer, left: 505, top: 104 },
     { input: evento.buffer, left: 530, top: 176 },
-    { input: foto, left: 195, top: 285 },
-    { input: nombre.buffer, left: 110, top: perfilTextoY },
-    { input: empresa.buffer, left: 110, top: empresaY },
-    { input: subtitulo.buffer, left: 110, top: subtituloY },
+    { input: foto, left: fotoX, top: fotoY },
+    { input: nombre.buffer, left: perfilTextoX, top: perfilTextoY },
+    { input: empresa.buffer, left: perfilTextoX, top: empresaY },
+    { input: subtitulo.buffer, left: perfilTextoX, top: subtituloY },
     { input: reflexion.buffer, left: centrarHorizontal(reflexion), top: reflexionY },
   ];
 
