@@ -13,7 +13,7 @@ export type DatosTarjetaCosechaPng = {
 };
 
 const ANCHO = 1600;
-const ALTO = 1000;
+const ALTO = 920;
 const FUENTE_REGULAR = join(process.cwd(), "public", "fuentes", "Poppins-Regular.ttf");
 const FUENTE_SEMIBOLD = join(process.cwd(), "public", "fuentes", "Poppins-SemiBold.ttf");
 const FUENTE_EMOJI = join(process.cwd(), "public", "fuentes", "NotoColorEmoji.ttf");
@@ -111,7 +111,7 @@ async function avatar(url: string | null | undefined, nombre: string, tamano: nu
 export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   await cargarFuenteEmoji();
   const avatarTamano = 180;
-  const posiciones = [260, 470, 680];
+  const posiciones = [205, 415, 625];
   const respuestas = [datos.respuestas.meLlevo, datos.respuestas.agradezco, datos.respuestas.activo];
   const etiquetas = ["Me llevo", "Agradezco", "Activo"];
   const colores = ["#087aa8", "#0e7c6e", "#5c8f1d"];
@@ -134,20 +134,21 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
   const etiquetasPng = await Promise.all(etiquetas.map((etiqueta, indice) => textoAjustado(etiqueta, 350, 42, 30, 25, colores[indice], true)));
 
   const panelPerfilX = 75;
-  const panelPerfilY = 260;
+  const panelPerfilY = 205;
   const panelPerfilAncho = 420;
-  const panelPerfilAlto = 625;
-  const anchoTextoPerfil = 350;
+  const panelPerfilAlto = 605;
   const separacionFotoPerfil = 36;
   const altoPerfil = nombre.alto + 10 + empresa.alto + 8 + subtitulo.alto;
   const altoContenidoPerfil = avatarTamano + separacionFotoPerfil + altoPerfil;
   const fotoX = panelPerfilX + Math.round((panelPerfilAncho - avatarTamano) / 2);
   const fotoY = panelPerfilY + Math.round((panelPerfilAlto - altoContenidoPerfil) / 2);
-  const perfilTextoX = panelPerfilX + Math.round((panelPerfilAncho - anchoTextoPerfil) / 2);
+  const fotoCentroX = fotoX + Math.round(avatarTamano / 2);
+  const fotoCentroY = fotoY + Math.round(avatarTamano / 2);
   const perfilTextoY = fotoY + avatarTamano + separacionFotoPerfil;
   const empresaY = perfilTextoY + nombre.alto + 10;
   const subtituloY = empresaY + empresa.alto + 8;
-  const reflexionY = 912;
+  const centrarEnPanelPerfil = (texto: TextoRenderizado) => panelPerfilX + Math.round((panelPerfilAncho - texto.ancho) / 2);
+  const reflexionY = 847;
   const puntoFooterY = reflexionY + Math.round(reflexion.alto / 2);
   const centrarHorizontal = (texto: TextoRenderizado) => Math.round((ANCHO - texto.ancho) / 2);
 
@@ -160,34 +161,34 @@ export async function generarTarjetaCosechaPng(datos: DatosTarjetaCosechaPng) {
     </defs>
     <rect width="${ANCHO}" height="${ALTO}" fill="#eff8fa"/>
     <circle cx="1545" cy="25" r="190" fill="#8cc63f" opacity=".14"/>
-    <circle cx="20" cy="980" r="150" fill="#0e7c6e" opacity=".08"/>
-    <rect x="50" y="50" width="1500" height="900" rx="58" fill="#fff"/>
-    <rect x="75" y="75" width="1450" height="160" rx="42" fill="url(#cabecera)"/>
-    <circle cx="1465" cy="82" r="112" fill="#8cc63f" opacity=".18"/>
-    <rect x="75" y="260" width="420" height="625" rx="42" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
-    <circle cx="285" cy="375" r="101" fill="#087aa8" opacity=".10"/>
-    <circle cx="285" cy="375" r="94" fill="#fff"/>
-    <rect x="520" y="260" width="1005" height="185" rx="36" fill="url(#r1)"/>
-    <rect x="520" y="470" width="1005" height="185" rx="36" fill="url(#r2)"/>
-    <rect x="520" y="680" width="1005" height="185" rx="36" fill="url(#r3)"/>
-    <circle cx="565" cy="297" r="13" fill="#087aa8"/>
-    <circle cx="565" cy="507" r="13" fill="#0e7c6e"/>
-    <circle cx="565" cy="717" r="13" fill="#5c8f1d"/>
-    <rect x="550" y="331" width="6" height="91" rx="3" fill="#087aa8" opacity=".42"/>
-    <rect x="550" y="541" width="6" height="91" rx="3" fill="#0e7c6e" opacity=".42"/>
-    <rect x="550" y="751" width="6" height="91" rx="3" fill="#5c8f1d" opacity=".42"/>
+    <circle cx="20" cy="900" r="150" fill="#0e7c6e" opacity=".08"/>
+    <rect x="50" y="30" width="1500" height="860" rx="58" fill="#fff"/>
+    <rect x="75" y="55" width="1450" height="125" rx="38" fill="url(#cabecera)"/>
+    <circle cx="1465" cy="62" r="112" fill="#8cc63f" opacity=".18"/>
+    <rect x="${panelPerfilX}" y="${panelPerfilY}" width="${panelPerfilAncho}" height="${panelPerfilAlto}" rx="42" fill="#f7fbfc" stroke="#dcecf1" stroke-width="2"/>
+    <circle cx="${fotoCentroX}" cy="${fotoCentroY}" r="101" fill="#087aa8" opacity=".10"/>
+    <circle cx="${fotoCentroX}" cy="${fotoCentroY}" r="94" fill="#fff"/>
+    <rect x="520" y="205" width="1005" height="185" rx="36" fill="url(#r1)"/>
+    <rect x="520" y="415" width="1005" height="185" rx="36" fill="url(#r2)"/>
+    <rect x="520" y="625" width="1005" height="185" rx="36" fill="url(#r3)"/>
+    <circle cx="565" cy="242" r="13" fill="#087aa8"/>
+    <circle cx="565" cy="452" r="13" fill="#0e7c6e"/>
+    <circle cx="565" cy="662" r="13" fill="#5c8f1d"/>
+    <rect x="550" y="276" width="6" height="91" rx="3" fill="#087aa8" opacity=".42"/>
+    <rect x="550" y="486" width="6" height="91" rx="3" fill="#0e7c6e" opacity=".42"/>
+    <rect x="550" y="696" width="6" height="91" rx="3" fill="#5c8f1d" opacity=".42"/>
     <circle cx="305" cy="${puntoFooterY}" r="7" fill="#8cc63f"/>
     <circle cx="1295" cy="${puntoFooterY}" r="7" fill="#0e7c6e"/>
   </svg>`);
 
   const overlays: sharp.OverlayOptions[] = [
-    { input: logo, left: 115, top: 113 },
-    { input: titulo.buffer, left: 505, top: 104 },
-    { input: evento.buffer, left: 530, top: 176 },
+    { input: logo, left: 115, top: 86 },
+    { input: titulo.buffer, left: 505, top: 65 },
+    { input: evento.buffer, left: 530, top: 133 },
     { input: foto, left: fotoX, top: fotoY },
-    { input: nombre.buffer, left: perfilTextoX, top: perfilTextoY },
-    { input: empresa.buffer, left: perfilTextoX, top: empresaY },
-    { input: subtitulo.buffer, left: perfilTextoX, top: subtituloY },
+    { input: nombre.buffer, left: centrarEnPanelPerfil(nombre), top: perfilTextoY },
+    { input: empresa.buffer, left: centrarEnPanelPerfil(empresa), top: empresaY },
+    { input: subtitulo.buffer, left: centrarEnPanelPerfil(subtitulo), top: subtituloY },
     { input: reflexion.buffer, left: centrarHorizontal(reflexion), top: reflexionY },
   ];
 
