@@ -417,8 +417,8 @@ export function PresentacionResumenEvento({ datos }: { datos: DatosResumenEvento
   );
 }
 
-function Titulo({ etiqueta, titulo, descripcion }: { etiqueta: string; titulo: string; descripcion?: string }) {
-  return <div className="mb-[clamp(18px,3vh,34px)]"><p className="font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">{etiqueta}</p><h2 className="mt-2 font-display text-[clamp(34px,4.5vw,68px)] font-extrabold leading-none">{titulo}</h2>{descripcion && <p className="mt-3 max-w-4xl text-[clamp(15px,1.35vw,21px)] text-white/65">{descripcion}</p>}</div>;
+function Titulo({ etiqueta, titulo, descripcion, descripcionUnaLinea = false }: { etiqueta: string; titulo: string; descripcion?: string; descripcionUnaLinea?: boolean }) {
+  return <div className="mb-[clamp(18px,3vh,34px)]"><p className="font-extrabold uppercase tracking-[.2em] text-[var(--epm-verde)]">{etiqueta}</p><h2 className="mt-2 font-display text-[clamp(34px,4.5vw,68px)] font-extrabold leading-none">{titulo}</h2>{descripcion && <p data-testid={descripcionUnaLinea ? "descripcion-satisfaccion" : undefined} className={`mt-3 text-white/65 ${descripcionUnaLinea ? "max-w-none whitespace-nowrap text-[clamp(13px,1.2vw,19px)]" : "max-w-4xl text-[clamp(15px,1.35vw,21px)]"}`}>{descripcion}</p>}</div>;
 }
 
 function Portada({ nombre }: { nombre: string }) {
@@ -569,13 +569,12 @@ function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["sati
   const colorPromedio = promedio === null ? "#ffffff" : promedio >= 9 ? "#8cc63f" : promedio >= 7 ? "#f7c948" : "#fb7185";
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios recogen lo que las personas valoraron y las oportunidades para seguir mejorando.`} />
+      <Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios recogen lo que las personas valoraron y las oportunidades para seguir mejorando.`} descripcionUnaLinea />
       <div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(18px,2.2vw,34px)]">
         <article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.2vw,36px)] text-center shadow-2xl backdrop-blur">
           <div className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorPromedio }}>
             <div>
-              <span className="block text-sm font-extrabold uppercase tracking-[.2em] text-white/60">Satisfacción general</span>
-              <strong data-testid="promedio-satisfaccion" className="mt-1 block font-display text-[clamp(68px,6.5vw,102px)] font-extrabold leading-none" style={{ color: colorPromedio }}>{promedioFormateado}</strong>
+              <strong data-testid="promedio-satisfaccion" className="block font-display text-[clamp(68px,6.5vw,102px)] font-extrabold leading-none" style={{ color: colorPromedio }}>{promedioFormateado}</strong>
               <span className="mt-2 block text-lg font-extrabold text-white/70">sobre 10</span>
             </div>
           </div>
