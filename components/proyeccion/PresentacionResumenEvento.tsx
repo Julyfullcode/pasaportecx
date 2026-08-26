@@ -63,7 +63,11 @@ export type DatosResumenEvento = {
     promedio: number | null;
     respuestas: number;
     sumaCalificaciones: number;
-    comentarios: string[];
+    comentarios: {
+      texto: string;
+      pregunta: string;
+      tono: "positivo" | "mejora";
+    }[];
   };
 };
 
@@ -565,7 +569,7 @@ function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["sati
   const colorPromedio = promedio === null ? "#ffffff" : promedio >= 9 ? "#8cc63f" : promedio >= 7 ? "#f7c948" : "#fb7185";
   return (
     <section className="flex h-full min-h-0 flex-col">
-      <Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios positivos recogen lo que las personas más valoraron del encuentro.`} />
+      <Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios recogen lo que las personas valoraron y las oportunidades para seguir mejorando.`} />
       <div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(18px,2.2vw,34px)]">
         <article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.2vw,36px)] text-center shadow-2xl backdrop-blur">
           <div className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorPromedio }}>
@@ -582,7 +586,10 @@ function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["sati
           <p className="mt-4 max-w-sm text-xs leading-relaxed text-white/50">Promedio = suma de las respuestas ÷ cantidad de respuestas a “En general, ¿qué tan satisfecho(a) te encuentras con la jornada de hoy?”.</p>
         </article>
         <div data-testid="comentarios-satisfaccion" className="grid min-h-0 grid-cols-2 grid-rows-3 gap-[clamp(10px,1.2vw,17px)]">
-          {comentarios.length ? comentarios.map((comentario, indice) => <blockquote key={`${pagina}-${comentario}`} className="miniatura-cifra-animada relative flex min-h-0 items-center overflow-hidden rounded-[clamp(18px,1.5vw,25px)] border border-white/15 bg-white/10 px-[clamp(16px,1.4vw,24px)] py-3 shadow-xl backdrop-blur" style={{ animation: `miniatura-cifra-entrada .55s ${indice * .09}s ease-out both` }}><MessageCircleHeart className="mr-3 shrink-0 text-[var(--epm-verde)]" size={34} /><p className="line-clamp-4 font-display text-[clamp(15px,1.15vw,20px)] font-bold leading-snug text-white/90">“{comentario}”</p></blockquote>) : <div className="col-span-2 row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios positivos aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}
+          {comentarios.length ? comentarios.map((comentario, indice) => {
+            const esMejora = comentario.tono === "mejora";
+            return <blockquote key={`${pagina}-${comentario.pregunta}-${comentario.texto}`} data-tono={comentario.tono} className={`miniatura-cifra-animada relative flex min-h-0 overflow-hidden rounded-[clamp(18px,1.5vw,25px)] border px-[clamp(16px,1.4vw,24px)] py-3 shadow-xl backdrop-blur ${esMejora ? "border-orange-300/40 bg-orange-400/20" : "border-white/15 bg-white/10"}`} style={{ animation: `miniatura-cifra-entrada .55s ${indice * .09}s ease-out both` }}><MessageCircleHeart className={`mr-3 mt-1 shrink-0 ${esMejora ? "text-orange-300" : "text-[var(--epm-verde)]"}`} size={34} /><div className="min-w-0 self-center"><small className={`mb-1 block line-clamp-2 text-[clamp(10px,.72vw,12px)] font-extrabold uppercase leading-snug tracking-[.08em] ${esMejora ? "text-orange-200" : "text-white/55"}`}>{comentario.pregunta}</small><p className="line-clamp-3 font-display text-[clamp(15px,1.15vw,20px)] font-bold leading-snug text-white/90">“{comentario.texto}”</p></div></blockquote>;
+          }) : <div className="col-span-2 row-span-3 grid place-items-center rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-center"><div><MessageCircleHeart className="mx-auto text-[var(--epm-verde)]" size={68} /><p className="mt-5 text-2xl font-bold text-white/70">Los comentarios aparecerán aquí cuando existan respuestas disponibles.</p></div></div>}
         </div>
       </div>
     </section>

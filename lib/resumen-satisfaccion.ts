@@ -9,7 +9,13 @@ export type ResumenSatisfaccion = {
   promedio: number | null;
   respuestas: number;
   sumaCalificaciones: number;
-  comentarios: string[];
+  comentarios: ComentarioSatisfaccion[];
+};
+
+export type ComentarioSatisfaccion = {
+  texto: string;
+  pregunta: string;
+  tono: "positivo" | "mejora";
 };
 
 const PREGUNTA_SATISFACCION_GENERAL = "En general, ¿qué tan satisfecho(a) te encuentras con la jornada de hoy?";
@@ -28,13 +34,13 @@ function esPreguntaSatisfaccionGeneral(texto: string) {
   return normalizarPregunta(texto) === normalizarPregunta(PREGUNTA_SATISFACCION_GENERAL);
 }
 
-function esPreguntaPositiva(texto: string) {
-  return !/ajust|diferente|mejorar|cambiar|suger|por-ajustar/i.test(texto);
+function tonoPregunta(texto: string): ComentarioSatisfaccion["tono"] {
+  return /ajust|diferente|mejorar|cambiar|suger|por-ajustar/i.test(texto) ? "mejora" : "positivo";
 }
 
 export function resumirSatisfaccion(registros: RegistroEncuesta[]): ResumenSatisfaccion {
   const calificaciones: number[] = [];
-  const comentarios: string[] = [];
+  const comentarios: ComentarioSatisfaccion[] = [];
 
   for (const registro of registros) {
     const respuesta = objeto(registro.respuesta);
@@ -51,9 +57,15 @@ export function resumirSatisfaccion(registros: RegistroEncuesta[]): ResumenSatis
       }
 
       for (const pregunta of registro.configuracion.preguntas) {
-        if (pregunta.tipo !== "ABIERTA" || !esPreguntaPositiva(`${pregunta.id} ${pregunta.titulo}`)) continue;
+        if (pregunta.tipo !== "ABIERTA") continue;
         const comentario = respuestas[pregunta.id];
-        if (typeof comentario === "string" && comentario.trim().length >= 12) comentarios.push(comentario.trim());
+        if (typeof comentario === "string" && comentario.trim().length >= 12) {
+          comentarios.push({
+            texto: comentario.trim(),
+            pregunta: pregunta.titulo,
+            tono: tonoPregunta(`${pregunta.id} ${pregunta.titulo}`),
+          });
+        }
       }
       continue;
     }
@@ -64,6 +76,9 @@ export function resumirSatisfaccion(registros: RegistroEncuesta[]): ResumenSatis
     if (esPreguntaSatisfaccionGeneral(pregunta) && typeof valor === "number" && Number.isInteger(valor) && valor >= 0 && valor <= 10) {
       calificaciones.push(valor);
     }
+    if (pregunta && typeof valor === "string" && valor.trim().length >= 12) {
+      comentarios.push({ texto: valor.trim(), pregunta, tono: tonoPregunta(pregunta) });
+    }
   }
 
   const sumaCalificaciones = calificaciones.reduce((total, calificacion) => total + calificacion, 0);
@@ -73,6 +88,8 @@ export function resumirSatisfaccion(registros: RegistroEncuesta[]): ResumenSatis
     promedio,
     respuestas: calificaciones.length,
     sumaCalificaciones,
-    comentarios: [...new Set(comentarios)],
+    comentarios: comentarios.filter((comentario, indice, todos) => todos.findIndex((otro) => (
+      otro.texto === comentario.texto && otro.pregunta === comentario.pregunta
+    )) === indice),
   };
 }

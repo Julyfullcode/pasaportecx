@@ -162,6 +162,10 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await expect(page.getByRole("heading", { name: "Las voces que nos impulsan" })).toBeVisible();
   await expect(page.getByTestId("promedio-satisfaccion")).toHaveText(/10[,.]0/);
   await expect(page.getByText(/La conexión genuina con personas/)).toBeVisible();
+  await expect(page.getByText(PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO[2].titulo, { exact: true })).toBeVisible();
+  const comentarioMejora = page.getByTestId("comentarios-satisfaccion").locator('[data-tono="mejora"]');
+  await expect(comentarioMejora).toContainText("Más tiempo para conversar.");
+  await expect(comentarioMejora).toContainText(PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO[3].titulo);
 
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: /La tecnología cobra sentido/ })).toBeVisible();

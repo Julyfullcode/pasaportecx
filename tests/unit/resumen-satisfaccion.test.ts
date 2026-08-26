@@ -3,7 +3,7 @@ import { PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO } from "@/lib/encuesta-mixta";
 import { resumirSatisfaccion } from "@/lib/resumen-satisfaccion";
 
 describe("resumen de satisfacción para la presentación", () => {
-  test("calcula el promedio de la pregunta exacta de satisfacción y conserva únicamente comentarios positivos", () => {
+  test("calcula el promedio y conserva comentarios positivos y oportunidades de mejora con su pregunta", () => {
     const configuracion = { formato: "mixta" as const, preguntas: PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO };
     const registro = (calificacion: number, valioso: string, ajuste: string) => ({
       configuracion,
@@ -26,8 +26,17 @@ describe("resumen de satisfacción para la presentación", () => {
 
     expect(resumen.promedio).toBe(8);
     expect(resumen).toMatchObject({ respuestas: 4, sumaCalificaciones: 32 });
-    expect(resumen.comentarios).toHaveLength(4);
-    expect(resumen.comentarios.join(" ")).not.toContain("horarios");
+    expect(resumen.comentarios).toHaveLength(8);
+    expect(resumen.comentarios).toContainEqual({
+      texto: "La conexión con personas de otras empresas.",
+      pregunta: PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO[2].titulo,
+      tono: "positivo",
+    });
+    expect(resumen.comentarios).toContainEqual({
+      texto: "Mejorar los horarios.",
+      pregunta: PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO[3].titulo,
+      tono: "mejora",
+    });
   });
 
   test("no usa otra pregunta de escala como reemplazo", () => {
