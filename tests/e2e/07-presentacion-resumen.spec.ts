@@ -161,8 +161,9 @@ test("la presentación final reúne cifras, fotos, controles y música", async (
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByRole("heading", { name: "Las voces que nos impulsan" })).toBeVisible();
   await expect(page.getByTestId("descripcion-satisfaccion")).toHaveCSS("white-space", "nowrap");
+  await expect(page.getByTestId("titulo-indicador-satisfaccion")).toHaveText("Satisfacción general");
+  await expect(page.getByTestId("circulo-satisfaccion").getByText("Satisfacción general", { exact: true })).toHaveCount(0);
   await expect(page.getByTestId("promedio-satisfaccion")).toHaveText(/10[,.]0/);
-  await expect(page.getByText("Satisfacción general", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/La conexión genuina con personas/)).toBeVisible();
   await expect(page.getByText(PREGUNTAS_ENCUESTA_MIXTA_EJEMPLO[2].titulo, { exact: true })).toBeVisible();
   const comentarioMejora = page.getByTestId("comentarios-satisfaccion").locator('[data-tono="mejora"]');

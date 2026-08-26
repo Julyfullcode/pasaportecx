@@ -572,7 +572,8 @@ function Satisfaccion({ satisfaccion }: { satisfaccion: DatosResumenEvento["sati
       <Titulo etiqueta="Satisfacción" titulo="Las voces que nos impulsan" descripcion={`${satisfaccion.comentarios.length} comentarios recogen lo que las personas valoraron y las oportunidades para seguir mejorando.`} descripcionUnaLinea />
       <div className="grid min-h-0 flex-1 grid-cols-[.72fr_1.28fr] gap-[clamp(18px,2.2vw,34px)]">
         <article className="flex min-h-0 flex-col items-center justify-center rounded-[2.5rem] border border-white/15 bg-white/10 p-[clamp(20px,2.2vw,36px)] text-center shadow-2xl backdrop-blur">
-          <div className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorPromedio }}>
+          <h3 data-testid="titulo-indicador-satisfaccion" className="mb-3 text-sm font-extrabold uppercase tracking-[.2em] text-white/65">Satisfacción general</h3>
+          <div data-testid="circulo-satisfaccion" className="grid h-[clamp(210px,20vw,300px)] w-[clamp(210px,20vw,300px)] place-items-center rounded-full border-[clamp(14px,1.4vw,22px)] bg-slate-950/20 shadow-[0_0_60px_rgba(0,0,0,.2)]" style={{ borderColor: colorPromedio }}>
             <div>
               <strong data-testid="promedio-satisfaccion" className="block font-display text-[clamp(68px,6.5vw,102px)] font-extrabold leading-none" style={{ color: colorPromedio }}>{promedioFormateado}</strong>
               <span className="mt-2 block text-lg font-extrabold text-white/70">sobre 10</span>
