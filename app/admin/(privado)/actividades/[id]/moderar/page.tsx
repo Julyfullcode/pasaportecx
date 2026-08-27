@@ -10,8 +10,9 @@ import { GraficaActividadEnVivo } from "@/components/admin/GraficaActividadEnViv
 import { ResumenAnalisisActividad } from "@/components/admin/ResumenAnalisisActividad";
 import { avanzarActividad, cerrarActividad, publicarActividad, retrocederActividad } from "@/app/admin/(privado)/actividades/actions";
 import { ModeradorJuegoCxEx } from "@/components/admin/ModeradorJuegoCxEx";
+import { ModeradorUniverso } from "@/components/admin/ModeradorUniverso";
 import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
-import { TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
+import { constelacionDeTarjeta, leerRespuestasUniverso, tarjetaUniversoPorId, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,16 @@ function etiquetaEstado(estado: string) {
 
 export default async function ModerarActividad({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const actividad = await db.actividad.findUnique({ where: { id }, include: { respuestas: true, resultadosJuego: { orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } }, participante: { select: { nombre: true } } } }, _count: { select: { respuestas: true, participaciones: true } } } });
+  const actividad = await db.actividad.findUnique({ where: { id }, include: { respuestas: { include: { participante: { select: { nombre: true } } } }, resultadosJuego: { orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } }, participante: { select: { nombre: true } } } }, _count: { select: { respuestas: true, participaciones: true } } } });
   if (!actividad) notFound();
   if (actividad.tipo === TIPO_JUEGO_CX_EX) return <ModeradorJuegoCxEx actividad={actividad} />;
+  if (actividad.tipo === TIPO_UNIVERSO_TARJETAS) {
+    const misiones = actividad.respuestas.flatMap((respuesta) => leerRespuestasUniverso(respuesta.respuesta).flatMap((mision, indice) => {
+      const tarjeta = tarjetaUniversoPorId(mision.tarjetaId);
+      return tarjeta ? [{ id: `${respuesta.id}-${indice}`, participanteId: respuesta.participanteId, participante: respuesta.participante.nombre, reflexion: mision.reflexion, respondidaEn: mision.respondidaEn ?? respuesta.respondidoEn.toISOString(), tarjeta, constelacion: constelacionDeTarjeta(tarjeta) }] : [];
+    })).sort((a, b) => a.respondidaEn.localeCompare(b.respondidaEn));
+    return <ModeradorUniverso actividad={actividad} misiones={misiones} />;
+  }
   const preguntas = preguntasDe(actividad.configuracion);
   const esFormularioCompleto = actividad.tipo === "EVALUACION_WHATSAPP";
   const esUniverso = actividad.tipo === TIPO_UNIVERSO_TARJETAS;

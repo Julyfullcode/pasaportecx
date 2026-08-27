@@ -5,7 +5,7 @@ import { CheckCircle2, Clock3, Lightbulb, LoaderCircle, Send, Sparkles, XCircle 
 import { usePollingVisible } from "@/lib/usePollingVisible";
 import { JuegoCxEx } from "@/components/participante/JuegoCxEx";
 import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
-import { UniversoTarjetas } from "@/components/participante/UniversoTarjetas";
+import { UniversoTarjetas, type MisionUniversoVisible } from "@/components/participante/UniversoTarjetas";
 import { TIPO_UNIVERSO_TARJETAS, type ConstelacionUniverso, type TarjetaUniverso } from "@/lib/universo-experiencia";
 
 type PreguntaVisible = {
@@ -49,6 +49,8 @@ type DatosActividad = {
   tarjetaUniverso: (TarjetaUniverso & { constelacion: ConstelacionUniverso }) | null;
   reflexionUniverso: string | null;
   universoCompletado: boolean;
+  universoAgotado: boolean;
+  misionesUniverso: MisionUniversoVisible[];
 };
 
 export function ActividadEnVivo({ codigo }: { codigo: string }) {
@@ -130,8 +132,8 @@ export function ActividadEnVivo({ codigo }: { codigo: string }) {
   if (actividad.tipo === TIPO_JUEGO_CX_EX && actividad.etapa !== "CIERRE") {
     return <JuegoCxEx codigo={codigo} titulo={actividad.titulo} invitacion={actividad.invitacion} cierre={actividad.cierre} equipos={datos.equipos} equipoParticipanteId={datos.equipoParticipanteId} clasificacionInicial={datos.clasificacion} puntos={actividad.puntosHabilitados ? actividad.puntos : 0} />;
   }
-  if (actividad.tipo === TIPO_UNIVERSO_TARJETAS && actividad.etapa !== "CIERRE" && datos.tarjetaUniverso) {
-    return <UniversoTarjetas codigo={codigo} titulo={actividad.titulo} invitacion={actividad.invitacion} tarjeta={datos.tarjetaUniverso} completada={datos.universoCompletado} reflexionGuardada={datos.reflexionUniverso} puntos={actividad.puntosHabilitados ? actividad.puntos : 0} alGuardar={cargar} />;
+  if (actividad.tipo === TIPO_UNIVERSO_TARJETAS && actividad.etapa !== "CIERRE") {
+    return <UniversoTarjetas codigo={codigo} titulo={actividad.titulo} invitacion={actividad.invitacion} tarjeta={datos.tarjetaUniverso} misiones={datos.misionesUniverso} agotado={datos.universoAgotado} puntos={actividad.puntosHabilitados ? actividad.puntos : 0} alGuardar={cargar} />;
   }
   if (actividad.etapa === "FORMULARIO_COMPLETO") {
     const listo = Boolean(empresaEvaluadaId) && datos.preguntas.every((item) => (respuestasAbiertas[item.id] ?? "").trim().length >= 2);

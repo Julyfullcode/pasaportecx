@@ -22,6 +22,7 @@ export type TarjetaUniverso = {
 export type RespuestaUniverso = {
   tarjetaId: string;
   reflexion: string;
+  respondidaEn?: string;
 };
 
 export const CONSTELACIONES_UNIVERSO: ConstelacionUniverso[] = [
@@ -59,6 +60,8 @@ export const TARJETAS_UNIVERSO: TarjetaUniverso[] = [
   { id: "medimos-decidir", constelacionId: "medimos", titulo: "Mide para decidir", mensaje: "Un indicador no es la meta; es una brújula para priorizar experiencias y verificar si las acciones generan valor.", reto: "¿Qué decisión concreta debería habilitar la próxima medición de tu equipo?" },
 ];
 
+export const MAX_MISIONES_UNIVERSO = TARJETAS_UNIVERSO.length;
+
 export function constelacionDeTarjeta(tarjeta: TarjetaUniverso) {
   return CONSTELACIONES_UNIVERSO.find((constelacion) => constelacion.id === tarjeta.constelacionId) ?? CONSTELACIONES_UNIVERSO[0];
 }
@@ -67,19 +70,51 @@ export function tarjetaUniversoPorId(id: string) {
   return TARJETAS_UNIVERSO.find((tarjeta) => tarjeta.id === id) ?? null;
 }
 
-export function tarjetaUniversoPara(semilla: string) {
+function hashUniverso(semilla: string) {
   let hash = 2_166_136_261;
   for (let indice = 0; indice < semilla.length; indice += 1) {
     hash ^= semilla.charCodeAt(indice);
     hash = Math.imul(hash, 16_777_619);
   }
-  return TARJETAS_UNIVERSO[(hash >>> 0) % TARJETAS_UNIVERSO.length];
+  return hash >>> 0;
 }
 
-export function leerRespuestaUniverso(valor: unknown): RespuestaUniverso | null {
+export function tarjetasUniversoPara(semilla: string) {
+  return [...TARJETAS_UNIVERSO].sort((a, b) => hashUniverso(`${semilla}:${a.id}`) - hashUniverso(`${semilla}:${b.id}`));
+}
+
+export function tarjetaUniversoPara(semilla: string, ronda = 0) {
+  const mazo = tarjetasUniversoPara(semilla);
+  return mazo[Math.max(0, Math.trunc(ronda)) % mazo.length];
+}
+
+export function siguienteTarjetaUniverso(semilla: string, usadas: string[]) {
+  const idsUsados = new Set(usadas);
+  return tarjetasUniversoPara(semilla).find((tarjeta) => !idsUsados.has(tarjeta.id)) ?? null;
+}
+
+function leerMisionUniverso(valor: unknown): RespuestaUniverso | null {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) return null;
   const respuesta = valor as Record<string, unknown>;
   if (typeof respuesta.tarjetaId !== "string" || !tarjetaUniversoPorId(respuesta.tarjetaId)) return null;
   if (typeof respuesta.reflexion !== "string" || respuesta.reflexion.trim().length < 8 || respuesta.reflexion.length > 500) return null;
-  return { tarjetaId: respuesta.tarjetaId, reflexion: respuesta.reflexion.trim() };
+  return {
+    tarjetaId: respuesta.tarjetaId,
+    reflexion: respuesta.reflexion.trim(),
+    ...(typeof respuesta.respondidaEn === "string" ? { respondidaEn: respuesta.respondidaEn } : {}),
+  };
+}
+
+export function leerRespuestasUniverso(valor: unknown): RespuestaUniverso[] {
+  if (valor && typeof valor === "object" && !Array.isArray(valor)) {
+    const contenedor = valor as Record<string, unknown>;
+    if (Array.isArray(contenedor.misiones)) return contenedor.misiones.map(leerMisionUniverso).filter((item): item is RespuestaUniverso => Boolean(item)).slice(0, MAX_MISIONES_UNIVERSO);
+  }
+  if (Array.isArray(valor)) return valor.map(leerMisionUniverso).filter((item): item is RespuestaUniverso => Boolean(item)).slice(0, MAX_MISIONES_UNIVERSO);
+  const anterior = leerMisionUniverso(valor);
+  return anterior ? [anterior] : [];
+}
+
+export function leerRespuestaUniverso(valor: unknown): RespuestaUniverso | null {
+  return leerRespuestasUniverso(valor).at(-1) ?? null;
 }

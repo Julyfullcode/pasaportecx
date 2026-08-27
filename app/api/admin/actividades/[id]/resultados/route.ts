@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { crearExcel } from "@/lib/excel";
 import { preguntasDe } from "@/lib/actividad";
 import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
-import { constelacionDeTarjeta, leerRespuestaUniverso, tarjetaUniversoPorId, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
+import { constelacionDeTarjeta, leerRespuestasUniverso, tarjetaUniversoPorId, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
 
 function textoRespuesta(valor: unknown) {
   if (typeof valor === "string") return valor;
@@ -45,13 +45,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return new Response(archivo, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="resultados-juego-cx-ex.xlsx"`, "Cache-Control": "private, no-store" } });
   }
   if (actividad.tipo === TIPO_UNIVERSO_TARJETAS) {
-    const filas = [["Número", "Participante", "Correo", "Empresa", "Dependencia", "Equipo", "Constelación", "Tarjeta", "Mensaje", "Misión estelar", "Reflexión", "Fecha"], ...actividad.respuestas.flatMap((item, indice) => {
-      const respuesta = leerRespuestaUniverso(item.respuesta);
-      const tarjeta = respuesta ? tarjetaUniversoPorId(respuesta.tarjetaId) : null;
-      if (!respuesta || !tarjeta) return [];
+    const misiones = actividad.respuestas.flatMap((item) => leerRespuestasUniverso(item.respuesta).flatMap((respuesta) => {
+      const tarjeta = tarjetaUniversoPorId(respuesta.tarjetaId);
+      if (!tarjeta) return [];
       const constelacion = constelacionDeTarjeta(tarjeta);
-      return [[indice + 1, item.participante.nombre, item.participante.correoAutorizado?.correo ?? "", item.participante.empresa.nombre, item.participante.dependencia?.nombre ?? "", item.participante.equipo?.nombre ?? "", constelacion.nombre, tarjeta.titulo, tarjeta.mensaje, tarjeta.reto, respuesta.reflexion, item.respondidoEn.toLocaleString("es-CO", { timeZone: "America/Bogota" })]];
-    })];
+      const fecha = respuesta.respondidaEn ? new Date(respuesta.respondidaEn) : item.respondidoEn;
+      return [{ item, respuesta, tarjeta, constelacion, fecha }];
+    })).sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+    const filas = [["Número", "Participante", "Correo", "Empresa", "Dependencia", "Equipo", "Constelación", "Tarjeta", "Mensaje", "Misión estelar", "Reflexión", "Fecha"], ...misiones.map(({ item, respuesta, tarjeta, constelacion, fecha }, indice) => [indice + 1, item.participante.nombre, item.participante.correoAutorizado?.correo ?? "", item.participante.empresa.nombre, item.participante.dependencia?.nombre ?? "", item.participante.equipo?.nombre ?? "", constelacion.nombre, tarjeta.titulo, tarjeta.mensaje, tarjeta.reto, respuesta.reflexion, fecha.toLocaleString("es-CO", { timeZone: "America/Bogota" })])];
     const archivo = await crearExcel(filas, "Misiones");
     return new Response(archivo, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="universo-experiencia.xlsx"`, "Cache-Control": "private, no-store" } });
   }

@@ -5,7 +5,7 @@ import { evaluarRespuestaActividad, idsRespuestasCorrectas, preguntasDe, respues
 import { bloquearPuntosParticipante, recalcularPuntosParticipante } from "@/lib/puntos";
 import { calcularJuegoCxEx, DURACION_JUEGO_CX_EX, respuestasJuegoCxExValidas, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 import { ejecutarTransaccionRobusta } from "@/lib/transaccion";
-import { constelacionDeTarjeta, leerRespuestaUniverso, PREGUNTA_UNIVERSO_ID, tarjetaUniversoPara, tarjetaUniversoPorId, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
+import { constelacionDeTarjeta, leerRespuestaUniverso, leerRespuestasUniverso, MAX_MISIONES_UNIVERSO, PREGUNTA_UNIVERSO_ID, siguienteTarjetaUniverso, tarjetaUniversoPorId, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +45,11 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
     db.equipo.findMany({ where: { activo: true }, orderBy: { orden: "asc" }, select: { id: true, nombre: true } }),
     db.resultadoJuegoActividad.findMany({ where: { actividadId: actividad.id }, orderBy: [{ puntaje: "desc" }, { segundos: "asc" }], include: { equipo: { select: { nombre: true } } } }),
   ]) : [[], []];
-  const respuestaUniverso = esUniverso ? leerRespuestaUniverso(actividad.respuestas.find((item) => item.preguntaId === PREGUNTA_UNIVERSO_ID)?.respuesta) : null;
+  const valorUniverso = actividad.respuestas.find((item) => item.preguntaId === PREGUNTA_UNIVERSO_ID)?.respuesta;
+  const respuestasUniverso = esUniverso ? leerRespuestasUniverso(valorUniverso) : [];
+  const respuestaUniverso = respuestasUniverso.at(-1) ?? null;
   const tarjetaUniverso = esUniverso
-    ? tarjetaUniversoPorId(respuestaUniverso?.tarjetaId ?? "") ?? tarjetaUniversoPara(`${actividad.id}:${participante.id}`)
+    ? siguienteTarjetaUniverso(`${actividad.id}:${participante.id}`, respuestasUniverso.map((mision) => mision.tarjetaId))
     : null;
   const etapa = actividad.estado === "CERRADA" || (actividad.tipo === "EVALUACION_WHATSAPP" && completada) || (!esUniverso && actividad.pasoActual > preguntas.length)
     ? "CIERRE"
@@ -83,6 +85,11 @@ export async function GET(_request: Request, contexto: { params: Promise<{ id: s
     tarjetaUniverso: tarjetaUniverso ? { ...tarjetaUniverso, constelacion: constelacionDeTarjeta(tarjetaUniverso) } : null,
     reflexionUniverso: respuestaUniverso?.reflexion ?? null,
     universoCompletado: Boolean(respuestaUniverso),
+    universoAgotado: respuestasUniverso.length >= MAX_MISIONES_UNIVERSO,
+    misionesUniverso: respuestasUniverso.flatMap((mision) => {
+      const tarjeta = tarjetaUniversoPorId(mision.tarjetaId);
+      return tarjeta ? [{ ...mision, tarjeta: { ...tarjeta, constelacion: constelacionDeTarjeta(tarjeta) } }] : [];
+    }),
   }, { headers: { "Cache-Control": "no-store, max-age=0" } });
 }
 
@@ -104,13 +111,21 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
       const preguntas = preguntasDe(actividad.configuracion);
       if (actividad.tipo === TIPO_UNIVERSO_TARJETAS) {
         if (actividad.estado !== "PUBLICADA") throw new Error("ETAPA_CAMBIO");
-        const esperada = tarjetaUniversoPara(`${actividad.id}:${participante.id}`);
+        const existente = await tx.respuestaActividad.findUnique({
+          where: { actividadId_participanteId_preguntaId: { actividadId: id, participanteId: participante.id, preguntaId: PREGUNTA_UNIVERSO_ID } },
+          select: { respuesta: true },
+        });
+        const misiones = leerRespuestasUniverso(existente?.respuesta);
+        if (misiones.length >= MAX_MISIONES_UNIVERSO) throw new Error("MAZO_COMPLETO");
+        const esperada = siguienteTarjetaUniverso(`${actividad.id}:${participante.id}`, misiones.map((mision) => mision.tarjetaId));
+        if (!esperada) throw new Error("MAZO_COMPLETO");
         const respuestaUniverso = leerRespuestaUniverso({ tarjetaId: cuerpo.tarjetaId, reflexion: cuerpo.reflexion });
         if (!respuestaUniverso || respuestaUniverso.tarjetaId !== esperada.id) throw new Error("RESPUESTA_INVALIDA");
+        const nuevasMisiones = [...misiones, { ...respuestaUniverso, respondidaEn: new Date().toISOString() }];
         await tx.respuestaActividad.upsert({
           where: { actividadId_participanteId_preguntaId: { actividadId: id, participanteId: participante.id, preguntaId: PREGUNTA_UNIVERSO_ID } },
-          update: { respuesta: respuestaUniverso as unknown as Prisma.InputJsonValue },
-          create: { actividadId: id, participanteId: participante.id, preguntaId: PREGUNTA_UNIVERSO_ID, respuesta: respuestaUniverso as unknown as Prisma.InputJsonValue },
+          update: { respuesta: { misiones: nuevasMisiones } as unknown as Prisma.InputJsonValue, respondidoEn: new Date() },
+          create: { actividadId: id, participanteId: participante.id, preguntaId: PREGUNTA_UNIVERSO_ID, respuesta: { misiones: nuevasMisiones } as unknown as Prisma.InputJsonValue },
         });
         const puntosOtorgados = actividad.puntosHabilitados && !participante.esStaff ? actividad.puntos : 0;
         await tx.participacionActividad.upsert({
@@ -119,7 +134,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
           create: { actividadId: id, participanteId: participante.id, puntosOtorgados },
         });
         await recalcularPuntosParticipante(tx, participante.id);
-        return { completada: true, puntosOtorgados, tarjetaId: esperada.id };
+        return { completada: true, puntosOtorgados, tarjetaId: esperada.id, totalMisiones: nuevasMisiones.length };
       }
       if (actividad.tipo === TIPO_JUEGO_CX_EX) {
         if (actividad.estado !== "PUBLICADA") throw new Error("ETAPA_CAMBIO");
@@ -206,6 +221,7 @@ export async function POST(request: Request, contexto: { params: Promise<{ id: s
     if (error instanceof Error && error.message === "EMPRESA_CAMBIO") return Response.json({ error: "La empresa evaluada debe ser la misma durante toda la actividad." }, { status: 409 });
     if (error instanceof Error && error.message === "EQUIPO_INVALIDO") return Response.json({ error: "Selecciona un equipo válido." }, { status: 400 });
     if (error instanceof Error && error.message === "EQUIPO_COMPLETADO") return Response.json({ error: "Este equipo ya registró su resultado. El moderador puede reiniciar la actividad para una nueva ronda." }, { status: 409 });
+    if (error instanceof Error && error.message === "MAZO_COMPLETO") return Response.json({ error: "Ya exploraste todas las tarjetas de este universo." }, { status: 409 });
     console.error("[actividades/responder]", error);
     return Response.json({ error: "No pudimos guardar tu respuesta. Intenta nuevamente." }, { status: 500 });
   }

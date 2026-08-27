@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { db } from "@/lib/db";
 import { asegurarActividadUniverso } from "@/lib/actividad";
 import { PREGUNTA_UNIVERSO_ID, TARJETAS_UNIVERSO } from "@/lib/universo-experiencia";
-import { autenticarParticipante, crearParticipanteConToken } from "./ayudas";
+import { autenticarParticipante, crearParticipanteConToken, iniciarAdmin } from "./ayudas";
 
-test("el universo revela una tarjeta aleatoria y guarda la misión del participante", async ({ browser }) => {
+test("el universo permite sacar varias tarjetas y consolida las misiones en órbita", async ({ browser }) => {
   const actividadBase = await asegurarActividadUniverso();
   const codigoAcceso = `universo-${Date.now()}`;
   const actividad = await db.actividad.update({
@@ -22,20 +22,36 @@ test("el universo revela una tarjeta aleatoria y guarda la misión del participa
   await expect(page.getByTestId("mazo-universo")).toBeVisible();
   await page.getByRole("button", { name: "Activar la órbita" }).click();
   await expect(page.getByText("Buscando tu señal…")).toBeVisible();
-  await expect(page.getByTestId("tarjeta-universo-revelada")).toBeVisible({ timeout: 3_000 });
+  await expect(page.getByTestId("tarjeta-universo-revelada")).toBeVisible({ timeout: 15_000 });
 
   const tituloTarjeta = await page.getByTestId("tarjeta-universo-revelada").getByRole("heading").textContent();
   expect(TARJETAS_UNIVERSO.some((tarjeta) => tarjeta.titulo === tituloTarjeta)).toBe(true);
   const reflexion = "Voy a convertir esta señal en una conversación concreta con mi equipo.";
   await page.getByTestId("reflexion-universo").fill(reflexion);
   await page.getByRole("button", { name: "Poner mi misión en órbita" }).click();
-  await expect(page.getByText("Misión puesta en órbita")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("consolidado-universo")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(`“${reflexion}”`)).toBeVisible();
+
+  await page.getByTestId("sacar-otra-tarjeta").click();
+  await page.getByRole("button", { name: "Activar la órbita" }).click();
+  await expect(page.getByTestId("tarjeta-universo-revelada")).toBeVisible({ timeout: 15_000 });
+  const segundoTitulo = await page.getByTestId("tarjeta-universo-revelada").getByRole("heading").textContent();
+  expect(segundoTitulo).not.toBe(tituloTarjeta);
+  const segundaReflexion = "Esta segunda señal también se convierte en una acción para nuestro equipo.";
+  await page.getByTestId("reflexion-universo").fill(segundaReflexion);
+  await page.getByRole("button", { name: "Poner mi misión en órbita" }).click();
+  await expect(page.getByText("2 misiones en órbita")).toBeVisible({ timeout: 15_000 });
+
+  await iniciarAdmin(page);
+  await page.goto(`/admin/actividades/${actividad.id}/moderar`);
+  await expect(page.getByText("Control orbital en vivo")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lo que está ocurriendo" })).toBeVisible();
+  await expect(page.getByText("2 misiones", { exact: true }).first()).toBeVisible();
 
   const respuesta = await db.respuestaActividad.findUniqueOrThrow({
     where: { actividadId_participanteId_preguntaId: { actividadId: actividad.id, participanteId: participante.id, preguntaId: PREGUNTA_UNIVERSO_ID } },
   });
-  expect(respuesta.respuesta).toMatchObject({ reflexion });
+  expect(respuesta.respuesta).toMatchObject({ misiones: [{ reflexion }, { reflexion: segundaReflexion }] });
   expect((await db.participacionActividad.findUniqueOrThrow({ where: { actividadId_participanteId: { actividadId: actividad.id, participanteId: participante.id } } })).puntosOtorgados).toBe(25);
   expect((await db.participante.findUniqueOrThrow({ where: { id: participante.id } })).puntosTotales).toBe(35);
   await contexto.close();
