@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { crearExcel } from "@/lib/excel";
 import { preguntasDe } from "@/lib/actividad";
 import { TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
+import { constelacionDeTarjeta, leerRespuestaUniverso, tarjetaUniversoPorId, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
 
 function textoRespuesta(valor: unknown) {
   if (typeof valor === "string") return valor;
@@ -42,6 +43,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     })];
     const archivo = await crearExcel(filas, "Clasificación");
     return new Response(archivo, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="resultados-juego-cx-ex.xlsx"`, "Cache-Control": "private, no-store" } });
+  }
+  if (actividad.tipo === TIPO_UNIVERSO_TARJETAS) {
+    const filas = [["Número", "Participante", "Correo", "Empresa", "Dependencia", "Equipo", "Constelación", "Tarjeta", "Mensaje", "Misión estelar", "Reflexión", "Fecha"], ...actividad.respuestas.flatMap((item, indice) => {
+      const respuesta = leerRespuestaUniverso(item.respuesta);
+      const tarjeta = respuesta ? tarjetaUniversoPorId(respuesta.tarjetaId) : null;
+      if (!respuesta || !tarjeta) return [];
+      const constelacion = constelacionDeTarjeta(tarjeta);
+      return [[indice + 1, item.participante.nombre, item.participante.correoAutorizado?.correo ?? "", item.participante.empresa.nombre, item.participante.dependencia?.nombre ?? "", item.participante.equipo?.nombre ?? "", constelacion.nombre, tarjeta.titulo, tarjeta.mensaje, tarjeta.reto, respuesta.reflexion, item.respondidoEn.toLocaleString("es-CO", { timeZone: "America/Bogota" })]];
+    })];
+    const archivo = await crearExcel(filas, "Misiones");
+    return new Response(archivo, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="universo-experiencia.xlsx"`, "Cache-Control": "private, no-store" } });
   }
   const preguntas = preguntasDe(actividad.configuracion);
   const empresas = await db.empresa.findMany({ select: { id: true, nombre: true } });

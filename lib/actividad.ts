@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { ACTIVIDAD_JUEGO_CX_EX_ID, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
+import { ACTIVIDAD_UNIVERSO_ID, PREGUNTA_UNIVERSO_ID, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
 
 export const ACTIVIDAD_CONOCIMIENTO_ID = "actividad-conocimiento-indicadores-mejora";
 export const ACTIVIDAD_WHATSAPP_ID = "actividad-evaluacion-canal-whatsapp";
@@ -165,6 +166,23 @@ export const ACTIVIDAD_JUEGO_CX_EX = {
   } satisfies ConfiguracionActividad,
 };
 
+export const ACTIVIDAD_UNIVERSO = {
+  titulo: "El universo de la experiencia",
+  invitacion: "Activa la órbita y descubre una tarjeta al azar. Cada planeta guarda una señal para mirar la experiencia desde otro lugar y convertirla en una acción concreta.",
+  cierre: "Cada acción es una estrella. Cuando conectamos escucha, viaje, roles, comportamientos y aprendizaje, creamos constelaciones de experiencias inolvidables.",
+  configuracion: {
+    preguntas: [
+      {
+        id: PREGUNTA_UNIVERSO_ID,
+        titulo: "Mi tarjeta del universo de la experiencia",
+        contexto: "Descubre una tarjeta y registra la acción que quieres poner en órbita.",
+        tipo: "RESPUESTA_ABIERTA" as const,
+        insight: "Explorar, conectar y transformar: cada rol tiene un lugar en el universo de la experiencia.",
+      },
+    ],
+  } satisfies ConfiguracionActividad,
+};
+
 function textoValido(valor: unknown, maximo = 5000) {
   return typeof valor === "string" && valor.trim().length > 0 && valor.length <= maximo;
 }
@@ -244,8 +262,26 @@ export async function asegurarActividadJuegoCxEx() {
   return db.actividad.update({ where: { id: actividad.id }, data: { codigoAcceso: randomUUID().replace(/-/g, "") } });
 }
 
+export async function asegurarActividadUniverso() {
+  const actividad = await db.actividad.upsert({
+    where: { id: ACTIVIDAD_UNIVERSO_ID },
+    update: {},
+    create: {
+      id: ACTIVIDAD_UNIVERSO_ID,
+      tipo: TIPO_UNIVERSO_TARJETAS,
+      codigoAcceso: randomUUID().replace(/-/g, ""),
+      titulo: ACTIVIDAD_UNIVERSO.titulo,
+      invitacion: ACTIVIDAD_UNIVERSO.invitacion,
+      cierre: ACTIVIDAD_UNIVERSO.cierre,
+      configuracion: ACTIVIDAD_UNIVERSO.configuracion as unknown as Prisma.InputJsonValue,
+    },
+  });
+  if (actividad.codigoAcceso) return actividad;
+  return db.actividad.update({ where: { id: actividad.id }, data: { codigoAcceso: randomUUID().replace(/-/g, "") } });
+}
+
 export async function asegurarActividadesBase() {
-  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp(), asegurarActividadJuegoCxEx()]);
+  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp(), asegurarActividadJuegoCxEx(), asegurarActividadUniverso()]);
 }
 
 export function preguntasDe(valor: unknown) {

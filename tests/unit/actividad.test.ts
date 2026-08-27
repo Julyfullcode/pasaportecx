@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ACTIVIDAD_CONOCIMIENTO,
+  ACTIVIDAD_UNIVERSO,
   ACTIVIDAD_WHATSAPP,
   descripcionRespuestaCorrecta,
   evaluarRespuestaActividad,
@@ -13,6 +14,12 @@ import {
 describe("actividad moderada", () => {
   it("incluye los cinco momentos del ejercicio", () => {
     expect(preguntasDe(ACTIVIDAD_CONOCIMIENTO.configuracion)).toHaveLength(5);
+  });
+
+  it("configura el universo como una experiencia de tarjeta y reflexión", () => {
+    const preguntas = preguntasDe(ACTIVIDAD_UNIVERSO.configuracion);
+    expect(preguntas).toHaveLength(1);
+    expect(preguntas[0]).toMatchObject({ id: "tarjeta-universo", tipo: "RESPUESTA_ABIERTA" });
   });
 
   it("rechaza configuraciones incompletas", () => {
