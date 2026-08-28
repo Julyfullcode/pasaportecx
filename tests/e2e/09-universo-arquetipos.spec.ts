@@ -8,6 +8,10 @@ test("la simulación acumula aportes y muestra la primera estrella de inmediato"
   const contador = page.getByText("APORTES").locator("..");
 
   await expect(page.getByAltText("Grupo EPM")).toBeVisible();
+  const accesoQr = page.getByRole("link", { name: "Ingresar a El Universo de la Experiencia" });
+  await expect(accesoQr).toBeVisible();
+  await expect(accesoQr).toHaveAttribute("href", /\/universo\/test$/);
+  await expect(page.getByAltText("Código QR para ingresar a El Universo de la Experiencia")).toBeVisible();
   await expect(contador.getByText("1", { exact: true })).toBeVisible();
   await expect(page.getByText("Ana María · EPM")).toBeVisible();
   await page.waitForTimeout(5_500);
