@@ -34,8 +34,18 @@ test("el nuevo universo descubre el arquetipo, completa un reto y publica la est
   }
   await expect(page).toHaveURL(/\/universo\/tarjeta\?revelar=1/, { timeout: 15_000 });
   await expect(page.getByText("Tu arquetipo está listo")).toBeVisible();
-  await page.getByRole("link", { name: "Entrar al mapa estelar" }).click();
+  const enlacePdf = page.getByRole("link", { name: "Abrir mi tarjeta en PDF" });
+  await expect(enlacePdf).toHaveAttribute("href", "/api/universo/tarjeta");
+  const tarjetaPdf = await page.request.get("/api/universo/tarjeta");
+  expect(tarjetaPdf.ok()).toBe(true);
+  expect(tarjetaPdf.headers()["content-type"]).toBe("application/pdf");
+  expect((await tarjetaPdf.body()).subarray(0, 4).toString()).toBe("%PDF");
+  await expect(page.getByRole("link", { name: "Ver Galaxia Colectiva" })).toHaveAttribute("href", "/universo/galaxia");
+  await page.getByRole("link", { name: "Ver organizador de tarjetas" }).click();
   await expect(page.getByRole("heading", { name: "Mapa estelar" })).toBeVisible();
+  await expect(page.getByTestId("organizador-tarjetas")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver Galaxia Colectiva" })).toHaveAttribute("target", "_blank");
+  await expect(page.getByRole("link", { name: "Tomar tarjeta El Cliente" })).toBeVisible();
 
   await page.goto("/universo/planeta/cliente");
   await page.locator("section button").first().click();
