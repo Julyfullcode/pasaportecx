@@ -167,3 +167,18 @@ textarea {
 .matriz-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--epm-azul);
 }
+
+.galaxia-ui,
+.galaxia-ui h1,
+.galaxia-ui strong,
+.galaxia-ui blockquote {
+  font-family: var(--font-quicksand), sans-serif;
+}
+
+.galaxia-ui > header {
+  max-width: 480px;
+}
+
+.galaxia-ui > header h1 {
+  white-space: nowrap;
+}

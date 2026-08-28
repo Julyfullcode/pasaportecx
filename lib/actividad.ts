@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { ACTIVIDAD_JUEGO_CX_EX_ID, TIPO_JUEGO_CX_EX } from "@/lib/juego-cx-ex";
 import { ACTIVIDAD_UNIVERSO_ID, PREGUNTA_UNIVERSO_ID, TIPO_UNIVERSO_TARJETAS } from "@/lib/universo-experiencia";
+import { asegurarActividadUniversoArquetipos } from "@/lib/universo-arquetipos";
 
 export const ACTIVIDAD_CONOCIMIENTO_ID = "actividad-conocimiento-indicadores-mejora";
 export const ACTIVIDAD_WHATSAPP_ID = "actividad-evaluacion-canal-whatsapp";
@@ -281,7 +282,7 @@ export async function asegurarActividadUniverso() {
 }
 
 export async function asegurarActividadesBase() {
-  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp(), asegurarActividadJuegoCxEx(), asegurarActividadUniverso()]);
+  return Promise.all([asegurarActividadConocimiento(), asegurarActividadWhatsapp(), asegurarActividadJuegoCxEx(), asegurarActividadUniverso(), asegurarActividadUniversoArquetipos()]);
 }
 
 export function preguntasDe(valor: unknown) {

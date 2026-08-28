@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito_Sans, Poppins } from "next/font/google";
+import { Nunito_Sans, Poppins, Quicksand } from "next/font/google";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -13,6 +13,13 @@ const nunito = Nunito_Sans({
   subsets: ["latin"],
   variable: "--font-nunito",
   weight: ["400", "600", "700", "800"],
+  display: "swap",
+});
+
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  variable: "--font-quicksand",
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
@@ -31,7 +38,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body className={`${poppins.variable} ${nunito.variable} font-sans`}>{children}</body>
+      <body className={`${poppins.variable} ${nunito.variable} ${quicksand.variable} font-sans`}>{children}</body>
     </html>
   );
 }

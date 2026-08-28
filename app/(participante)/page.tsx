@@ -1,17 +1,19 @@
 import Link from "next/link";
-import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, ShieldCheck, Sparkles, Sprout } from "lucide-react";
+import { Award, CalendarDays, Camera, ChevronRight, Download, ImagePlus, LockKeyhole, Medal, Orbit, ShieldCheck, Sparkles, Sprout } from "lucide-react";
 import { requerirParticipante } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { FotoPerfilEditable } from "@/components/participante/FotoPerfilEditable";
 import { EditarPerfil } from "@/components/participante/EditarPerfil";
 import { MarcaHeader } from "@/components/ui/MarcaHeader";
 import { CODIGO_DESAFIO_CIERRE, esRespuestasCosecha } from "@/lib/cosecha-config";
+import { asegurarActividadUniversoArquetipos, leerResultadoTestUniverso, PLANETAS_ARQUETIPO, RESPUESTA_TEST_UNIVERSO_ID } from "@/lib/universo-arquetipos";
 
 export const dynamic = "force-dynamic";
 
 export default async function Inicio() {
   const participante = await requerirParticipante("/");
-  const [ranking, completados, totalPublicados, configuracion, cosechaCompletada, empresas] = await Promise.all([
+  const actividadUniverso = await asegurarActividadUniversoArquetipos();
+  const [ranking, completados, totalPublicados, configuracion, cosechaCompletada, empresas, respuestaUniverso] = await Promise.all([
     db.participante.findMany({
       where: { activo: true, esStaff: false },
       orderBy: [{ puntosTotales: "desc" }, { creadoEn: "asc" }],
@@ -29,7 +31,10 @@ export default async function Inicio() {
       orderBy: { orden: "asc" },
       select: { id: true, nombre: true },
     }),
+    db.respuestaActividad.findUnique({ where: { actividadId_participanteId_preguntaId: { actividadId: actividadUniverso.id, participanteId: participante.id, preguntaId: RESPUESTA_TEST_UNIVERSO_ID } }, select: { respuesta: true } }),
   ]);
+  const arquetipoUniverso = leerResultadoTestUniverso(respuestaUniverso?.respuesta);
+  const planetaUniverso = arquetipoUniverso ? PLANETAS_ARQUETIPO.find((planeta) => planeta.id === arquetipoUniverso.planetaId) : null;
   const tieneCosecha = esRespuestasCosecha(cosechaCompletada?.respuesta);
   const completadosValidos = completados - (cosechaCompletada && !tieneCosecha ? 1 : 0);
   const posicion = participante.esStaff ? null : ranking.findIndex((p) => p.id === participante.id) + 1;
@@ -64,6 +69,8 @@ export default async function Inicio() {
           </div>
         </section>
         <EditarPerfil nombres={nombres} apellidos={apellidos} empresaId={participante.empresaId} empresas={empresas} />
+        {actividadUniverso.estado === "PUBLICADA" && <Link href={planetaUniverso ? "/universo" : "/universo/test"} className="group relative block min-h-44 overflow-hidden rounded-[1.8rem] border border-white/15 bg-[linear-gradient(135deg,#071a38,#005E7D_58%,#00A650)] p-6 text-white shadow-xl"><span className="absolute -right-14 -top-20 h-64 w-64 rounded-full border-[38px] border-lime-300/10" /><span className="absolute right-8 top-8 h-20 w-20 rounded-full bg-[radial-gradient(circle_at_30%_25%,#fff,#C3E05A_12%,#005E7D_64%,#071a38)] shadow-[0_0_38px_rgba(195,224,90,.38)]" /><div className="relative max-w-[78%]"><span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.18em] text-lime-300"><Orbit size={17} /> Nueva actividad</span><h2 className="mt-3 font-display text-2xl font-extrabold text-white">El Universo de la Experiencia</h2><p className="mt-2 text-sm leading-relaxed text-white/72">Encuentra tu planeta y descubre cuál es tu aporte a la experiencia del cliente.</p><span className="mt-4 inline-flex items-center gap-1 font-extrabold text-lime-200">{planetaUniverso ? "Entrar al mapa estelar" : "Descubrir qué planeta soy"} <ChevronRight className="transition group-hover:translate-x-1" size={18} /></span></div></Link>}
+        {planetaUniverso && <Link href="/universo/tarjeta" className="tarjeta flex items-center gap-4 p-4"><span className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-[#071a38]" style={{ background: planetaUniverso.color, boxShadow: `0 0 22px ${planetaUniverso.color}66` }}><Sparkles /></span><span className="min-w-0 flex-1"><small className="font-extrabold uppercase tracking-wider text-slate-500">Mi arquetipo</small><strong className="block truncate text-lg text-[var(--epm-azul-profundo)]">{planetaUniverso.arquetipo}</strong><span className="text-sm text-slate-500">Ver y descargar mi tarjeta</span></span><ChevronRight className="text-[var(--epm-azul)]" /></Link>}
         <section className="grid grid-cols-2 gap-3">
           <Link href="/desafios" className="tarjeta p-4">
             <span className="text-sm font-bold text-slate-500">Tu recorrido</span>
