@@ -3,6 +3,19 @@ import { db } from "@/lib/db";
 import { asegurarActividadUniversoArquetipos, RESPUESTA_TEST_UNIVERSO_ID } from "@/lib/universo-arquetipos";
 import { autenticarParticipante, crearParticipanteConToken, iniciarAdmin } from "./ayudas";
 
+test("la simulación acumula aportes y muestra la primera estrella de inmediato", async ({ page }) => {
+  await page.goto("/universo/galaxia?demo=1");
+  const contador = page.getByText("APORTES").locator("..");
+
+  await expect(page.getByAltText("Grupo EPM")).toBeVisible();
+  await expect(contador.getByText("1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ana María · EPM")).toBeVisible();
+  await page.waitForTimeout(5_500);
+  await expect(contador.getByText("2", { exact: true })).toBeVisible();
+  await page.waitForTimeout(2_500);
+  await expect(contador.getByText("2", { exact: true })).toBeVisible();
+});
+
 test("el nuevo universo descubre el arquetipo, completa un reto y publica la estrella", async ({ browser, request }) => {
   const actividadBase = await asegurarActividadUniversoArquetipos();
   const actividad = await db.actividad.update({ where: { id: actividadBase.id }, data: { estado: "PUBLICADA" } });
