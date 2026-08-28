@@ -37,28 +37,47 @@ function construirDisco(radio: number) {
 }
 
 function dibujarClienteCentral(ctx: CanvasRenderingContext2D, x: number, y: number, dpr: number, ahora: number) {
-  const pulso = .96 + Math.sin(ahora * .0012) * .04;
-  const radio = 34 * dpr * pulso;
+  const pulso = .94 + Math.sin(ahora * .0012) * .06;
+  const escala = dpr * pulso;
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
-  const halo = ctx.createRadialGradient(x, y, 0, x, y, radio * 1.55);
-  halo.addColorStop(0, "rgba(195,224,90,.055)");
-  halo.addColorStop(.55, "rgba(63,214,168,.025)");
+  const halo = ctx.createRadialGradient(x, y, 0, x, y, 48 * escala);
+  halo.addColorStop(0, "rgba(195,224,90,.05)");
+  halo.addColorStop(.48, "rgba(63,214,168,.022)");
   halo.addColorStop(1, "transparent");
   ctx.fillStyle = halo;
-  ctx.fillRect(x - radio * 1.55, y - radio * 1.55, radio * 3.1, radio * 3.1);
-  ctx.fillStyle = "rgba(2,6,14,.3)";
-  ctx.strokeStyle = "rgba(195,224,90,.2)";
-  ctx.lineWidth = .8 * dpr;
+  ctx.fillRect(x - 48 * escala, y - 48 * escala, 96 * escala, 96 * escala);
+
+  ctx.fillStyle = "rgba(195,224,90,.035)";
+  ctx.strokeStyle = "rgba(214,233,164,.3)";
+  ctx.lineWidth = 1.35 * dpr;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
   ctx.beginPath();
-  ctx.arc(x, y, radio, 0, Math.PI * 2);
+  ctx.arc(x, y - 14 * escala, 8.5 * escala, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "rgba(234,242,248,.68)";
-  ctx.font = `700 ${9.5 * dpr}px Quicksand, Arial, sans-serif`;
+
+  ctx.beginPath();
+  ctx.moveTo(x - 7 * escala, y - 3 * escala);
+  ctx.bezierCurveTo(x - 17 * escala, y - 2 * escala, x - 21 * escala, y + 5 * escala, x - 21 * escala, y + 14 * escala);
+  ctx.lineTo(x - 21 * escala, y + 22 * escala);
+  ctx.lineTo(x - 8 * escala, y + 22 * escala);
+  ctx.moveTo(x + 7 * escala, y - 3 * escala);
+  ctx.bezierCurveTo(x + 17 * escala, y - 2 * escala, x + 21 * escala, y + 5 * escala, x + 21 * escala, y + 14 * escala);
+  ctx.lineTo(x + 21 * escala, y + 22 * escala);
+  ctx.lineTo(x + 8 * escala, y + 22 * escala);
+  ctx.moveTo(x - 8 * escala, y + 22 * escala);
+  ctx.lineTo(x - 8 * escala, y + 9 * escala);
+  ctx.moveTo(x + 8 * escala, y + 22 * escala);
+  ctx.lineTo(x + 8 * escala, y + 9 * escala);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(234,242,248,.58)";
+  ctx.font = `700 ${8.5 * dpr}px Quicksand, Arial, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("EL CLIENTE", x, y + .5 * dpr);
+  ctx.fillText("EL CLIENTE", x, y + 34 * escala);
   ctx.restore();
 }
 
