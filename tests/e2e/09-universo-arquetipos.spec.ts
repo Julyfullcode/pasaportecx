@@ -62,5 +62,15 @@ test("el nuevo universo descubre el arquetipo, completa un reto y publica la est
   await iniciarAdmin(page); await page.goto("/admin/actividades");
   await expect(page.getByRole("heading", { name: "El Universo de la Experiencia", exact: true })).toBeVisible();
   await expect(page.getByText("Encuentra tu planeta y descubre cuál es tu aporte a la experiencia del cliente.")).toBeVisible();
+  await page.goto(`/admin/actividades/${actividad.id}`);
+  await expect(page.getByRole("heading", { name: "Datos de respuestas" })).toBeVisible();
+  const borrarRespuestas = page.getByRole("button", { name: "Borrar respuestas existentes" });
+  await expect(borrarRespuestas).toBeEnabled();
+  page.once("dialog", (dialogo) => dialogo.accept());
+  await borrarRespuestas.click();
+  await expect(page.getByRole("button", { name: "No hay respuestas para borrar" })).toBeDisabled();
+  await expect.poll(() => db.respuestaActividad.count({ where: { actividadId: actividad.id } })).toBe(0);
+  await expect.poll(() => db.participacionActividad.count({ where: { actividadId: actividad.id } })).toBe(0);
+  expect((await db.actividad.findUniqueOrThrow({ where: { id: actividad.id }, select: { estado: true } })).estado).toBe("BORRADOR");
   await contexto.close();
 });
