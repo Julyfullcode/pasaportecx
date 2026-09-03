@@ -8,9 +8,11 @@ test("la simulación acumula aportes y muestra la primera estrella de inmediato"
   const contador = page.getByText("APORTES").locator("..");
 
   await expect(page.getByAltText("Grupo EPM")).toBeVisible();
-  const accesoQr = page.getByRole("link", { name: "Ingresar a El Universo de la Experiencia" });
+  const accesoQr = page.getByRole("link", { name: "Ingresar a El Universo de la Experiencia como participante" });
   await expect(accesoQr).toBeVisible();
   await expect(accesoQr).toHaveAttribute("href", /\/universo\/test$/);
+  await expect(accesoQr).toHaveAttribute("target", "_blank");
+  await expect(page.getByText("Escanea o haz clic para entrar")).toBeVisible();
   await expect(page.getByAltText("Código QR para ingresar a El Universo de la Experiencia")).toBeVisible();
   await expect(contador.getByText("1", { exact: true })).toBeVisible();
   await expect(page.getByText("Ana María · EPM")).toBeVisible();
@@ -18,6 +20,12 @@ test("la simulación acumula aportes y muestra la primera estrella de inmediato"
   await expect(contador.getByText("2", { exact: true })).toBeVisible();
   await page.waitForTimeout(2_500);
   await expect(contador.getByText("2", { exact: true })).toBeVisible();
+  const nuevaPestana = page.waitForEvent("popup");
+  await accesoQr.click();
+  const ingresoParticipante = await nuevaPestana;
+  await ingresoParticipante.waitForLoadState("domcontentloaded");
+  await expect(ingresoParticipante).toHaveURL(/\/registro\?destino=%2Funiverso%2Ftest$/);
+  await ingresoParticipante.close();
 });
 
 test("el nuevo universo descubre el arquetipo, completa un reto y publica la estrella", async ({ browser, request }) => {
