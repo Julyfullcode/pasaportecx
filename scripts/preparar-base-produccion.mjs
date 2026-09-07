@@ -228,9 +228,9 @@ try {
   }
   const versionReinicioAdmin = process.env.ADMIN_PASSWORD_RESET_VERSION?.trim();
   const nuevaPasswordAdmin = process.env.ADMIN_PASSWORD;
-  if (versionReinicioAdmin && nuevaPasswordAdmin) {
+  if (nuevaPasswordAdmin) {
     const usuariosAdmin = ["admin"];
-    const accionReinicio = `mantenimiento:reinicio-acceso-admin:${versionReinicioAdmin}:v2`;
+    const accionReinicio = `mantenimiento:reinicio-acceso-admin:${versionReinicioAdmin || "automatico"}:v3`;
     const reinicioAplicado = await db.limiteSolicitud.findFirst({ where: { accion: accionReinicio } });
     const admins = await db.admin.findMany({ where: { usuario: { in: usuariosAdmin } }, select: { id: true, usuario: true } });
     if (!reinicioAplicado && admins.length) {
