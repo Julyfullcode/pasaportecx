@@ -1,23 +1,23 @@
 import "server-only";
 
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
 const COOKIE_ACCESO_RESUMEN = "acceso_presentacion_resumen";
-const HASH_CODIGO_PREDETERMINADO = "041d38e523791d81621a02de2eb4d0b9cdc7438e92952761b39dc2091fa29701";
+const CODIGO_PREDETERMINADO = "Experiencia";
 
-function identificadorDeCodigo() {
-  return HASH_CODIGO_PREDETERMINADO;
+function codigoConfigurado() {
+  return process.env.RESUMEN_PRESENTACION_CODIGO?.trim() || CODIGO_PREDETERMINADO;
 }
 
 function firmaAcceso() {
   const secreto = process.env.AUTH_SECRET || "pasaporte-cx-resumen-evento";
-  return createHmac("sha256", secreto).update(`resumen:${identificadorDeCodigo()}`).digest("hex");
+  return createHmac("sha256", secreto).update(`resumen:${codigoConfigurado()}`).digest("hex");
 }
 
 export function codigoResumenCorrecto(valor: string) {
-  const recibido = createHash("sha256").update(valor.trim()).digest();
-  const esperado = Buffer.from(HASH_CODIGO_PREDETERMINADO, "hex");
+  const recibido = Buffer.from(valor.trim());
+  const esperado = Buffer.from(codigoConfigurado());
   return recibido.length === esperado.length && timingSafeEqual(recibido, esperado);
 }
 
