@@ -230,17 +230,17 @@ try {
   const nuevaPasswordAdmin = process.env.ADMIN_PASSWORD;
   if (nuevaPasswordAdmin) {
     const usuariosAdmin = ["admin"];
-    const accionReinicio = `mantenimiento:reinicio-acceso-admin:${versionReinicioAdmin || "automatico"}:v3`;
+    const accionReinicio = `mantenimiento:reinicio-acceso-admin:${versionReinicioAdmin || "automatico"}:v4`;
     const reinicioAplicado = await db.limiteSolicitud.findFirst({ where: { accion: accionReinicio } });
-    const admins = await db.admin.findMany({ where: { usuario: { in: usuariosAdmin } }, select: { id: true, usuario: true } });
-    if (!reinicioAplicado && admins.length) {
+    if (!reinicioAplicado) {
       const passwordHash = await bcrypt.hash(nuevaPasswordAdmin, 12);
       await db.$transaction([
-        db.admin.updateMany({
-          where: { id: { in: admins.map((admin) => admin.id) } },
+        db.admin.upsert({
+          where: { usuario: "admin" },
+          create: { usuario: "admin", passwordHash },
           data: { passwordHash, intentosFallidos: 0, ultimoIntentoFallido: null, bloqueadoHasta: null },
         }),
-        db.limiteSolicitud.deleteMany({ where: { accion: { in: admins.map((admin) => `login-admin:${admin.usuario.toLowerCase()}`) } } }),
+        db.limiteSolicitud.deleteMany({ where: { accion: { in: usuariosAdmin.map((usuario) => `login-admin:${usuario}`) } } }),
         db.limiteSolicitud.create({
           data: {
             accion: accionReinicio,
