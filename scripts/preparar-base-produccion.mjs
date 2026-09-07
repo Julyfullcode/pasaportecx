@@ -8,6 +8,9 @@ if (!url || !url.startsWith("postgres")) {
 
 const db = new PrismaClient({ datasources: { db: { url } } });
 try {
+  await db.$executeRawUnsafe('ALTER TABLE "Admin" ADD COLUMN IF NOT EXISTS "intentosFallidos" INTEGER NOT NULL DEFAULT 0');
+  await db.$executeRawUnsafe('ALTER TABLE "Admin" ADD COLUMN IF NOT EXISTS "ultimoIntentoFallido" TIMESTAMP(3)');
+  await db.$executeRawUnsafe('ALTER TABLE "Admin" ADD COLUMN IF NOT EXISTS "bloqueadoHasta" TIMESTAMP(3)');
   await db.$executeRawUnsafe('ALTER TABLE "ConfiguracionEvento" ADD COLUMN IF NOT EXISTS "urlAgendaPdf" TEXT');
   await db.$executeRawUnsafe('ALTER TABLE "Desafio" ADD COLUMN IF NOT EXISTS "orden" INTEGER NOT NULL DEFAULT 0');
   await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "Desafio_dia_orden_idx" ON "Desafio"("dia", "orden")');
