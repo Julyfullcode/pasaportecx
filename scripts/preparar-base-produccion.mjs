@@ -241,7 +241,7 @@ try {
         db.admin.upsert({
           where: { usuario: "admin" },
           create: { usuario: "admin", passwordHash },
-          data: { passwordHash, intentosFallidos: 0, ultimoIntentoFallido: null, bloqueadoHasta: null },
+          update: { passwordHash, intentosFallidos: 0, ultimoIntentoFallido: null, bloqueadoHasta: null },
         }),
         db.limiteSolicitud.deleteMany({ where: { accion: { in: usuariosAdmin.map((usuario) => `login-admin:${usuario}`) } } }),
         db.limiteSolicitud.create({
