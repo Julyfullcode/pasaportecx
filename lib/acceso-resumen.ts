@@ -6,12 +6,8 @@ import { cookies } from "next/headers";
 const COOKIE_ACCESO_RESUMEN = "acceso_presentacion_resumen";
 const HASH_CODIGO_PREDETERMINADO = "041d38e523791d81621a02de2eb4d0b9cdc7438e92952761b39dc2091fa29701";
 
-function codigoConfigurado() {
-  return process.env.RESUMEN_PRESENTACION_CODIGO?.trim();
-}
-
 function identificadorDeCodigo() {
-  return codigoConfigurado() || HASH_CODIGO_PREDETERMINADO;
+  return HASH_CODIGO_PREDETERMINADO;
 }
 
 function firmaAcceso() {
@@ -20,13 +16,8 @@ function firmaAcceso() {
 }
 
 export function codigoResumenCorrecto(valor: string) {
-  const codigo = codigoConfigurado();
-  const recibido = codigo
-    ? Buffer.from(valor.trim())
-    : createHash("sha256").update(valor.trim()).digest();
-  const esperado = codigo
-    ? Buffer.from(codigo)
-    : Buffer.from(HASH_CODIGO_PREDETERMINADO, "hex");
+  const recibido = createHash("sha256").update(valor.trim()).digest();
+  const esperado = Buffer.from(HASH_CODIGO_PREDETERMINADO, "hex");
   return recibido.length === esperado.length && timingSafeEqual(recibido, esperado);
 }
 
