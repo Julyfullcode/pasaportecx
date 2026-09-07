@@ -4,7 +4,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
 const COOKIE_ACCESO_RESUMEN = "acceso_presentacion_resumen";
-const HASH_CODIGO_PREDETERMINADO = "08eb6bbf5dfa8b2e73f5576821650d2ff34ea31d1fc3d18bf837a4a7cbf66fb0";
+const HASH_CODIGO_PREDETERMINADO = "041d38e523791d81621a02de2eb4d0b9cdc7438e92952761b39dc2091fa29701";
 
 function codigoConfigurado() {
   return process.env.RESUMEN_PRESENTACION_CODIGO?.trim();
