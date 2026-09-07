@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const url = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!url || !url.startsWith("postgres")) {
@@ -223,6 +224,33 @@ try {
         ]);
         await db.participante.update({ where: { id: participante.id }, data: { puntosTotales: participante.puntosRegistro + (completitudes._sum.puntosOtorgados ?? 0) + (ajustes._sum.puntos ?? 0) } });
       }
+    }
+  }
+  const versionReinicioAdmin = process.env.ADMIN_PASSWORD_RESET_VERSION?.trim();
+  const nuevaPasswordAdmin = process.env.ADMIN_PASSWORD;
+  if (versionReinicioAdmin && nuevaPasswordAdmin) {
+    const usuarioAdmin = process.env.ADMIN_USER?.trim() || "admin";
+    const accionReinicio = `mantenimiento:reinicio-acceso-admin:${versionReinicioAdmin}`;
+    const reinicioAplicado = await db.limiteSolicitud.findFirst({ where: { accion: accionReinicio } });
+    const admin = await db.admin.findUnique({ where: { usuario: usuarioAdmin } });
+    if (!reinicioAplicado && admin) {
+      const passwordHash = await bcrypt.hash(nuevaPasswordAdmin, 12);
+      await db.$transaction([
+        db.admin.update({
+          where: { id: admin.id },
+          data: { passwordHash, intentosFallidos: 0, ultimoIntentoFallido: null, bloqueadoHasta: null },
+        }),
+        db.limiteSolicitud.deleteMany({ where: { accion: `login-admin:${usuarioAdmin.toLowerCase()}` } }),
+        db.limiteSolicitud.create({
+          data: {
+            accion: accionReinicio,
+            claveHash: "reinicio-manual",
+            ventana: new Date(),
+            cantidad: 1,
+            expiraEn: new Date("2099-01-01T00:00:00.000Z"),
+          },
+        }),
+      ]);
     }
   }
   console.log("Base de producción preparada.");
